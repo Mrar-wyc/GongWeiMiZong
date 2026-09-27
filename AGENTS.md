@@ -29,6 +29,12 @@
    ——守门人是 `tests/webui_harness.js` 的 pane 断言与 `tests/test_tui.py` 的逐字快照。
    CSS 也有合约：`tests/test_web_tokens.py` 盯七档字号阶梯、正文色的 AA 对比度、
    正文不许内滚、动效必须在 `body[data-motion="off"]` 与 `prefers-reduced-motion` 两处都关。
+11. **门禁不摆在桌上**。`visible_if` 不满足、`locked_if` / `locked_by` 没开、不可重复而又问过的
+   选项**一律不显示**（不许再拿「灰置 + 条件不足」当提示）。被挡住的那些必须能被
+   `GameEngine.hidden_options()` / `Game.options().hiddenOptions()` 数出来——`tools/audit_story.py`
+   的「从未解开过的门禁」和 `tools/audit_web.py` 的双端隐藏清单比对都指着它；
+   `locked_hint` 从此只给审计与排障看，不许出现在任何玩家可见的文字里
+   （守门人：`tests/test_engine.py` 的 `HiddenGateTest`、`tests/webui_harness.js` 的选项卡检查）。
 
 ## 2. 目录地图（该改哪里）
 
@@ -37,22 +43,27 @@
 | `gongwei/data/story.py` | ~2800 | 场景、选项、话题、结局规则、人物表、幕案映射 |
 | `gongwei/data/dossiers.py` | ~2100 | 91 份档案的正文、幕标题 `ACT_TITLES`、勘验总录 |
 | `gongwei/game/models.py` | 237 | 数据模型（字段不够用时才动） |
-| `gongwei/game/engine.py` | 812 | 规则引擎：选项门禁、效果、阅档、结局判定、存档 |
+| `gongwei/game/engine.py` | 864 | 规则引擎：选项门禁（含隐藏清单 `hidden_options()`）、效果、阅档、结局判定、存档 |
+| `gongwei/game/save.py` | 188 | 存读档：版本号、坏档兜底（任何形状都不许抛出来）、临时文件 + 替换的原子写 |
 | `gongwei/game/conditions.py` | 391 | 条件小语言（`clue:` / `flag:` / `trust:` …）+ AST |
 | `gongwei/game/command.py` | 578 | 指令解析（档号、档目、检索、记事、存读档），两端同一套语义 |
-| `gongwei/tui/terminal.py` | 877 | 零依赖终端层：CJK 双宽、禁则、ANSI（含 `NO_COLOR`）、键盘、行编辑 |
-| `gongwei/tui/app.py` | 1227 | 界面：分栏、阅读区、命令行、浮层、提示语、说话人名牌与结局印章 |
+| `gongwei/tui/terminal.py` | 888 | 零依赖终端层：CJK 双宽、禁则、ANSI（含 `NO_COLOR`）、键盘、行编辑 |
+| `gongwei/tui/app.py` | 1342 | 界面：分栏、阅读区、命令行、浮层、提示语、说话人名牌与结局印章、空桌引导 |
 | `gongwei/web/pack.py` | 154 | 剧本 → 内容包（条件编译成 AST） |
 | `gongwei/web/art.py` | 177 | 图景台账：地点→色调、时辰→明暗、标签→字形（纯名字，没有图片） |
 | `gongwei/autoplay.py` | 425 | 脚本化通关原语 + `ENDING_ROUTES`（tools/ 与 tests/ 共用） |
-| `web/src/game.js` | 818 | JS 侧引擎（必须与 `engine.py` 行为一致） |
-| `web/src/ui.js` | 1719 | 网页界面（分页、命令行、存读档、导出导入、图景与案外页、右栏仪表卡与卷首过场） |
+| `web/src/game.js` | 853 | JS 侧引擎（必须与 `engine.py` 行为一致） |
+| `web/src/ui.js` | 1731 | 网页界面（分页、命令行、存读档、导出导入、图景与案外页、右栏仪表卡与卷首过场） |
 | `web/src/style.css` | 1340 | 网页版**断点都在这儿**（窄屏分页、宽屏三栏、480px）+ 设计令牌与「原型形制」的一层皮（玻璃拟纸、印章、芯片、字号阶梯）——`ui.js` 里没有宽度判断；排版合约由 `tests/test_web_tokens.py` 盯着 |
 | `web/src/static.css` | 457 | 图景的画法：宫墙/药柜/书架/藻井/卷首画卷全是 CSS 渐变与形状（零图片、零外链） |
-| `web/src/driver.js` | 128 | node 下走路线，供 `audit_web.py` 调 |
+| `web/src/driver.js` | 133 | node 下走路线，供 `audit_web.py` 调 |
+| `android/` | — | 安卓壳（AGP 8.5.2 + 一个 `WebView` 读 `assets/index.html`，零 AndroidX）——`android/app/build.gradle` 44 行、`settings.gradle` 25 行 |
+| `tools/build_android.py` | 122 | 与 `build_web.py` 同形：`--check` 比资产与网页产物是否逐字节相同 |
+| `.github/workflows/android.yml` | 149 | 安卓门禁：`assembleDebug` → `aapt2 dump badging` 断言包名/SDK/无 `INTERNET` → 传 `app-debug.apk` |
 | `tools/audit_*.py` | — | 四道体检闸门（§4） |
 | `docs/prototype-v1.1-review.md` | 235 | 第三方 v1.1 插画版原型的拆解：偷了什么做法、明确不学什么、落在哪个文件 |
-| `tests/` | — | 302 项（其中 `tests/webui_harness.js` 的 31 项检查由 `tests/test_webui.py` 拖着 node 跑）；`tests/webui_harness.js` 在 node 里用最小 DOM 真跑 `web/src/ui.js` 与 `game.js` 的判决节拍；`BreadcrumbFlagTest` / `TrustCeilingTest` 盯着「只设不读的 flag」与角色的深谈阈值；`ActTitleTest` 盯着幕名表与实际用到的幕号互相覆盖；`DeadEndAuditTest` 盯着第 5 节那三档软卡判定；`tests/helpers.py` 只是转手 `autoplay` 的路线，**不要另抄一份**；`tests/test_art.py` 盯着图景台账与真剧本、`static.css`、网页产物三方对账 |
+| `docs/bug-audit.md` | — | 独立复检记录：五条真问题（终端版坏档崩溃、`AttributeError` 穿出存档层、网页端不校验版本、JS 悄悄读坏档、注释与代码不符）+ 修法与回归测试 + 「查过无事」的证据与盲区 |
+| `tests/` | — | 352 项（其中 `tests/webui_harness.js` 的 33 项检查由 `tests/test_webui.py` 拖着 node 跑，`tests/test_android.py` 523 行静态查安卓壳）；`tests/webui_harness.js` 在 node 里用最小 DOM 真跑 `web/src/ui.js` 与 `game.js` 的判决节拍；`BreadcrumbFlagTest` / `TrustCeilingTest` 盯着「只设不读的 flag」与角色的深谈阈值；`ActTitleTest` 盯着幕名表与实际用到的幕号互相覆盖；`DeadEndAuditTest` 盯着第 5 节那三档软卡判定；`HiddenGateTest` 盯着「门禁不摆在桌上」；`tests/helpers.py` 只是转手 `autoplay` 的路线，**不要另抄一份**；`tests/test_art.py` 盯着图景台账与真剧本、`static.css`、网页产物三方对账 |
 
 判断要点：**玩家的体验问题 → `story.py` / `dossiers.py`；行为不对 → `engine.py` + `web/src/game.js`
 两边一起改；显示不对 → `tui/app.py` / `web/src/ui.js`（网页版的断点在 `web/src/style.css`）；
@@ -130,7 +141,7 @@
 
 ```powershell
 python tools/build_web.py --check        # 产物等于当前剧本打的包
-python -m unittest discover -s tests -t .  # 302 项（含下面几道闸）
+python -m unittest discover -s tests -t .  # 352 项（含下面几道闸）
 python tools/audit_gates.py              # 线索/物证登记一致性、门禁引用是否有据
 python tools/audit_web.py                # 跨端差分：27 条路线逐字比对存档与选项表
 python tools/audit_story.py 30000        # 可达性：枚举状态图 + 20 条结局路线（参数是预算步数）
@@ -144,8 +155,8 @@ python tools/audit_logic.py              # 逻辑体检：后门/剧透面/刷�
 
 预期输出（当前基线）：
 
-- `Ran 302 tests … OK`
-  （其中 `tests/webui_harness.js` → `CHECKS 31 0`，`tests/test_web_tokens.py` 15 项静态查 CSS 合约）
+- `Ran 352 tests … OK`
+  （其中 `tests/webui_harness.js` → `CHECKS 33 0`，`tests/test_web_tokens.py` 15 项静态查 CSS 合约）
 - `审计通过：门禁全部可达，引用全部有据。`
 - `✓ 两端逐步一致：存档与选项表逐字相同，连报错都一致`
 - `场景 64/64`、`档案 91/91`、`线索/物证 103/103（核心 65/65）`、`话题 44/44`、`结局 20/20`、
@@ -196,7 +207,10 @@ python tools/audit_logic.py              # 逻辑体检：后门/剧透面/刷�
 
 - [ ] 六道门禁 + 单元测试全绿，输出与 §4 的基线一致（数字变了就同步 README）。
 - [ ] 新加的场景/档案/线索/话题/结局都出现在 `audit_story.py` 的 `N/N` 里。
-- [ ] 新加的门禁都写了 `locked_hint`（玩家要知道缺什么）。
+- [ ] 新加的门禁都写了 `locked_hint`（**只给审计与排障看**，玩家看不到：门禁不开就不显示，
+      见硬规则 11）；没有可见选项的屏要给出引导文案（`tests/test_engine.py` 与两端界面测试盯着）。
+- [ ] 安卓包能出：`python tools/build_android.py --check` 绿（资产等于 `web/gongwei-mizong.html`），
+      `android.yml` 产出 `app-debug.apk` 且 `aapt2 dump badging` 里没有 `INTERNET` 权限。
 - [ ] 改动涉及界面 → 终端与网页两端都手工看过一眼（窄屏也要看）。
 - [ ] 改了界面样式 → 重拍 `docs/ui/` 的复验图，并同步 `README.md` 的 UI 说明与示例屏。
 - [ ] 新增视觉装饰 → `tests/test_web_tokens.py` / `tests/webui_harness.js` 的条数写进 §4 基线。

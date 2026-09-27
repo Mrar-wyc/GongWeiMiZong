@@ -1,0 +1,7 @@
+// 根工程的构建脚本：只声明插件版本，不 apply —— 具体配置在 app/build.gradle。
+//
+// AGP 版本写死 8.5.2：它要 Gradle 8.7+ 与 JDK 17，
+// 与 .github/workflows/android.yml 里的 setup-java(17) + setup-gradle(8.7) 一对。
+plugins {
+    id 'com.android.application' version '8.5.2' apply false
+}

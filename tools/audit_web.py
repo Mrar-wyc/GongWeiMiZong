@@ -9,7 +9,8 @@ AST 形式带上），所以「内容会不会漂移」不用怕；真正会漂�
 
 这个脚本把同一串动作分别喂给两边，逐步比对：
   * 存档（`GameState.to_save()` 与 JS 的 `toSave()`，逐字相同）
-  * 选项表（序号 / 标签 / 是否可用 / 被锁时的提示语）
+  * 选项表（序号 / 标签 / 是否可用 / 被锁时的提示语，外加最后一行
+    ``["hidden", 标签…]``：被门禁挡住、玩家看不见的那批 —— 见 `option_table()`）
 
 用法::
 
@@ -49,7 +50,22 @@ def canon(value: Any) -> str:
 
 
 def option_table(engine: GameEngine) -> List[List[Any]]:
-    return [[o.index, o.label, o.enabled, o.hint] for o in engine.options()]
+    """此刻桌上的选项表 —— **门禁语义的守门人**。
+
+    选项门禁改成「藏起来」之后，可见项恒 ``enabled=True``、``hint=""``：光比可见
+    的这几行，「两端藏的是不是同一批」就没人证明了。所以这张表比界面多带一行
+    ``["hidden", 标签…]``，取 ``engine.hidden_options()``（按 ``raw_choices()`` 的
+    顺序，与可见行同一个数组）—— 27 条路线于是同时证明两端**可见的**与**藏起来的**
+    都是同一批。
+
+    必须与 `web/src/driver.js` 的输出逐字对齐：那边是
+    ``game.options().map(...)`` 之后再 ``push(["hidden"].concat(...))``，
+    行数、顺序、空表时只留一行 ``["hidden"]``，都按这个来。
+    """
+    rows: List[List[Any]] = [[o.index, o.label, o.enabled, o.hint]
+                             for o in engine.options()]
+    rows.append(["hidden"] + [o.label for o in engine.hidden_options()])
+    return rows
 
 
 def snapshot(engine: GameEngine) -> Dict[str, Any]:

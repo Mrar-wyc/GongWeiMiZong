@@ -199,6 +199,14 @@ class GameState:
 
 @dataclass
 class Option:
+    """桌上摆着的一条可做之事。
+
+    门禁没开的选择**根本不会成为 Option**（去哪了见 ``GameEngine.hidden_options()``），
+    所以 ``options()`` 的结果里 ``enabled`` 恒为 ``True``、``hint`` 恒为 ``""``：
+    这两个字段留着是因为 ``tools/audit_web.py`` 要拿 ``[index, label, enabled, hint]``
+    与 JS 侧逐字比对，形状一动两端就会对不上。
+    """
+
     index: int
     label: str
     detail: str = ""
@@ -457,43 +465,87 @@ class GameEngine:
         return " · ".join(bits)
 
     # -- 选项 ------------------------------------------------------------
+    def raw_choices(self, scene: Scene) -> List[Tuple[Choice, Optional[str]]]:
+        """桌上的原始选择：场景自带的 + 在场者可问的话题（两端顺序必须一致）。"""
+        raw: List[Tuple[Choice, Optional[str]]] = [(ch, None) for ch in scene.choices]
+        if scene.interlocutor:
+            raw.extend((ch, tid) for ch, tid in self._interrogation_choices(scene.interlocutor))
+        return raw
+
     def options(self) -> List[Option]:
+        """此刻摆在桌上的事。
+
+        条件不满足的选择**不出现**（不是灰置）：`visible_if` 不满足、
+        `locked_if` / `locked_by` 没开、不可重复而又问过的，都直接跳过。
+        被挡住的那些去哪了？见 `hidden_options()`——审计与启动期检查靠它数门禁，
+        而不是靠玩家能看见的灰项。
+        """
         scene = self.scene
         state = self.state
         if scene.kind == "ending":
             return []
-        raw: List[Tuple[Choice, Optional[str]]] = [(ch, None) for ch in scene.choices]
-        if scene.interlocutor:
-            raw.extend((ch, tid) for ch, tid in self._interrogation_choices(scene.interlocutor))
         options: List[Option] = []
-        for choice, topic_id in raw:
+        for choice, topic_id in self.raw_choices(scene):
             vis = _cond(choice.visible_if)
             lock = _cond(choice.locked_if or choice.locked_by)
             if vis is not None and not vis(state):
                 continue
             if not choice.repeatable and choice.key in state.seen_choices:
                 continue
-            enabled = True
-            hint = ""
             if lock is not None and lock(state):
-                enabled = False
-                hint = choice.locked_hint or "条件不足"
-            asked = choice.key in state.seen_choices
+                continue
             options.append(Option(
                 index=0,
                 label=choice.label,
                 detail=choice.detail,
-                enabled=enabled,
-                hint=hint,
+                enabled=True,
+                hint="",
                 wants=choice.wants,
                 tag=choice.tag,
                 gated=(vis is not None or lock is not None),
-                asked=asked,
+                asked=choice.key in state.seen_choices,
                 action=(lambda c=choice, t=topic_id: self.choose(c, t)),
             ))
         for i, opt in enumerate(options, start=1):
             opt.index = i
         return options
+
+    def hidden_options(self) -> List[Option]:
+        """此刻被门禁挡住、玩家看不见的选择（只给审计与排障，永远不进界面）。
+
+        与 `options()` 共用同一套判定，只有两点不同：这里只收**被条件挡住的**
+        （`visible_if` 不满足，或 `locked_if` / `locked_by` 没开）；返回的 `hint`
+        是写给开发者看的原因（`locked_hint`），所以两端界面都不许拿它渲染。
+
+        「问过就不再出现」的过滤在这儿**只管普通话题**：好感会掉，门禁是会重新
+        关上的——一个问过、如今门禁又锁着的话题照样进这张清单（`audit_story`
+        的「从未解开过的门禁」就是按这张清单数的，不算它才是漏账）。
+        """
+        scene = self.scene
+        state = self.state
+        if scene.kind == "ending":
+            return []
+        out: List[Option] = []
+        for choice, topic_id in self.raw_choices(scene):
+            vis = _cond(choice.visible_if)
+            lock = _cond(choice.locked_if or choice.locked_by)
+            by_vis = vis is not None and not vis(state)
+            by_lock = (not by_vis) and lock is not None and lock(state)
+            if not (by_vis or by_lock):
+                continue
+            out.append(Option(
+                index=0,
+                label=choice.label,
+                detail=choice.detail,
+                enabled=False,
+                hint=(choice.locked_hint or "条件不足") if by_lock else "",
+                wants=choice.wants,
+                tag=choice.tag,
+                gated=True,
+                asked=choice.key in state.seen_choices,
+                action=(lambda c=choice, t=topic_id: self.choose(c, t)),
+            ))
+        return out
 
     # -- 审讯 ------------------------------------------------------------
     def register_topic_gate(self, topic_id: str, gate, hint: str) -> None:

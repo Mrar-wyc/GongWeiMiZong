@@ -1,0 +1,149 @@
+# 安卓壳：把单文件网页打进 debug APK，并在流水线里真去拆开 APK 验一遍。
+#
+# 为什么单独一条工作流：门禁（gates.yml）跑的是剧本与两端的正确性，它不装 JDK、
+# 不装 Android SDK；而这一条要的是「能不能出一个装得上、且不联网的包」。
+# 两条腿各管各的，谁红了一眼就知道该看哪边。
+#
+# 只允许官方 / 维护方的一手 action：checkout、setup-java、setup-android、
+# setup-gradle、setup-python、upload-artifact，发布用镜像自带的 gh。
+# 不用 softprops/action-gh-release 这类第三方 —— 发布这件事不该经过陌生人的代码。
+name: android
+
+on:
+  push:
+    branches: [main]
+    # 版本标签也要出包（下面只有 v* 标签那一步会去发 Release）。
+    # 注意：GitHub 对**标签**推送不评估 paths 过滤，所以打标签必定触发。
+    tags: ['v*']
+    paths:
+      - 'android/**'
+      - 'web/**'
+      - 'gongwei/**'
+      - 'tools/**'
+      - 'tests/**'
+      - '.github/workflows/android.yml'
+  pull_request:
+    paths:
+      - 'android/**'
+      - 'web/**'
+      - 'gongwei/**'
+      - 'tools/**'
+      - 'tests/**'
+      - '.github/workflows/android.yml'
+  workflow_dispatch:
+
+# 标签推送要发 Release，所以需要写权限（main / PR 上只用来出 artifact，不影响）。
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONIOENCODING: utf-8
+  PYTHONUTF8: "1"
+
+jobs:
+  apk:
+    name: 打包 debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: 取仓库
+        uses: actions/checkout@v7
+
+      - name: 装 JDK 17（AGP 8.5 要求）
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: 装 Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          # 命令行工具版本交给 action 自己的默认值（维护方随 release 钉的）：
+          # 手写构建号一旦过时，这里会红在「下载一个不存在的 zip」上。
+          # build-tools 里才有 aapt2（下面要拿它拆包验证），platforms;android-34 对应 compileSdk。
+          packages: 'platform-tools build-tools;34.0.0 platforms;android-34'
+
+      - name: 装 Gradle 8.7（AGP 8.5.2 要求 8.7+，钉死版本免得随镜像漂移）
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '8.7'
+          # 缓存 ~/.gradle：AGP 与 build-tools 的下载是这一条流水线最慢的部分
+          cache-read-only: false
+
+      - name: 装 Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.x'
+
+      - name: 打单文件网页
+        run: python tools/build_web.py
+
+      - name: 把网页搬进安卓 assets（逐字节）
+        run: python tools/build_android.py
+
+      - name: 复核 assets 就是网页产物
+        run: python tools/build_android.py --check
+
+      - name: 编译 debug APK
+        run: gradle -p android assembleDebug --no-daemon --stacktrace
+
+      # 这一条是**真验证**：不看构建日志，直接把 APK 拆开读它的清单。
+      # 「零权限」不是写在纸上的承诺，是从产物里读出来的事实。
+      - name: 拆开 APK 验包名 / minSdk / 不许联网
+        run: |
+          set -euo pipefail
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          test -f "$APK"
+
+          # setup-android 只把 platform-tools 与 cmdline-tools 放进 PATH，build-tools 不在，
+          # 所以要自己找。取版本号最大的那个（排一下序就够，用不上 sort -V）。
+          # 三个变量依次退让：万一 ANDROID_HOME 没导出，也别让 find 拿到空路径去瞎找。
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          test -d "$SDK/build-tools"
+          AAPT2="$(find "$SDK/build-tools" -type f -name aapt2 | sort | tail -n 1)"
+          test -x "$AAPT2"
+          echo "用 $AAPT2 读 $APK（$(stat -c %s "$APK") 字节）"
+
+          "$AAPT2" dump badging "$APK" | tee /tmp/badging.txt
+
+          grep -q "package: name='com.gongwei.mizong'" /tmp/badging.txt \
+            || { echo "✗ 包名不是 com.gongwei.mizong"; exit 1; }
+          grep -q "sdkVersion:'24'" /tmp/badging.txt \
+            || { echo "✗ minSdk 不是 24"; exit 1; }
+
+          # 这个壳子从头到尾都是本地的：网页在 assets 里，存档在 localStorage。
+          # 一旦产物里冒出 INTERNET，说明有人给它加了联网的口子 —— 直接红。
+          if grep -q "android.permission.INTERNET" /tmp/badging.txt; then
+            echo "✗ APK 里出现了 android.permission.INTERNET：这一卷不许联网"
+            exit 1
+          fi
+
+          echo "✓ 包名与 minSdk 都对，且产物里没有 android.permission.INTERNET"
+          echo "（APK 申请的权限清单，空的就是一个都没有）"
+          grep "uses-permission" /tmp/badging.txt || echo "  （无）"
+
+      - name: 上传 APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: gongwei-mizong-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      # 打 v* 标签时顺手挂到 Release；gh 是 runner 镜像自带的，不用第三方 action。
+      - name: 挂到 Release（仅 v* 标签）
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$APK#gongwei-mizong-debug.apk" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "$APK#gongwei-mizong-debug.apk" \
+              --title "$GITHUB_REF_NAME" --generate-notes
+          fi

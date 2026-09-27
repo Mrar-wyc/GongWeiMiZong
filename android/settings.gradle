@@ -1,0 +1,25 @@
+// 《宫闱迷踪》安卓壳：一个模块、零第三方依赖。
+//
+// 这里只有一件事要做：让 AGP 自己能被解析到（pluginManagement），
+// 并且把「依赖从哪儿来」钉死在 google() / mavenCentral()。
+// 仓库里没有任何 implementation/http 依赖，这两个仓库实际只会用来取 AGP 本身。
+
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    // 模块里不许再自己写 repositories{}：仓库只有一个地方说了算。
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.name = 'gongwei-mizong'
+include ':app'

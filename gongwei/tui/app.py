@@ -132,6 +132,10 @@ class GameApp:
     FOOTER_KEYS_NARROW = "↑↓ 选 · Enter 确认 · H 帮助 · Q 离开"
     FOOTER_KEYS_ENDING = "Enter 重开 · Q 离开"
 
+    #: 选项面板一张空桌时的那行引导（门禁把这一刻的事全挡掉了才会出现）。
+    #: 与网页版 `fillOptions()` 的空态同一句，只是终端里用 ``·`` 与全角括号。
+    NO_CHOICE_GUIDE = "（此刻无事可做 · 翻翻档目，或问问在场的人）"
+
     #: 正文一行的换行上限（显示列）。超宽终端上左侧卷宗会宽到一行塞 55 个汉字，
     #: 读完一句要横着找头，眼睛很累；这里只收窄「换行宽度」这一个观感参数，
     #: 正文行仍旧 pad 到面板内宽、画布每行仍旧补满整屏宽度，所以
@@ -532,9 +536,8 @@ class GameApp:
             self.notify(f"眼下没有「{want or cmd.kind}」这一项。", "error")
             return
         pick = hits[0]
-        if not pick.enabled:
-            self.notify(pick.hint or "此时还做不到。", "error")
-            return
+        # 桌上只摆得开的东西（门禁没开的选择根本不进 options()），所以这里没有
+        # 「找到了但做不了」这一档：`pick.hint` 是写给审计排障看的原因，念不得。
         self.cursor = pick.index - 1
         self._activate()
 
@@ -555,9 +558,8 @@ class GameApp:
         if not opts:
             return False
         opt = opts[self.cursor]
-        if not opt.enabled:
-            self.notify(opt.hint or "此时还做不到。", "error")
-            return True
+        # 门禁没开的选择不在这张桌上，所以没有「点了也做不了」这一档
+        # （`opt.hint` 是写给审计排障看的 `locked_hint`，不许念给玩家听）。
         # 选项自带 action 闭包（引擎侧绑好了效果与场景切换），界面只管调用
         upd = opt.action() if opt.action is not None else None
         self._apply_update(upd)
@@ -833,14 +835,21 @@ class GameApp:
 
         opts = [] if (ending or not show_options) else self.engine.options()
         sel = opts[self.cursor] if opts and self.cursor < len(opts) else None
+        # 空桌：门禁把这一刻的事全挡掉了（`options()` 里一条不剩）。这时面板底下
+        # 留一行指路 —— 挡住的那些本来就不该出现（硬规则 11），但光秃秃一片会让人
+        # 以为游戏坏了。只有真的一个选项都没有、又不是结案屏时才占这行。
+        guide = (not opts) and (not ending) and show_options
         # 选项区实际占用的行数
         opt_rows = len(opts) + 1        # 分隔线 + 每个选项一行
         if sel is not None and sel.detail:
             opt_rows += 1
-        if sel is not None and not sel.enabled and sel.hint:
-            opt_rows += 1
         opt_top = max(top_row, bottom_row - opt_rows + 1) if opts else bottom_row + 1
-        log_rows = max(1, (opt_top - 1) - top_row) if opts else max(1, bottom_row - top_row + 1)
+        if opts:
+            log_rows = max(1, (opt_top - 1) - top_row)
+        elif guide:
+            log_rows = max(1, bottom_row - top_row - 1)   # 扣掉分隔线与引导那一行
+        else:
+            log_rows = max(1, bottom_row - top_row + 1)
 
         rows = self._reading_rows(min(inner_w, self.READ_COLS_MAX))
         total = len(rows)
@@ -871,10 +880,18 @@ class GameApp:
             # 翻页标照旧空一格接在标题后面（x+5+宽(title)+1）。
             pos = min(x + 6 + display_width(title), x + w - 2 - display_width(tag))
             canvas.put(pos, y, paint(tag, C_GOLD))
-        if not opts or opt_top <= top_row:
+        if not opts:
+            if guide and bottom_row - 1 > top_row:
+                canvas.put(x + 2, bottom_row - 1, paint("┄" * inner_w, "default", dim=True))
+                canvas.put(x + 2, bottom_row,
+                           paint(pad(truncate(self.NO_CHOICE_GUIDE, inner_w), inner_w),
+                                 "default", dim=True))
+            return
+        if opt_top <= top_row:
             return
 
-        # 分隔线之下是选项：当前项高亮，灰掉的是「条件不足」的门禁
+        # 分隔线之下是选项：门禁没开的压根不在这儿，因此只有「现在能做的」，
+        # 当前项描金高亮。
         canvas.put(x + 2, opt_top, paint("┄" * inner_w, "default", dim=True))
         line = opt_top + 1
         for i, opt in enumerate(opts):
@@ -886,20 +903,12 @@ class GameApp:
             label = truncate(label, max(4, inner_w - 6))
             color = C_GOLD if here else "default"
             body = f"{mark} {opt.index}. {label}"
-            # 禁用项以前是「红 + 暗」：浅色终端上红字读不清，而且红色同时兼着
-            # 「错误 / 条件不足 / 确认框边框」三重意思。禁用只是「现在不能用」，
-            # 灰掉（default + dim）就够；红色留给真正的错误。
-            canvas.put(x + 2, line, paint(pad(body, inner_w), color, bold=here,
-                                         dim=not opt.enabled))
+            canvas.put(x + 2, line, paint(pad(body, inner_w), color, bold=here))
             line += 1
         if sel is not None and sel.detail and line <= bottom_row:
             canvas.put(x + 2, line,
                        paint(pad(truncate("   " + sel.detail, inner_w), inner_w),
                              "default", dim=True))
-            line += 1
-        if sel is not None and not sel.enabled and sel.hint and line <= bottom_row:
-            canvas.put(x + 2, line,
-                       paint(pad(truncate("   条件不足：" + sel.hint, inner_w), inner_w), C_WARN))
 
     def _draw_dossier(self, canvas: Canvas, x: int, y: int, w: int, h: int) -> None:
         """第三栏：地点、时辰、进度等速览。数字一律描金，文字仍用正白。"""
@@ -1085,18 +1094,18 @@ class GameApp:
                        paint(pad(f"核心 {len(clues)}/{total}", inner_w), C_GOLD, dim=True))
 
     def _draw_footer(self, canvas: Canvas, w: int, y: int, h: int, ending: bool) -> None:
-        """底栏：分隔线 + toast/条件提示 + 按键提示。行数由 `_draw_game` 算好后传进来。"""
+        """底栏：分隔线 + toast + 按键提示。行数由 `_draw_game` 算好后传进来。
+
+        `hot` 这行以前还会替选中项念一遍「条件不足：…」；门禁如今不摆在桌上
+        （硬规则 11），这里就只剩提示语与状态两种来源了。
+        """
         canvas.put(0, y, paint("─" * w, "default", dim=True))
         toast_alive = bool(self.toast and self.toast.alive())
-        hot = ""                                     # 最急的一行：toast 或条件不足
+        hot = ""                                     # 最急的一行：只有 toast 抢得来
         hot_color = C_WARN
         if toast_alive:
             hot = " " + self.toast.text
             hot_color = {"error": C_WARN, "ok": C_OK}.get(self.toast.kind, C_GOLD)
-        elif not ending:
-            opts = self.engine.options()
-            if opts and not opts[self.cursor].enabled and opts[self.cursor].hint:
-                hot = " 条件不足：" + opts[self.cursor].hint
         if ending:
             keys = self.FOOTER_KEYS_ENDING
         elif w >= 100:
@@ -1195,10 +1204,19 @@ class GameApp:
 
     # -- 确认 ------------------------------------------------------------
     def _draw_confirm(self, canvas: Canvas, w: int, h: int) -> None:
+        # 坏档也要问得出口：`summary()` 读不动时返回 None（save.py 的约定是「绝不
+        # 因为一个坏档让游戏起不来」），所以这里绝不能直接 `.describe()`。
+        info = self.store.summary() if self.store.exists() else None
+        if info is not None:
+            load_line = info.describe()
+        elif self.store.exists():
+            load_line = self.store.last_error or "（存档读不动）"
+        else:
+            load_line = ""
         prompts = {
             "quit": "确定离开？未存档的进度会丢掉。",
             "new": "重开一案？当前进度会丢掉。",
-            "load": f"读取存档？当前进度会被覆盖。\n{self.store.summary().describe() if self.store.exists() else ''}",
+            "load": f"读取存档？当前进度会被覆盖。\n{load_line}",
         }
         text = prompts.get(self.pending or "", "确定？")
         lines = text.split("\n")

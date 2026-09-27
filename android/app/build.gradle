@@ -1,0 +1,44 @@
+// 《宫闱迷踪》app 模块：一个 Activity、一份 assets、零依赖。
+//
+// 源码目录就用 AGP 默认的 src/main/java（MainActivity 在
+// src/main/java/com/gongwei/mizong/MainActivity.java），所以这里不写 sourceSets：
+// 少一处配置，就少一处「明明改了却没人编译」的坑。
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.gongwei.mizong'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.gongwei.mizong'
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+    }
+
+    compileOptions {
+        // AGP 8.5 自己就要跑在 JDK 17 上（CI 里 setup-java 也是 17），源码级别跟着它走。
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    buildTypes {
+        release {
+            // 不混淆：这个 APK 里只有一层 WebView 外壳，真正的游戏是 assets 里那份
+            // 单文件网页（混淆外壳既没收益，又会让崩溃栈变成天书）。
+            minifyEnabled false
+        }
+    }
+}
+
+dependencies {
+    // 故意留空 —— 这是本仓库最硬的一条规矩：零第三方依赖。
+    //
+    // 网页版是**单文件、零外链**的产物，安卓壳要做的事情只有一件：把 assets/index.html
+    // 塞进 WebView。用系统自带的 android.webkit.WebView 就够，不需要 AndroidX
+    // （AppCompat / WebKit 那些「兼容库」在这里只会多出几百 KB 与一串传递依赖）。
+    // AGENTS.md §1 与 README 都写着这条；tests/test_android.py 会扫这个空块。
+}

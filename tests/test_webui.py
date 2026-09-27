@@ -93,7 +93,7 @@ class WebUiSmokeTest(unittest.TestCase):
             proc.returncode, 0,
             "网页版界面冒烟测试没通过：\n" + "\n".join(failed) + "\n" + proc.stdout + proc.stderr,
         )
-        self.assertGreaterEqual(total, 31, f"只跑了 {total} 项检查，覆盖面缩水了")
+        self.assertGreaterEqual(total, 33, f"只跑了 {total} 项检查，覆盖面缩水了")
         self.assertEqual(failed, [])
         for name in ("开屏是标题屏", "点「新案」进第一幕", "敲档号能阅档",
                      "「读档」开存读面板，点「读本机存档」不出错", "读回一份结案存档",
@@ -112,7 +112,9 @@ class WebUiSmokeTest(unittest.TestCase):
                      "标题屏的落花与印章只做样子，一个字都不吐",
                      "卷首过场：点「新案」起幕帘，Esc 与轻触都能落下",
                      "游戏屏顶栏：图标键只带 aria/title，不跟文字按钮抢名字",
-                     "选项卡：序号与标签分家，锁着的仍写「条件不足：」"):
+                     "选项卡：序号与标签分家，没开的选项整条不出现",
+                     "种一份审讯存档：被门禁挡住的话题整条不出现，理由也不许露出来",
+                     "坏档：版本太新、档案状态不成对，两端都读不进来"):
             self.assertIn(name, passed, f"没跑到「{name}」这一项")
 
     def test_a_broken_ui_is_actually_caught(self):

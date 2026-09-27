@@ -13,10 +13,34 @@ import io
 import unittest
 
 from gongwei.data.story import TOPIC_GATES
-from gongwei.game.conditions import has_clue, trust_at_least
+from gongwei.game.conditions import always, has_clue, trust_at_least
 from gongwei.game.models import Choice, Content, Dossier, Effect, Scene
 
 from .helpers import load_tool
+
+
+class WebOptionTableTest(unittest.TestCase):
+    """`tools/audit_web.py` 的选项表：可见行 + 最后一行隐藏清单。
+
+    门禁改成「藏起来」之后，可见行恒 ``enabled=True`` / ``hint=""``，
+    光比这几行证明不了「两端藏的是不是同一批」——`web/src/driver.js` 追加的最后
+    一行 ``["hidden", 标签…]`` 才是那件事的证据。这里盯住它的形状与顺序。
+    """
+
+    def setUp(self) -> None:
+        self.mod = load_tool("audit_web")
+
+    def test_the_hidden_row_is_present_and_in_engine_order(self):
+        engine = self.mod.GameEngine(self.mod.build_content(), gates=TOPIC_GATES)
+        engine.new_game()
+        table = self.mod.option_table(engine)
+        self.assertTrue(table, "选项表不能是空的")
+        self.assertEqual(table[-1][0], "hidden")
+        self.assertEqual(table[-1][1:],
+                         [o.label for o in engine.hidden_options()])
+        self.assertTrue(table[-1][1:], "开局就有一批门禁挡着，隐藏清单不该是空的")
+        for row in table[:-1]:
+            self.assertEqual(row[2:], [True, ""], row)
 
 
 class GateAuditTest(unittest.TestCase):
@@ -104,6 +128,76 @@ class StoryAuditTest(unittest.TestCase):
         found = self.mod.search(4000, reverse=False, seed=seeds[-1])
         self.assertIn("verdict3_LWS", found["scenes"])
 
+    def test_the_opening_screen_has_a_well_per_branch(self):
+        """案② 开场那一屏的岔路各有一口井，值房那道门才证明得了能开。
+
+        值房「查值夜簿上的签押」是 ``missing_any_clue("night_roster2")`` 挡的：
+        草草拐进值房时值夜簿还没到手，它本就该在桌上。深度优先在那一屏上只往下
+        走第一条岔路（药库），这一刻就永远轮不到预算 —— 少了这口井，它会被错报成
+        「从未解开过的门禁」。所以这里盯住井的**状态**（值房 + 值夜簿不在手上），
+        而不是只盯它数出了什么。
+        """
+        seeds = self.mod.seed_states()
+        fresh = [s for s in seeds
+                 if s["scene"] == "night_room"
+                 and "night_roster2" not in s["clues"]]
+        self.assertTrue(fresh, "开场屏第二条岔路没有起点：值房那道门没人证明得了能开")
+        # 两条新岔路各站着一个起点：值房与账房（药库那条是「案② 药局前厅」那口井）。
+        scenes = {s["scene"] for s in seeds}
+        self.assertLessEqual({"night_room", "drug_office"}, scenes)
+        found = self.mod.search(200, reverse=False, seed=fresh[0])
+        self.assertIn(("night_room", "查值夜簿上的签押"), found["open"])
+
+    def test_the_hidden_gate_tally_is_not_a_dead_audit(self):
+        """门禁数的是 `hidden_options()`，不能退化成恒空。
+
+        旧口径按 ``not opt.enabled`` 数，而引擎现在**根本不产出**灰置选项 ——
+        照旧写就会一行都数不到，体检却照样打印「[从未解开过的门禁] 无」。
+        所以这里盯两遍：挡过的那批要数得到（``blocked`` 非空），而且同一格要在
+        别的可达状态里亮过（开局那道 ``missing_dossier`` 门槛正是这样：先被挡，
+        读全第一幕的档之后进 ``open``）。
+        """
+        found = self.mod.search(1500, reverse=False)
+        self.assertTrue(found["blocked"], "被挡过的门禁一处都没数到：这份审计已经空转")
+        start = self.mod.CONTENT.start_scene
+        spot = next((s for s in found["blocked"]
+                     if s[0] == start and s[1].startswith("移步侧殿")), None)
+        self.assertIsNotNone(spot, sorted(found["blocked"]))
+        self.assertIn(spot, found["open"], "开局那道门槛读全档案之后就该亮起来")
+
+    def test_a_gate_that_never_opens_is_reported(self):
+        """恒暗的门禁（谁也点不开）必须被报出来 —— 这份审计存在的理由。"""
+        scenes = {
+            "start": Scene(id="start", title="门厅", place="", time="", body="",
+                           act=1, case=1,
+                           choices=[Choice(label="推门", to="inner")]),
+            "inner": Scene(id="inner", title="内室", place="", time="", body="",
+                           act=1, case=1,
+                           choices=[Choice(label="暗门", to="start",
+                                           locked_if=always)]),
+        }
+        probe = Content(items={}, characters={}, scenes=scenes, topics={},
+                        endings=[], start_scene="start", verdict_scene="start",
+                        title="探针", subtitle="", prologue="", version="探针")
+        self.addCleanup(setattr, self.mod, "CONTENT", self.mod.CONTENT)
+        self.mod.CONTENT = probe
+        found = self.mod.search(200, reverse=False)
+        self.assertIn(("start", "推门"), found["open"])
+        self.assertIn(("inner", "暗门"), found["blocked"])
+        never = self.mod.never_unlocked(found["blocked"], found["open"], set())
+        self.assertEqual(set(never), {("inner", "暗门")})
+
+    def test_a_gate_opened_elsewhere_is_not_a_dead_gate(self):
+        """同一个文本在别的场景亮过、或路线里真点过，都不算「从未解开」。"""
+        blocked = {("s1", "移步"): 3, ("s2", "验尸"): 1}
+        never = self.mod.never_unlocked(blocked, {("s1", "移步")}, set())
+        self.assertNotIn(("s1", "移步"), never, "同格后来亮过，不该算死门")
+        self.assertIn(("s2", "验尸"), never, "它谁也没亮过，必须留着")
+        never = self.mod.never_unlocked(blocked, set(), {"验尸"})
+        self.assertNotIn(("s2", "验尸"), never, "路线里真点过，不该算死门")
+        self.assertEqual(set(self.mod.never_unlocked(blocked, set(), set())),
+                         set(blocked))
+
 
 class LogicAuditTest(unittest.TestCase):
     """`tools/audit_logic.py` 第 1 节：往后推进的后门扫描器。"""
@@ -149,6 +243,9 @@ class DeadEndAuditTest(unittest.TestCase):
     这一节原先只分「有没有档可读」两档，于是开局那份 27 份档一摆，
     「软卡」这行字就恒存在、也就没人看。现在多分一档：**翻开任何一份档
     都不改变任何东西**的软卡才是问题（玩家被钉在原地翻页）。
+
+    入口判据也跟着门禁的语义换了口径：不再是「选项全灰」而是**这一屏一个可见选项
+    都没有**（`not engine.options()`）——被门禁挡住的选择不上桌，也就不算出口。
     """
 
     def setUp(self) -> None:
@@ -171,6 +268,27 @@ class DeadEndAuditTest(unittest.TestCase):
                        title="探针", subtitle="", prologue="", version="探针",
                        dossiers=dossiers)
 
+    def _hidden_door(self) -> object:
+        """唯一的出口被门禁藏着：这一屏没有可见选项，也没有档可翻。"""
+        scenes = {
+            "trap": Scene(id="trap", title="死巷", place="", time="", body="",
+                          act=1, case=1,
+                          choices=[Choice(label="推门", to="trap",
+                                          locked_if=always)]),
+        }
+        return Content(items={}, characters={}, scenes=scenes, topics={},
+                       endings=[], start_scene="trap", verdict_scene="trap",
+                       title="探针", subtitle="", prologue="", version="探针")
+
+    def test_a_hidden_exit_is_not_an_exit(self):
+        """门禁没开的选择不算出口：这格按「没有可见选项」判进硬死那一档。"""
+        self.mod.CONTENT = self._hidden_door()
+        hard, soft, stalled, _states = self.mod.dead_ends(200)
+        self.assertEqual(len(hard), 1)
+        self.assertIn("trap", hard[0])
+        self.assertEqual(soft, [])
+        self.assertEqual(stalled, [])
+
     def test_a_flip_that_changes_nothing_is_a_problem(self):
         self.mod.CONTENT = self._trap(Effect())
         _hard, soft, stalled, _states = self.mod.dead_ends(200)
@@ -187,7 +305,7 @@ class DeadEndAuditTest(unittest.TestCase):
         self.assertIn("trap", soft[0])
 
     def test_the_real_story_has_no_flip_inert_dead_end(self):
-        """真剧本里每一处「选项全灰」都靠翻档解得开。"""
+        """真剧本里每一处「没有可见选项」都靠翻档解得开。"""
         _hard, _soft, stalled, states = self.mod.dead_ends(30000)
         self.assertGreater(states, 100)
         self.assertEqual(stalled, [])

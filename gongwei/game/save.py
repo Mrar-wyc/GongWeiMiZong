@@ -73,13 +73,22 @@ class SaveStore:
         if data is None:
             return None
         state = data.get("state") or {}
+        # 坏档的形状可以很离谱（`state` 是字符串、`turn` 是 "abc"）：摘要只是标题屏上
+        # 的一行字，读不动就如实说读不动，**绝不能**把异常穿出去（模块头的约定）。
+        if not isinstance(state, dict):
+            self.last_error = "存档格式不对（state 不是对象）"
+            return None
+        try:
+            turn = int(state.get("turn") or 0)
+        except (TypeError, ValueError):
+            turn = 0
         return SaveSummary(
             path=self.path,
             scene_title=str(data.get("title") or ""),
             time=str(state.get("time") or ""),
             place=str(state.get("place") or ""),
             clues=len(state.get("clues") or []),
-            turn=int(state.get("turn") or 0),
+            turn=turn,
             stamp=str(data.get("stamp") or ""),
             ending=str(state.get("ending") or ""),
         )
@@ -151,7 +160,10 @@ class SaveStore:
             return False, self.last_error
         try:
             engine.load(data)
-        except (KeyError, ValueError, TypeError) as exc:
+        except (KeyError, ValueError, TypeError, AttributeError) as exc:
+            # AttributeError 也在这儿：`{"v":1,"state":"x"}` 这种形状会让引擎
+            # 拿字符串当对象用（`'str' object has no attribute 'get'`）——
+            # 那是坏档，不是崩溃的理由。
             self.last_error = f"存档内容与本剧不匹配：{exc}"
             return False, self.last_error
         # 存档停在判决处，说明当时还没结算；读回来立刻补上结局。

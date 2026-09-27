@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  启动图标：一枚朱砂方印，阴刻一个「宫」字。
+
+  只用一个 <vector>（矢量，任何屏幕都不糊），path 只写 pathData / fillColor /
+  strokeColor / strokeWidth —— 这几样从 API 21 起就认，minSdk 24 上稳。
+  刻意不用 aapt:attr 内联颜色（那要额外声明命名空间，而且写法一复杂就容易在
+  老的渲染路径上翻车）。
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 印面：整块朱砂（#8C2B2B） -->
+    <path
+        android:fillColor="#8C2B2B"
+        android:pathData="M0,0h108v108h-108z" />
+
+    <!-- 边栏：象牙色细框 -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#F5E6D3"
+        android:strokeWidth="4"
+        android:pathData="M14,14h80v80h-80z" />
+
+    <!-- 「宫」的宝盖头（方折写法，像刻出来的） -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#F5E6D3"
+        android:strokeWidth="5"
+        android:pathData="M28,42 L54,26 L80,42" />
+
+    <!-- 「宫」的上口 -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#F5E6D3"
+        android:strokeWidth="5"
+        android:pathData="M38,50h32v14h-32z" />
+
+    <!-- 「宫」的下口 -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#F5E6D3"
+        android:strokeWidth="5"
+        android:pathData="M31,72h46v16h-46z" />
+</vector>

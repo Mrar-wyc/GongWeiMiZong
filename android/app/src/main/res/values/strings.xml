@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 界面上要显示的名字只写在这里，清单与启动器都引 @string/app_name。 -->
+<resources>
+    <string name="app_name">宫闱迷踪</string>
+</resources>

@@ -48,20 +48,22 @@ class OpeningTest(unittest.TestCase):
         bodies = [e for e in engine.state.log if e.kind == "scene"]
         self.assertEqual(len(bodies), 1)
 
-    def test_opening_has_six_options(self):
-        """开局六项：前五项能点，第六项「移步侧殿」被第一幕门槛锁着。
+    def test_opening_keeps_the_gated_option_out_of_sight(self):
+        """开局五项目光所及，第六项「移步侧殿」被第一幕门槛挡在桌下——看不见，也不灰着。
 
         门槛是 `missing_dossier(FIRST_ACT_SUMMARY)`——没读全勘验格目就走不掉，
-        所以这一项**本来**就该是灰的，并且给出可读的提示。
+        所以这一项**本来**就不该出现在玩家眼前；原因仍写在 `hidden_options()` 里，
+        只给审计与排障看。
         """
         engine = new_engine()
         opts = engine.options()
-        self.assertEqual(len(opts), 6)
-        locked = [o for o in opts if not o.enabled]
-        self.assertEqual(len(locked), 1, [o.label for o in opts])
-        self.assertTrue(locked[0].label.startswith("移步侧殿"), locked[0].label)
-        self.assertTrue(locked[0].hint)
-        self.assertTrue(all(o.enabled for o in opts if o is not locked[0]))
+        self.assertEqual(len(opts), 5, [o.label for o in opts])
+        self.assertTrue(all(o.enabled for o in opts), "摆出来的选项不该有灰的")
+        hidden = engine.hidden_options()
+        gated = [o for o in hidden if o.label.startswith("移步侧殿")]
+        self.assertEqual(len(gated), 1, [o.label for o in hidden])
+        self.assertTrue(gated[0].hint, "门禁要给开发者留下可读的原因")
+        self.assertFalse([o for o in opts if o.label.startswith("移步侧殿")])
 
     def test_first_choice_grants_core_clues(self):
         engine = new_engine()
@@ -97,12 +99,19 @@ class GateTest(unittest.TestCase):
         with self.assertRaises(WalkError):
             resolve(engine, "这个选项不存在")
 
-    def test_locked_topic_stays_visible_with_hint(self):
-        """回归：被门禁锁住的话题曾被 `seen_choices` 直接吃掉，玩家看不到提示。"""
+    def test_gated_topic_never_shows_up(self):
+        """门禁没开的话题不摆在桌上——不灰着，也不带提示。
+
+        回归：被门禁锁住的话题曾被 `seen_choices` 直接吃掉，玩家看不到提示；
+        现在的口径是「没开就不显示」，原因只写进 `hidden_options()`。
+        """
         engine = new_engine()
         play(engine, helpers.preface(["传唤 · 太监总管"]))
-        locked = [o for o in engine.options() if not o.enabled and o.hint]
-        self.assertTrue(locked, "审讯里应当至少有一个「锁住但有提示」的话题")
+        visible = {o.label for o in engine.options()}
+        hidden = [o for o in engine.hidden_options() if o.hint]
+        self.assertTrue(hidden, "审讯里应当至少有一个被门禁挡住的话题")
+        self.assertFalse([o for o in hidden if o.label in visible], "挡住的不能同时露在桌上")
+        self.assertTrue(visible, "总还有问得出口的话")
 
     def test_asking_a_topic_marks_it_asked(self):
         engine = new_engine()
@@ -112,21 +121,53 @@ class GateTest(unittest.TestCase):
         first[0].action()
         self.assertTrue(engine.state.topics_asked, "问过的话题应记进 topics_asked")
 
-    def test_asked_topic_disappears_unless_locked(self):
-        """问过且已解锁的话题要收起来；锁住的即使问过也要留着（带提示）。"""
+    def test_asked_topic_disappears_unless_gated(self):
+        """问过的话题要收起来；被门禁挡住的本来就没摆出来。"""
         engine = new_engine()
         play(engine, helpers.preface(["传唤 · 太监总管"]))
-        before = len([o for o in engine.options() if o.enabled])
-        [o for o in engine.options() if o.enabled and not o.asked][0].action()
-        after = len([o for o in engine.options() if o.enabled])
+        before = len([o for o in engine.options() if not o.asked])
+        [o for o in engine.options() if not o.asked][0].action()
+        after = len([o for o in engine.options() if not o.asked])
         self.assertEqual(after, before - 1)
 
-    def test_skipping_evidence_keeps_pharmacy_topic_locked(self):
-        """没去尚药局拿领用簿，王德海的「出示」话题应当锁着。"""
+    def test_skipping_evidence_keeps_the_present_topic_hidden(self):
+        """没去尚药局拿领用簿，王德海的「出示」话题就不该露面。"""
         engine = new_engine()
         play(engine, helpers.preface(["传唤 · 太监总管"]))
-        locked = [o for o in engine.options() if not o.enabled]
-        self.assertTrue(any("出示" in o.label for o in locked))
+        self.assertFalse([o for o in engine.options() if "出示" in o.label])
+        hidden = [o for o in engine.hidden_options() if "出示" in o.label]
+        self.assertTrue(hidden, "挡住的「出示」话题应当留在 hidden_options() 里")
+
+
+class HiddenGateTest(unittest.TestCase):
+    """门禁不显示：全剧本扫一遍——可见的没有灰项，挡住的都只在隐藏清单里。"""
+
+    def test_no_scene_shows_a_gated_choice(self):
+        checked = 0
+        gated_seen = 0
+        for sid, scene in CONTENT.scenes.items():
+            if scene.kind == "ending":
+                continue
+            engine = new_engine()
+            engine.state.scene = sid
+            visible = [o for o in engine.options()]
+            hidden = [o for o in engine.hidden_options()]
+            labels = [o.label for o in visible]
+            self.assertTrue(all(o.enabled for o in visible), f"{sid}: 摆出来的有灰项")
+            self.assertFalse([o for o in hidden if o.label in labels],
+                             f"{sid}: 同一标签又露又藏")
+            gated_seen += len([o for o in hidden if o.gated])
+            checked += 1
+        self.assertGreater(checked, 40, f"只检查了 {checked} 个场景")
+        self.assertGreater(gated_seen, 10, f"全剧本只数出 {gated_seen} 个被挡住的选项，门槛覆盖缩水了")
+
+    def test_hidden_options_carry_a_reason_for_the_audit(self):
+        """被 locked_if 挡住的必须留下原因（开发者读），visible_if 挡住的没有原因可给。"""
+        engine = new_engine()
+        hidden = engine.hidden_options()
+        self.assertTrue(hidden)
+        self.assertTrue(all(not o.enabled for o in hidden), "隐藏清单里的都不该是可选状态")
+        self.assertTrue(any(o.hint for o in hidden), "至少有一条要留原因")
 
 
 class AccusationTest(unittest.TestCase):
@@ -338,6 +379,45 @@ class SaveTest(unittest.TestCase):
         ok, message = store.load(new_engine())
         self.assertFalse(ok)
         self.assertIn("版本", message)
+
+    def test_a_misshapen_save_never_raises(self):
+        """坏档只许安静地失败：`load()` 给理由、`summary()` 或给摘要或给 None。
+
+        审计摸出来的形状：`state` 不是对象（AttributeError）、`state` 里的东西不是
+        对象、`v` 不是数字、`dossiers` 的值不成对。标题屏的确认框会直接问
+        `summary()`，一抛异常整个游戏就起不来（save.py 开头的约定）。
+        """
+        shapes = [
+            {"v": 1, "state": "x"},
+            {"v": 1, "state": {"turn": "abc"}},
+            {"v": 1, "state": {"dossiers": {"01-FY-01": True}}},
+            {"v": 1, "state": {"dossiers": {"01-FY-01": 5}}},
+            {"v": 2, "state": {}},
+            {"v": "一", "state": {}},
+            {"v": 1, "state": []},
+        ]
+        for payload in shapes:
+            with self.subTest(payload=payload):
+                with open(self.path, "w", encoding="utf-8") as handle:
+                    json.dump(payload, handle, ensure_ascii=False)
+                store = SaveStore(self.path)
+                ok, message = store.load(new_engine())
+                self.assertFalse(ok, payload)
+                self.assertTrue(message, payload)
+                summary = store.summary()          # 标题屏就是这么问的：不许抛
+                if summary is not None:
+                    self.assertTrue(summary.describe(), payload)
+
+    def test_summary_refuses_a_state_that_is_not_an_object(self):
+        """`state` 不是对象时摘要不给半真半假的一行字，只留理由。"""
+        for payload in ({"v": 1, "state": "x"}, {"v": 1, "state": [1, 2]},
+                        {"v": 2, "state": {}}, {"v": "一", "state": {}}):
+            with self.subTest(payload=payload):
+                with open(self.path, "w", encoding="utf-8") as handle:
+                    json.dump(payload, handle, ensure_ascii=False)
+                store = SaveStore(self.path)
+                self.assertIsNone(store.summary(), payload)
+                self.assertTrue(store.last_error, payload)
 
     def test_clear_removes_file(self):
         store = SaveStore(self.path)

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  《宫闱迷踪》的清单：一页 Activity，一条权限都不要。
+
+  为什么不写 <uses-permission>：这一卷从头到尾都是本地的 —— 网页是 assets 里那份
+  单文件产物（没有 CDN、没有字体、没有图片、没有接口），存档走 WebView 的
+  localStorage，音效走 WebAudio，连导入导出存档都是页面内的 textarea。
+  换句话说它没有任何需要联网或读外部存储的地方，所以 INTERNET 之类的权限
+  一个都不申请；.github/workflows/android.yml 会用 aapt2 拆开 APK 复核这一点
+  （产物里出现 android.permission.INTERNET 就直接红）。
+
+  activity 上那串 configChanges 是有用途的：旋转、深色模式切换、系统字号变化都不重建
+  Activity —— 重建会让 WebView 重新加载页面，正在写的存档与卷宗就断了。
+  返回键没有单独的拦截（MainActivity 里有说明：网页里没有那个钩子）。
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:allowBackup="true"
+        android:hardwareAccelerated="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@drawable/ic_launcher"
+        android:theme="@style/AppTheme"
+        android:usesCleartextTraffic="false">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode|density|fontScale"
+            android:windowSoftInputMode="adjustResize">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

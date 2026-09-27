@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 import tempfile
@@ -250,17 +251,27 @@ class GameScreenTest(AppTestCase):
         self.app.handle("c")
         self.assertIn("卷宗", self.screen(80, 24))
 
-    def test_disabled_choice_only_toasts(self):
+    def test_gated_choice_never_shows_up(self):
+        """门禁没开的选择不摆上桌：桌上没有它，幕后数得到它。
+
+        老用例验的是「点到灰置项只弹一句 toast」。现在这枚选项根本不进
+        `engine.options()`（硬规则 11），所以既没有「灰置」这一档，也不该
+        有那句 toast —— 而 `locked_hint` 是写给审计与排障看的原因，一个字
+        都不许跟着飘到屏幕上。
+        """
         self.start()
         play(self.engine, helpers.preface(["传唤 · 太监总管"]))
-        self.app.cursor = 0
-        locked = [o for o in self.app.options() if not o.enabled]
-        self.assertTrue(locked, "审讯里应当有被门禁锁住的话题")
-        self.app.cursor = locked[0].index - 1
-        before = self.engine.state.turn
-        self.app.handle("ENTER")
-        self.assertEqual(self.engine.state.turn, before, "锁住的选项不该推进回合")
-        self.assertTrue(self.app.toast)
+        gated = "出示 · 尚药局领用簿上的七次取用"
+        self.assertNotIn(gated, [o.label for o in self.app.options()], "被门禁挡住的话题不该摆上桌")
+        hidden = self.engine.hidden_options()
+        self.assertIn(gated, [o.label for o in hidden], "挡住的那些要能被 hidden_options() 数到")
+        self.assertTrue(all(o.enabled for o in self.app.options()), "桌上的选项没有「灰置」这一档")
+        screen = self.screen()
+        self.assertNotIn("条件不足", screen)
+        for opt in hidden:
+            self.assertNotIn(opt.label, screen, "被挡的选项整条都不该出现")
+            self.assertTrue(opt.hint, "每条门禁都该带一段写给开发者的理由")
+            self.assertNotIn(opt.hint, screen, "locked_hint 只给审计排障看，不许进画面")
 
     def test_quit_asks_for_confirmation(self):
         self.start()
@@ -312,6 +323,29 @@ class SaveKeyTest(AppTestCase):
         self.assertIsNone(self.app.pending)
         self.assertTrue(self.app.toast)
         self.assertIn("没有存档", self.app.toast.text)
+
+    def test_a_broken_save_does_not_take_the_title_screen_down(self):
+        """坏档只许安静地失败：标题屏问一句「读取存档？」也得画得出来。
+
+        审计摸到的形状：`v` 太新、`state` 不是对象、`turn` 不是数字。以前
+        `_draw_confirm` 直接 `self.store.summary().describe()`，`summary()` 在
+        读不动时返回 None —— 一按 L 就 AttributeError，游戏起不来。
+        """
+        cases = [({"v": 2, "state": {}}, "太新"),
+                 ({"v": 1, "state": "x"}, "格式不对"),
+                 ({"v": "一", "state": {}}, "不是数字"),
+                 ({"v": 1, "state": {"turn": "abc"}}, "")]   # 这种只是读数归零，摘要照给
+        for payload, reason in cases:
+            with self.subTest(payload=payload):
+                with open(self.store.path, "w", encoding="utf-8") as handle:
+                    json.dump(payload, handle, ensure_ascii=False)
+                self.start()
+                self.app.handle("l")
+                self.assertEqual(self.app.pending, "load")
+                screen = self.screen(100, 30)
+                self.assertIn("读取存档", screen)
+                if reason:
+                    self.assertIn(reason, screen)
 
 
 class EndingScreenTest(AppTestCase):
@@ -385,8 +419,9 @@ class ScreenInventorySnapshotTest(AppTestCase):
     """把**每一种**屏幕状态都照一遍相，逐个尺寸验宽度。
 
     别的渲染测试只覆盖「启动」和「通关」两个状态；真正的排版事故大多出在
-    少见的那几屏：帮助浮层、确认框、toast、窄屏切到记事簿、八个结局屏
-    （结局正文长短差很多）、以及停在判决过渡场景的那一瞬。
+    少见的那几屏：帮助浮层、确认框、toast、门禁把选项全挡光了的空桌、
+    窄屏切到记事簿、八个结局屏（结局正文长短差很多）、以及停在判决过渡场景
+    的那一瞬。
 
     每屏都验三件事：
     1. 行数 == 高度、每行可视宽度 == 宽度（宽字符算两格）；
@@ -433,6 +468,9 @@ class ScreenInventorySnapshotTest(AppTestCase):
     def _game_opening(self):
         app = self._fresh()
         app.handle("ENTER")              # 新案开卷
+        # 门禁不摆在桌上：开局那两枚还没开的（移步侧殿、再验一次）不在选项表里。
+        self.assertTrue(app.engine.hidden_options(), "开局本该有被门禁挡住的选项")
+        self.assertTrue(all(o.enabled for o in app.options()), "桌上没有「灰置」这一档")
         return "开局卷宗", app, ["卷宗", "记事簿", "案卷", "俯身验尸"]
 
     def _game_after_choices(self):
@@ -471,13 +509,23 @@ class ScreenInventorySnapshotTest(AppTestCase):
         app.handle("1")                  # 俯身验尸 → 线索 toast
         return "线索 toast", app, []
 
-    def _toast_locked(self):
-        app = self._fresh(helpers.preface(["传唤 · 太监总管"]))
-        locked = [o for o in app.options() if not o.enabled]
-        self.assertTrue(locked, "审讯里本该有被门禁锁住的话题")
-        app.cursor = locked[0].index - 1
-        app.handle("ENTER")
-        return "门禁 toast", app, []
+    #: 案① 开局把四件现场的事做完、`再验一次` 也用过之后的那条路线：`engine.options()`
+    #: 一条不剩（门禁把仅剩的「移步侧殿」也挡在幕后），必须先回侧殿翻档目。步骤写成
+    #: 短前缀，`autoplay.resolve` 按 startswith 唯一匹配。
+    NO_CHOICE_ROUTE = ["俯身验尸", "询问王德海", "细查门窗",
+                       "查看茶与香炉", "翻检塌上枕下", "再验一次"]
+
+    def _no_choices(self):
+        """门禁把这一刻的事全挡光了的那一屏。
+
+        老用例（`_toast_locked`）验的是「点到灰置项弹一句 toast」；现在这枚选项
+        根本不进 `options()`，所以这一屏是**空桌**：面板底下要有一行指路，否则
+        看着像坏了（DoD：没有可见选项的屏要给出引导文案）。
+        """
+        app = self._fresh(self.NO_CHOICE_ROUTE)
+        self.assertEqual([], [o.label for o in app.options()], "这一屏本该一条选项都不剩")
+        self.assertTrue(app.engine.hidden_options(), "门禁是把选项挡在幕后，不是删掉")
+        return "空桌（门禁挡光了）", app, ["（此刻无事可做", "翻翻档目"]
 
     def _interrogation(self):
         app = self._fresh(helpers.preface(["传唤 · 太监总管"]))
@@ -507,7 +555,7 @@ class ScreenInventorySnapshotTest(AppTestCase):
             self._title, self._title_with_save, self._title_help,
             self._game_opening, self._game_after_choices, self._game_scrolled,
             self._clues_panel, self._help_overlay, self._confirm_quit,
-            self._confirm_restart, self._toast, self._toast_locked,
+            self._confirm_restart, self._toast, self._no_choices,
             self._interrogation, self._at_verdict,
         ]
         for maker in makers:

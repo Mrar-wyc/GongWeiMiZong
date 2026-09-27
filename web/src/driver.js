@@ -116,6 +116,11 @@ function main(argv) {
     var opts = game.options().map(function (o) {
       return [o.index, o.label, o.enabled, o.hint];
     });
+    // 最后一行的 "hidden" 是被门禁挡住、玩家看不见的那批（与 Python 侧同形）：
+    // 比对「桌上摆了什么」之外，也比对「桌上没什么」。
+    opts.push(["hidden"].concat(game.hiddenOptions().map(function (o) {
+      return o.label;
+    })));
     out.push((i + 1) + "\t" + canonical({
       v: payload.v, state: payload.state
     }) + "\t" + canonical(opts));

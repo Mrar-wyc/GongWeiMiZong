@@ -1,3 +1,5 @@
 __pycache__/
 *.pyc
 
+# 生成物：由 python tools/build_android.py 从 web/gongwei-mizong.html 逐字节拷来
+android/app/src/main/assets/index.html

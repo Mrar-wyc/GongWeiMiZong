@@ -6,7 +6,8 @@
 
 **两件事必须一起枚举，否则体检会说谎**：
 
-1. 选项（``engine.options()`` 里 enabled 的那些）；
+1. 选项（``engine.options()``——门禁没开的选择**根本不上桌**，所以这里没有
+   ``enabled`` 可判，看得见的就是能点的）；
 2. **阅档**（``engine.can_read_dossier(did) and not state.dossier_read(did)``）。
 
 第二件事是后加的：第一幕的出口挂着「必须先读过勘验总录」（``missing_dossier``），
@@ -28,13 +29,25 @@
 **从哪儿开始撒网**：只从 ``new_game()`` 出发时，深度优先会在案② 之前耗尽预算
 （实测 400000 步、三十万个状态，最深只到第六幕），案② 后半与案③ 的内容全靠
 那二十条路线兜着 —— 路线没读的档、没走的判决屏就会报「未触达」。所以这里用
-剧本自带的路线前缀造几个**深水起点**（案② 药局前厅 / 案② 结案厅 / 案③ 阁前 /
-案③ 结案厅），每个起点再撒一遍网：从案③ 结案厅往外摸，才摸得到卷尾那四份
-总录，也才走得到「指认贺小五」「指认陆文昭」这两张没人写路线的判决屏。
+剧本自带的路线前缀造几个**深水起点**（案② 药局前厅 / 案② 开场的两条岔路 /
+案② 结案厅 / 案③ 阁前 / 案③ 结案厅），每个起点再撒一遍网：从案③ 结案厅往外摸，
+才摸得到卷尾那四份总录，也才走得到「指认贺小五」「指认陆文昭」这两张没人写
+路线的判决屏。**开场屏那两条岔路的井是「藏起来」的门禁逼出来的**：深度优先在
+一个状态上只往下走一条分支，而那一屏有三条岔路，于是「值夜簿还没到手就先拐进
+值房」这一刻永远轮不到预算 —— 值房那道门就会被错报成「从未解开过」。
+详见 ``seed_states()``。
 
 **「从未解开过的门禁」按 ``(场景, 选项文本)`` 计数**：同一个文本在三个场景里
 各写一遍（`移步 · 药局前厅` 就是），只按文本计数会把「这三个里有一个亮过」
 错当成「每个场景都亮过」，于是漏报。
+
+门禁改成「藏起来」之后，被挡的选项不再以 ``enabled=False`` 的样子留在
+``engine.options()`` 里（那段计数会退化成恒空的死审计），这个数只能从
+``engine.hidden_options()`` 取：它只收**被条件挡住的**（问过就不再来的不算门禁）。
+判据随之写成「挡过 / 后来亮过」——每个被挡过的 ``(场景, 文本)`` 都必须在**别的
+可达状态**里进过 ``engine.options()``（或在二十条路线里被真点过），否则它就是一道
+永远打不开的门。**两遍计数都要取全**：只数不判（恒亮一行）与只判不数（恒空一行）
+一样是死审计。
 
 用法::
 
@@ -148,7 +161,7 @@ def search(budget: int, reverse: bool, seed: Optional[dict] = None) -> dict:
     seen: set = {fingerprint(start)}
     found: dict = {k: set() for k in
                    ("scenes", "clues", "topics", "endings", "dossiers")}
-    locked_counts: dict = {}
+    blocked_counts: dict = {}
     open_labels: set = set()
     moves = 0
     max_depth = 0
@@ -165,14 +178,16 @@ def search(budget: int, reverse: bool, seed: Optional[dict] = None) -> dict:
         found["dossiers"].update(raw["dossiers"])
 
         opts = engine.options()
+        # 门禁是「藏起来」而不是灰置：被挡的选项不在 opts 里，只能去
+        # ``hidden_options()`` 取（它只收被条件挡住的，问过就不再来的不算门禁）。
+        # 于是「亮过」= 这个 (场景, 文本) 在某个状态里上过桌。
         for opt in opts:
+            open_labels.add((raw["scene"], opt.label))
+        for opt in engine.hidden_options():
             spot = (raw["scene"], opt.label)
-            if opt.enabled:
-                open_labels.add(spot)
-            else:
-                locked_counts[spot] = locked_counts.get(spot, 0) + 1
+            blocked_counts[spot] = blocked_counts.get(spot, 0) + 1
         steps: List[Tuple[str, Callable[[], None]]] = [
-            (o.label, o.action) for o in opts if o.enabled]
+            (o.label, o.action) for o in opts]
         reads: List[Tuple[str, Callable[[], None]]] = []
         # 结局屏与判决屏上不再枚举阅档：玩家已经走到头，能读的档在进这一屏之前就
         # 读得到（``can_read_dossier`` 既不看 ``ending`` 也不看判决屏），在这儿枚举
@@ -219,7 +234,7 @@ def search(budget: int, reverse: bool, seed: Optional[dict] = None) -> dict:
             stack.pop()
 
     found["seen"] = seen
-    found["locked"] = locked_counts
+    found["blocked"] = blocked_counts
     found["open"] = open_labels
     found["moves"] = moves
     found["states"] = len(seen)
@@ -236,6 +251,10 @@ def route_sweep() -> Tuple[dict, List[str]]:
     它们要求「手上证据少就提笔」，而撒网总是先往证据多的深处走。
 
     返回 (摸到的东西, 走不通的路线说明)。
+
+    ``found["open"]`` 里的标签是「路线里真点过」的证据：走位写法允许前缀
+    （``移步侧殿`` 匹配 ``移步侧殿 · 布置问询与查证``），光收步骤文本会对不上
+    选项标签，所以再从 ``seen_choices`` 里把完整的 ``目标::标签`` 取出来放进去。
     """
     from gongwei.autoplay import ENDING_ROUTES, WalkError, play
 
@@ -253,6 +272,10 @@ def route_sweep() -> Tuple[dict, List[str]]:
             broken.append(f"{eid}：{exc}")
             continue
         state = engine.state
+        for key in state.seen_choices:
+            if key.startswith("topic::") or "::" not in key:
+                continue                # 话题那条是 ``topic::<id>``，不是选项标签
+            opened.add(key.rsplit("::", 1)[1])
         found["scenes"].update(state.visited)
         found["scenes"].add(state.scene)
         found["clues"].update(state.clues)
@@ -272,6 +295,14 @@ def seed_states() -> List[dict]:
     用的都是剧本自带的路线前缀 —— 走一遍就等于「有个玩家真做到了这一步」，
     于是从那份状态出发的撒网不必再从头把案① 的分支摸一遍。没有这一步，
     案③ 结案厅之外的分支（比如把卷尾那四份总录一份份读完）永远轮不到预算。
+
+    **案② 开场那一屏的岔路必须各开一口井**：深度优先在每个状态上只往下走一条
+    分支（见模块开头「枚举顺序」），而那一屏有三条岔路（药库 / 值房 / 账房）。
+    实测 30000 步里 ``case2_open`` 只被展开过一次，走的还是第一条 —— 于是
+    「值夜簿还没到手就先拐进值房」这一刻一个状态都没轮到，值房里那道
+    ``missing_any_clue`` 的门禁（``查值夜簿上的签押``）被报成「从未解开过」。
+    那不是剧本里的死门，是撒网的盲区：真玩家在开场屏上拐一下就到了。
+    第一条岔路（药库）由「案② 药局前厅」那口井覆盖，这里补第二、第三条。
     """
     from gongwei.autoplay import (CASE2_ACT6, CASE2_HEAD, CASE2_ROUTE,
                                   CASE3_ACT9, CASE3_ACT10, CASE3_ENTRY,
@@ -279,6 +310,8 @@ def seed_states() -> List[dict]:
 
     prefixes = [
         ("案② 药局前厅", CASE2_HEAD + CASE2_ACT6),
+        ("案② 开场 · 直拐值房", CASE2_HEAD + ["先去值房"]),
+        ("案② 开场 · 直拐账房", CASE2_HEAD + ["先去账房"]),
         ("案② 结案厅", CASE2_HEAD + CASE2_ROUTE),
         ("案③ 阁前", CASE3_HEAD + [CASE3_ENTRY] + CASE3_ACT9),
         ("案③ 结案厅", CASE3_HEAD + [CASE3_ENTRY] + CASE3_ACT9 + CASE3_ACT10),
@@ -293,6 +326,21 @@ def seed_states() -> List[dict]:
             continue
         seeds.append(pack(engine.state))
     return seeds
+
+
+def never_unlocked(blocked: dict, open_labels: set, route_labels: set) -> dict:
+    """把「挡过」减掉「后来亮过」，剩下的才是永远打不开的门禁。
+
+    门禁是「藏起来」的，所以这里必须两遍对账：``blocked`` 来自
+    ``engine.hidden_options()``（哪些 ``(场景, 文本)`` 被条件挡过，键带场景是因为
+    同一个文本会写在三个场景里），``open_labels`` 是撒网时上过桌的那些，
+    ``route_labels`` 是二十条路线里被真点过的标签。
+
+    **只数不判**会恒亮一行、**只判不数**会恒空一行，两种都是死审计：
+    「挡过」证明这份表有内容，「后来亮过」才证明它不是一道废门。
+    """
+    return {spot: n for spot, n in blocked.items()
+            if spot not in open_labels and spot[1] not in route_labels}
 
 
 def main() -> int:
@@ -326,11 +374,11 @@ def main() -> int:
     topics = set().union(*(r["topics"] for r in runs)) | routes_found["topics"]
     endings = set().union(*(r["endings"] for r in runs)) | routes_found["endings"]
     dossiers = set().union(*(r["dossiers"] for r in runs)) | routes_found["dossiers"]
-    locked_counts: dict = {}
+    blocked_counts: dict = {}
     open_labels: set = set()
     for tally in runs:
-        for spot, count in tally["locked"].items():
-            locked_counts[spot] = locked_counts.get(spot, 0) + count
+        for spot, count in tally["blocked"].items():
+            blocked_counts[spot] = blocked_counts.get(spot, 0) + count
         open_labels |= tally["open"]
     open_labels |= routes_found["open"]
     moves = sum(r["moves"] for r in runs)
@@ -386,15 +434,13 @@ def main() -> int:
         if e.id not in endings:
             print(f"   ✗ 未触达: {e.id}  {e.title}")
 
-    # 只报「**任何状态下都没解开过**」的门禁。单纯被挡很多次不等于死锁：
-    # 「已经验过了」「已经推演过了」这类不 repeatable 的动作，后半程每次都被挡，
-    # 次数最高恰恰说明它成功过 —— 所以这里用 open_labels 把它们滤掉。
+    # 只报「**挡过、却在任何可达状态里都没亮过**」的门禁 —— 也就是永远打不开的门。
+    # 单纯被挡很多次不等于死锁：只要它在别的状态里上过一次桌，就说明这道门能开。
     # 键是 ``(场景, 选项文本)``：同一个文本在三个场景里各写一遍时（药局前厅那条
     # 门禁就是），只按文本算会把「一处亮过」当成「处处亮过」。路线里真点过的
     # 选项也算亮过 —— 那是有玩家真的走通了。
     route_labels = routes_found["open"]
-    never = {spot: n for spot, n in locked_counts.items()
-             if spot not in open_labels and spot[1] not in route_labels}
+    never = never_unlocked(blocked_counts, open_labels, route_labels)
     if never:
         print("\n[从未解开过的门禁] 这些选项在任何状态下都没亮过")
         for (scene_id, label), count in sorted(never.items(), key=lambda kv: -kv[1]):

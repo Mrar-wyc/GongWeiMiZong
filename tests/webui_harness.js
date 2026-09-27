@@ -765,6 +765,42 @@ if (booted) {
         "线索行的字被改动了：" + paneText("reading-body").slice(0, 100));
     });
 
+    // 坏档：Python 那边（gongwei/game/save.py）拒收的形状，网页版也必须拒收 ——
+    // 同一份档两端给相反的答案最坑人。两条：`v` 太新（ui.js 的 saveVersionError）
+    // 与 `dossiers` 的值不成对（game.js 的 fromSave 抛错，以前会静默读成 [false,false]）。
+    check("坏档：版本太新、档案状态不成对，两端都读不进来", function () {
+      var cases = [
+        { what: "版本太新", word: "太新",
+          mutate: function (d) { d.v = 2; } },
+        { what: "档案状态不成对", word: "不成对",
+          mutate: function (d) { d.state.dossiers["01-FY-01"] = true; } }
+      ];
+      cases.forEach(function (item) {
+        var data = JSON.parse(fs.readFileSync(SEED_SAVE, "utf8"));
+        item.mutate(data);
+        storage.setItem("gongwei_save", JSON.stringify(data));
+        // 第一轮从游戏屏回标题屏；第二轮本来就站在标题屏上（上一轮没读进去）。
+        if (query(app(), ".top-actions").length === 1) { backToTitle(); }
+        need(!byId("reading-body"), item.what + "：没回到标题屏 —— " + brief(app(), 60));
+        var entry = buttons(app(), "续前案");
+        need(entry.length === 1,
+          item.what + "：标题屏上找不到唯一的「续前案（读档）」入口（找到 " + entry.length + " 个）");
+        entry[0].click();
+        var told = paneText("toasts");
+        need(told.indexOf(item.word) >= 0,
+          item.what + "：读不进来却没说清原因（toasts 里是「" + brief(byId("toasts"), 120) + "」）");
+        need(!byId("reading-body"),
+          item.what + "：坏档居然读进去了 —— " + brief(app(), 120));
+      });
+      // 把状态还给后面的检查：先「新案」回到轴上，再读一份正规存档。
+      var fresh = buttons(app(), "新案");
+      need(fresh.length === 1,
+        "标题屏上找不到唯一的「新案」入口（找到 " + fresh.length + " 个）");
+      fresh[0].click();
+      loadSeed(function () {});
+      need(byId("reading-body"), "做完坏档检查之后，正规存档也读不回来了");
+    });
+
     check("行动记录折叠条：aria 跟着开合走，条数与卷宗对得上", function () {
       var bars = query(app(), ".log-bar");
       need(bars.length === 1, "卷宗页上该有一条行动记录折叠条，实得 " + bars.length + " 条");
@@ -938,35 +974,30 @@ if (booted) {
     need(buttons(app(), "新案").length === 0, "游戏屏上冒出了 " + buttons(app(), "新案").length + " 个「新案」按钮");
   });
 
-  check("选项卡：序号与标签分家，锁着的仍写「条件不足：」", function () {
+  check("选项卡：序号与标签分家，没开的选项整条不出现", function () {
     var cards = query(app(), ".choice-card");
     need(cards.length >= 2, "选项区只有 " + cards.length + " 张卡，这条检查会空转");
-    var locked = 0;
     cards.forEach(function (card, i) {
       var nums = query(card, ".choice-num");
       need(nums.length === 1, "第 " + (i + 1) + " 张卡上找不到序号");
       need(textOf(nums[0]) === String(i + 1), "第 " + (i + 1) + " 张卡的序号写的是「" + textOf(nums[0]) + "」");
       need(query(card, ".choice-label").length === 1, "第 " + (i + 1) + " 张卡上找不到标签");
-      var isLocked = (" " + card.className + " ").indexOf(" locked ") >= 0;
-      var chip = query(card, ".lock-chip");
-      if (isLocked) {
-        locked += 1;
-        need(chip.length === 1, "锁着的第 " + (i + 1) + " 张卡上没有 .lock-chip");
-        need(textOf(chip[0]).indexOf("条件不足：") === 0,
-          "锁定提示不是以「条件不足：」开头：" + brief(chip[0], 40));
-      } else {
-        need(chip.length === 0, "没锁的第 " + (i + 1) + " 张卡上却有锁定提示");
-      }
+      // 门禁不摆在桌上（硬规则 11）：桌上只有真能做的事，没有「灰置 + 条件不足」
+      // 那一档 —— 卡上既不该带 locked 记号，也不该挂 .lock-chip。
+      need((" " + card.className + " ").indexOf(" locked ") < 0,
+        "第 " + (i + 1) + " 张卡还带着 locked 记号：" + card.className);
+      need(query(card, ".lock-chip").length === 0,
+        "第 " + (i + 1) + " 张卡上还挂着锁定提示：" + brief(card, 60));
+      need(textOf(card).indexOf("条件不足") < 0, "第 " + (i + 1) + " 张卡上写着「条件不足」");
     });
-    need(locked >= 1, "开局该有一张锁着的卡，实得 " + locked + " 张");
-    var pick = cards.filter(function (c) {
-      return (" " + c.className + " ").indexOf(" locked ") < 0;
-    })[0];
-    need(pick, "开局所有选项都锁着");
+    need(appText().indexOf("条件不足") < 0,
+      "页面上还留着「条件不足」四个字：" + brief(app(), 200));
+    var pick = cards[0];
+    need(pick, "开局一张选项卡都没有");
     var labelNode = query(pick, ".choice-label")[0];
-    // 卡面上标签与细节（.detail/.lock-chip）同住 label 这一层，卷宗里只记标签那一截。
+    // 卡面上标签与细节（.detail）同住 label 这一层，卷宗里只记标签那一截。
     var label = textOf(labelNode);
-    query(labelNode, ".detail").concat(query(labelNode, ".lock-chip")).forEach(function (n) {
+    query(labelNode, ".detail").forEach(function (n) {
       label = label.replace(textOf(n), "");
     });
     need(label.length > 0, "这张卡上没有标签：" + brief(pick, 40));
@@ -981,6 +1012,49 @@ if (booted) {
     need(choices.length >= 1, "答话那行没进卷宗（找不到 .log-choice）");
     need(textOf(choices[choices.length - 1]) === label,
       "卷宗里记的是「" + textOf(choices[choices.length - 1]) + "」，按钮上写的是「" + label + "」");
+  });
+
+  check("种一份审讯存档：被门禁挡住的话题整条不出现，理由也不许露出来", function () {
+    // 固定存档 + 固定改写：把结案存档倒回「案① 审讯王德海、这一案什么都还没查出」
+    // 的那一刻。这一刻的选项表是**确定**的（同一份存档在 Python 侧算出来是同样三枚，
+    // audit_web.py 逐字比对两端的选项表）：三枚能问、四枚被门禁挡着。挡住的那几枚
+    // 整条都不该出现 —— 连它们的 locked_hint（写给审计排障看的理由）也不许飘到页面上。
+    loadSeed(function (data) {
+      var s = data.state;
+      s.scene = "talk_wdh";
+      s.ending = "";
+      s.chapter = 1;
+      s.case = 1;
+      s.turn = 16;
+      s.interrogating = "WDH";
+      s.clues = [];
+      s.items_owned = [];
+      s.flags = [];
+      s.topics_asked = [];
+      s.seen_choices = [];
+      s.log = [];
+      s.open_dossier = "";
+    });
+    var dealt = ["再问一遍 · 今夜你几时进的殿",
+                 "追问 · 那盏茶是谁送进去的",
+                 "作揖告退 · 结束对「王德海」的问询"];
+    var gated = ["逼问 · 你进过殿内",
+                 "出示 · 尚药局领用簿上的七次取用",
+                 "摊牌 · 采薇是被你办的",
+                 "问他 · 为什么是她"];
+    var cards = query(app(), ".choice-card");
+    need(cards.length === dealt.length,
+      "这一屏该摆 " + dealt.length + " 枚选项，实得 " + cards.length + " 枚：" + brief(app(), 200));
+    var page = appText();
+    dealt.forEach(function (label, i) {
+      need(textOf(cards[i]).indexOf(label) >= 0,
+        "第 " + (i + 1) + " 张卡该是「" + label + "」，写的是「" + brief(cards[i], 40) + "」");
+    });
+    gated.forEach(function (label) {
+      need(page.indexOf(label) < 0, "被门禁挡住的「" + label + "」还摆在桌上");
+    });
+    need(page.indexOf("条件不足") < 0, "页面上还留着「条件不足」四个字");
+    need(query(app(), ".lock-chip").length === 0, "页面上还挂着锁定提示");
   });
 }
 // ---------------------------------------------------------------------------

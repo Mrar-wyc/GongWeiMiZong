@@ -82,8 +82,8 @@ class Choice:
     detail: str = ""                              # 悬停/旁注说明
     effect: Effect = field(default_factory=Effect)
     visible_if: Optional[Condition] = None        # 不满足则不显示
-    locked_if: Optional[Condition] = None         # 满足则显示但灰置
-    locked_hint: str = ""                         # 灰置原因（需明示，避免玩家瞎猜）
+    locked_if: Optional[Condition] = None         # 门禁：没开就不显示（从来不灰置）
+    locked_hint: str = ""                         # 门禁原因——写给审计与排障看，玩家看不到
     repeatable: bool = True                       # 做过之后是否仍显示
     locked_by: Optional[Condition] = None         # locked_if 的别名（剧本里更顺手）
     wants: str = ""                               # 该选项关注的角色 id（用于面板高亮）

@@ -113,6 +113,20 @@
     } catch (e) { return null; }
   }
 
+  // 与 gongwei/game/save.py 的 SAVE_VERSION 对齐：太新的档终端版会拒读，
+  // 网页版也不能闷头读进来（同一份档两端给相反的答案最坑人）。
+  var SAVE_VERSION = 1;
+
+  function saveVersionError(data) {
+    if (!data || typeof data !== "object" || data.v === undefined || data.v === null) {
+      return "";
+    }
+    var n = parseInt(data.v, 10);
+    if (isNaN(n)) { return "存档版本号不是数字：" + data.v; }
+    if (n > SAVE_VERSION) { return "存档版本 " + n + " 太新，本版本读不了"; }
+    return "";
+  }
+
   function writeSave() {
     try {
       var payload = game.save();
@@ -312,6 +326,8 @@
   function doLoad() {
     var data = readSave();
     if (!data) { toast("本机没有存档。", "error"); return; }
+    var verr = saveVersionError(data);
+    if (verr) { toast("读档失败：" + verr, "error"); return; }
     try {
       game.fromSave(data);
     } catch (err) {
@@ -341,10 +357,8 @@
 
   function runOption(opt) {
     if (!opt) { return; }
-    if (!opt.enabled) {
-      toast("「" + opt.label + "」现在做不了：" + (opt.hint || "条件不足"), "error");
-      return;
-    }
+    // 门禁没开的选择根本不在这张桌上（见 game.options() 与 game.hiddenOptions()），
+    // 所以这里没有「点了也做不了」这一档。
     var upd = opt.choice
       ? game.choose(opt.choice, opt.topic_id)
       : { toasts: [], new_clues: [], new_items: [], new_dossiers: [] };
@@ -699,18 +713,14 @@
   function fillOptions(body) {
     var opts = game.options();
     if (!opts.length) {
-      body.appendChild(el("p", "empty", "此刻没有可做的事。"));
+      body.appendChild(el("p", "empty", "此刻无事可做：翻翻档目，或问问在场的人。"));
       return;
     }
     opts.forEach(function (opt, i) {
-      var b = el("button", "choice-card opt" + (opt.enabled ? "" : " locked") +
-        (i === ui.cursor ? " focus" : ""));
+      var b = el("button", "choice-card opt" + (i === ui.cursor ? " focus" : ""));
       b.appendChild(el("span", "choice-num num", String(opt.index)));
       var label = el("span", "choice-label label", opt.label);
       if (opt.detail) { label.appendChild(el("span", "detail", opt.detail)); }
-      if (!opt.enabled && opt.hint) {
-        label.appendChild(el("span", "hint lock-chip", "条件不足：" + opt.hint));
-      }
       if (opt.asked) { label.appendChild(el("span", "asked", "（已经问过）")); }
       b.appendChild(label);
       b.addEventListener("click", function () { runOption(opt); });
@@ -1153,6 +1163,8 @@
         var data;
         try { data = JSON.parse(text); }
         catch (e) { toast("这段不是合法存档：" + e.message, "error"); return; }
+        var verr = saveVersionError(data);
+        if (verr) { toast("这份存档读不了：" + verr, "error"); return; }
         try { game.fromSave(data); }
         catch (e2) { toast("这份存档读不了：" + e2.message, "error"); return; }
         if (game.atVerdict() && !game.state.ending) { game.finalize(); }

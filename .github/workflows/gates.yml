@@ -1,6 +1,6 @@
 name: 门禁
 
-# 六道门禁 + 302 项单元测试，每次 push / PR 自动跑一遍。
+# 六道门禁 + 352 项单元测试，每次 push / PR 自动跑一遍。
 # 命令与 AGENTS.md §4 逐条对应；本地怎么跑、怎么读输出，见 README 的「开发」一节。
 #
 # 两条腿：Windows + 当前 Python（开发环境本尊）、Linux + 较老的 Python
@@ -57,7 +57,7 @@ jobs:
       - name: 门禁 1/6 · 网页产物等于当前剧本打的包
         run: python tools/build_web.py --check
 
-      - name: 门禁 2/6 · 单元测试（302 项）
+      - name: 门禁 2/6 · 单元测试（352 项）
         run: python -m unittest discover -s tests -t .
 
       - name: 门禁 3/6 · 线索/物证登记与门禁引用

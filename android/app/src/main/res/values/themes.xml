@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  主题：系统自带的 Material Light 去标题栏，不引 AppCompat（零第三方依赖）。
+
+  颜色取网页版的纸色 #F5E6D3：状态栏、导航栏、窗口底色都铺成同一张纸，
+  这样冷启动、切后台、手势条那一圈都不会出现系统默认的灰或白。
+  windowLightStatusBar 让状态栏图标走深色（浅底上黑字才看得见）。
+-->
+<resources>
+    <style name="AppTheme" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#F5E6D3</item>
+        <item name="android:navigationBarColor">#F5E6D3</item>
+        <item name="android:windowBackground">#F5E6D3</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

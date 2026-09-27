@@ -270,7 +270,12 @@
     st.dossiers = {};
     var ds = data.dossiers || {};
     for (var did in ds) {
-      var pair = ds[did] || [false, false];
+      var pair = ds[did];
+      // 形状不对就整档拒收（Python 那边 `list(True)` 会抛 TypeError，同样拒收）：
+      // 静默按 [false, false] 读进来会把「读过的档」变回未读，那是悄悄丢数据。
+      if (!pair || typeof pair.length !== "number") {
+        throw new Error("存档里的档案状态不成对：" + did);
+      }
       st.dossiers[did] = [!!pair[0], !!pair[1]];
     }
     st.notes = (data.notes || []).slice();
@@ -506,27 +511,32 @@
   };
 
   // -- 选项 -----------------------------------------------------------
-  Game.prototype.options = function () {
-    var scene = this.scene(), st = this.state;
-    if (scene.kind === "ending") { return []; }
+  Game.prototype.rawChoices = function (scene) {
+    // 桌上的原始选择：场景自带的 + 在场者可问的话题（顺序必须与 Python 侧一致）
     var raw = scene.choices.map(function (ch) { return [ch, null]; });
     if (scene.interlocutor) {
       raw = raw.concat(this.interrogationChoices(scene.interlocutor));
     }
+    return raw;
+  };
+
+  Game.prototype.options = function () {
+    // 条件不满足的选择**不出现**（不是灰置）：visible_if 不满足、
+    // locked_if / locked_by 没开、不可重复而又问过的，都直接跳过。
+    // 被挡住的那些去哪了？见 hiddenOptions()。
+    var scene = this.scene(), st = this.state;
+    if (scene.kind === "ending") { return []; }
+    var raw = this.rawChoices(scene);
     var options = [];
     for (var i = 0; i < raw.length; i++) {
       var choice = raw[i][0], topicId = raw[i][1];
       var vis = choice.visible_if, lock = choice.locked_if || choice.locked_by;
       if (vis && !evalAst(vis, st)) { continue; }
       if (!choice.repeatable && st.seen_choices.indexOf(choice.key) >= 0) { continue; }
-      var enabled = true, hint = "";
-      if (lock && evalAst(lock, st)) {
-        enabled = false;
-        hint = choice.locked_hint || "条件不足";
-      }
+      if (lock && evalAst(lock, st)) { continue; }
       options.push({
         index: 0, label: choice.label, detail: choice.detail || "",
-        enabled: enabled, hint: hint, wants: choice.wants || "",
+        enabled: true, hint: "", wants: choice.wants || "",
         tag: choice.tag || "", gated: !!(vis || lock),
         asked: st.seen_choices.indexOf(choice.key) >= 0,
         choice: choice, topic_id: topicId, engine: this
@@ -534,6 +544,31 @@
     }
     for (var k = 0; k < options.length; k++) { options[k].index = k + 1; }
     return options;
+  };
+
+  Game.prototype.hiddenOptions = function () {
+    // 此刻被门禁挡住、玩家看不见的选择（只给审计与排障，永远不进界面）。
+    // 与 options() 共用同一套判定，只两点不同：只收被条件挡住的（问过就不再来的
+    // 不算门禁），hint 是写给开发者看的原因，界面不许拿它渲染。
+    var scene = this.scene(), st = this.state;
+    if (scene.kind === "ending") { return []; }
+    var raw = this.rawChoices(scene);
+    var out = [];
+    for (var i = 0; i < raw.length; i++) {
+      var choice = raw[i][0], topicId = raw[i][1];
+      var vis = choice.visible_if, lock = choice.locked_if || choice.locked_by;
+      var byVis = !!(vis && !evalAst(vis, st));
+      var byLock = !byVis && !!(lock && evalAst(lock, st));
+      if (!byVis && !byLock) { continue; }
+      out.push({
+        index: 0, label: choice.label, detail: choice.detail || "",
+        enabled: false, hint: byLock ? (choice.locked_hint || "条件不足") : "",
+        wants: choice.wants || "", tag: choice.tag || "", gated: true,
+        asked: st.seen_choices.indexOf(choice.key) >= 0,
+        choice: choice, topic_id: topicId, engine: this
+      });
+    }
+    return out;
   };
 
   Game.prototype.topicsFor = function (cid) {

@@ -18,17 +18,19 @@
    两个不同的选项撞了同一个 key，且其中一个不可重复 —— 做过一个，另一个就永远消失。
 4. **结局兜底**：`pick_ending()` 在没有任何规则命中时，按案取兜底结局。
    兜底必须落在「什么都没查出来」那一档上，不能兜出一个好结局。
-5. **死胡同**：某个状态下所有选项都被挡（或都不可重复且已做过），
-   场景里就再也没有出口。这时按「手上的档还救不救得了场」分三档：
+5. **死胡同**：某个状态下**一个可见选项都没有**（门禁没开的选择根本不上桌，
+   不可重复的又都做过了），场景里就再也没有出口。这时按「手上的档还救不救得了场」
+   分三档：
 
-   * **硬死**（没有选项、也没有可读的档）——问题；
+   * **硬死**（没有可见选项、也没有可读的档）——问题；
    * **翻不动的软卡**（还有档可读，但翻开任何一份都不改变任何东西：没有新线索／
      物证／档目／旗标／信任／分数，没有选项变亮，也没有别的档因此变得可读）——
      问题，玩家被钉在原地翻页；
    * **正常的软卡**（翻档能翻出新东西，新线索开出新选项）——设计好的节奏，不报，
      加 `-v` 才列明细。
-6. **锁而无提示**：灰置的选项没写 `locked_hint`，界面只剩一句「条件不足」，
-   玩家不知道该去补什么。
+6. **门禁缺开发者可读的原因**：被 `locked_if` / `locked_by` 挡住的选项没写
+   `locked_hint`，`hidden_options()` 就只剩一句兜底的「条件不足」。门禁既然不摆在
+   桌上，这行字便只有审计与排障会读 —— 缺了它，被挡住的原因只能回头翻剧本去猜。
 7. **问询退场归属**：`talk_*` 场景的 `hall` 必须回到**同一案**的前厅，
    否则案③ 问完人会被送回案① 的侧殿，案号跟着回退，结局判定就串了。
 8. **可重复的选项带一次性收益**：`repeatable=True` 而效果里有分数／信任／线索／
@@ -222,12 +224,15 @@ def _progress_signature(engine: GameEngine) -> Tuple:
 
     刻意不含「哪些档还没读」：读一份档必然把它自己从那里拿走，
     但那只是翻页本身，不是进展。
+
+    选项面就是 ``engine.options()`` 的标签集：门禁没开的不上桌，所以看得见的
+    就是亮着的 —— 这一格少了哪一项，就说明那份档翻开真的开出了新路。
     """
     st = engine.state
     return (frozenset(st.clues), frozenset(st.items_owned),
             frozenset(st.known_dossiers()), frozenset(st.flags),
             tuple(sorted(st.trust.items())), st.score,
-            frozenset(o.label for o in engine.options() if o.enabled))
+            frozenset(o.label for o in engine.options()))
 
 
 def _flip_opens_something(raw: Dict, did: str, others: Set[str]) -> bool:
@@ -248,9 +253,10 @@ def _flip_opens_something(raw: Dict, did: str, others: Set[str]) -> bool:
 def dead_ends(budget: int = BUDGET) -> Tuple[List[str], List[str], List[str], int]:
     """撒网找「没有任何出口」的状态。
 
-    出口 = `options()` 里 enabled 的那个，或者一份**翻开来会改变点什么**的档案。
-    三个清单依次是：硬死（没选项也没档）、翻不动的软卡（有档，但翻哪份都一样）、
-    正常软卡（翻档能翻出新东西 —— 设计好的节奏，由调用方决定要不要列）。
+    出口 = `engine.options()` 里摆着的那个（门禁没开的选择根本不上桌，所以看得见
+    的就是能点的），或者一份**翻开来会改变点什么**的档案。
+    三个清单依次是：硬死（没有可见选项、也没档）、翻不动的软卡（有档，但翻哪份都
+    一样）、正常软卡（翻档能翻出新东西 —— 设计好的节奏，由调用方决定要不要列）。
     判决过渡场景不算：它们进来就结算。
     """
     engine = GameEngine(CONTENT, gates=TOPIC_GATES)
@@ -268,7 +274,9 @@ def dead_ends(budget: int = BUDGET) -> Tuple[List[str], List[str], List[str], in
         scene = engine.scene
         reads = sorted(_readable_unread(engine))
         if scene.kind != "ending" and not engine.at_verdict():
-            if not any(o.enabled for o in engine.options()):
+            # 门禁不开的选择不上桌：``options()`` 空了就是「这一屏没有可见选项」，
+            # 挡住的那些在 ``hidden_options()`` 里 —— 它们**不算出口**。
+            if not engine.options():
                 if not reads:
                     hard.append((raw["scene"], scene.title, raw["turn"]))
                 elif any(_flip_opens_something(raw, did, set(reads) - {did})
@@ -276,7 +284,7 @@ def dead_ends(budget: int = BUDGET) -> Tuple[List[str], List[str], List[str], in
                     soft.append((raw["scene"], scene.title, raw["turn"], len(reads)))
                 else:
                     stalled.append((raw["scene"], scene.title, raw["turn"], len(reads)))
-        steps = [o for o in engine.options() if o.enabled]
+        steps = engine.options()
         advanced = False
         for kind, item in ([("opt", o) for o in steps] + [("read", d) for d in reads]):
             engine.state = type(engine.state).from_save(raw, CONTENT)
@@ -390,6 +398,15 @@ def ending_verdicts() -> Tuple[List[str], int]:
 
 
 def locks_without_hint() -> List[str]:
+    """被 `locked_if` / `locked_by` 挡住、却没写 ``locked_hint`` 的选项。
+
+    门禁改成「藏起来」之后，兜底的「条件不足」不再给玩家看，可这行字**审计与
+    排障仍然要读**：`hidden_options()` 的原样输出、`audit_story.py` 的「从未解开过
+    的门禁」都靠它认门禁。缺了它，被挡住的原因就只能回头翻剧本去猜。
+
+    只查 `locked_if` / `locked_by`：`visible_if` 挡住的本来就不该给玩家提示
+    （那是「还没到该看见它的时候」，不是「你缺什么」）。
+    """
     out: List[str] = []
     for sid, scene in sorted(CONTENT.scenes.items()):
         for ch in scene.choices:
@@ -475,26 +492,29 @@ def main() -> int:
         for line in bad5:
             print(f"  ✗ {line}")
     else:
-        print(f"  ✓ 展开 {states} 个状态，没有任何「没选项、连档也没得读」的硬死")
+        print(f"  ✓ 展开 {states} 个状态，"
+              f"没有任何「没有可见选项、连档也没得读」的硬死")
     if stalled5:
         problems += len(stalled5)
         for line in stalled5:
-            print(f"  ✗ {line} —— 选项全灰，手上能翻的档翻开来也不改变任何东西")
+            print(f"  ✗ {line} —— 本状态没有可见选项，"
+                  f"手上能翻的档翻开来也不改变任何东西")
     if soft5:
-        print(f"  · 另有 {len(soft5)} 处「选项全灰、但翻档能翻出新东西」的软卡"
+        print(f"  · 另有 {len(soft5)} 处「没有可见选项、但翻档能翻出新东西」的软卡"
               f"（翻档即解，正常节奏；{'明细：' if verbose else '加 -v 看明细'}）")
         if verbose:
             for line in soft5:
                 print(f"      {line}")
 
-    print("== 6. 锁而无提示 ==")
+    print("== 6. 门禁缺开发者可读的原因（locked_hint）==")
     bad6 = locks_without_hint()
     if bad6:
         problems += len(bad6)
         for line in bad6:
             print(f"  ✗ {line}")
     else:
-        print("  ✓ 每个灰置的选项都写了理由")
+        print("  ✓ 每道 locked_if / locked_by 门禁都写了 locked_hint"
+              "（门禁不摆上桌，这行字只剩审计与排障在读）")
 
     print("== 7. 问询退场归属 ==")
     bad7 = hall_mismatch()
