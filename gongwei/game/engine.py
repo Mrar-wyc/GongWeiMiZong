@@ -649,6 +649,10 @@ class GameEngine:
             self.state.case = scene.case
         self.state.interrogating = scene.interlocutor
         upd.scene_changed = True
+        # 判决过渡场景进来即结算，它的标题没有任何地方显示（顶栏一帧都不画）。
+        # 记一行进卷宗，结局屏的阅读区里就有那一下「判决」的节拍。
+        if first_visit and scene_id in self.content.verdict_scenes:
+            self.state.log.append(LogEntry("scene", f"【判决】{scene.title}"))
         if scene.body and first_visit:
             self.state.log.append(LogEntry("scene", scene.body))
         if scene.on_enter is not None:
@@ -667,10 +671,35 @@ class GameEngine:
         self.state.accused = suspect_id
         self.state.flags.add("accused")
         upd = Update()
-        target = self.content.verdicts.get(suspect_id, ("", ""))[0]
+        target = self.verdict_target(suspect_id)
         if target:
             self.go_to(target, upd)
         return upd
+
+    def verdict_target(self, suspect_id: str) -> str:
+        """某人**在本案**的判决过渡场景（案号对不上就不去）。
+
+        ``verdicts`` 那张表是按**嫌疑人**登记的，
+        而冯保与萧衍各在两案里出现——一张表放不下两个去处，所以它只有 11 条
+        而判决屏有 13 张。先去剧本的指认选项里找本案的那一张，找不到才退回
+        表里那一条（表里那一条属于别案时也不用，免得把别案的判决正文念出来）。
+        """
+        for scene in self.content.scenes.values():
+            for choice in scene.choices:
+                if choice.suspect != suspect_id or choice.tag != "accuse":
+                    continue
+                target_id = choice.effect.scene or choice.to
+                target = self.content.scenes.get(target_id)
+                if target is None:
+                    continue
+                if target.case and target.case != self.state.case:
+                    continue
+                return target_id
+        target_id = self.content.verdicts.get(suspect_id, ("", ""))[0]
+        target = self.content.scenes.get(target_id)
+        if target is not None and (not target.case or target.case == self.state.case):
+            return target_id
+        return ""
 
     def pick_ending(self) -> str:
         """按规则表取第一个命中的结局（只在本案的规则里挑）。

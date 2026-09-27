@@ -460,5 +460,67 @@ class EveryEndingReachableTest(unittest.TestCase):
                          + "，".join(f"{k}→{v}" for k, v in wrong.items()))
 
 
+class VerdictScreenTest(unittest.TestCase):
+    """判决过渡场景：标题要留下「节拍」，跨两案的嫌疑人要回本案的屏。
+
+    判决屏是「进屏即结算」的中转站（``kind="scene"``、零选项，``at_verdict()``
+    为真的那一瞬间就被 ``finalize()`` 送去结局屏），它自己的标题两端都来不及
+    显示：正文靠 ``go_to()`` 记进卷宗，标题曾经哪儿都没有。
+    """
+
+    def _save_isolated(self):
+        handle, path = tempfile.mkstemp(suffix=".json")
+        os.close(handle)
+        os.unlink(path)
+        self.addCleanup(lambda: os.path.exists(path) and os.unlink(path))
+        return SaveStore(path)
+
+    def test_the_verdict_title_leaves_a_beat_in_the_log(self):
+        """标题记一行进卷宗，而且就记在判决正文的前一行。"""
+        engine, _ = play(new_engine(), TRUE_ENDING)
+        texts = [e.text for e in engine.state.log if e.kind == "scene"]
+        beats = [t for t in texts if t.startswith("【判决】")]
+        screen = CONTENT.scenes["verdict_WDH"]
+        self.assertEqual(beats, [f"【判决】{screen.title}"],
+                         f"判决屏的标题不是恰好记了一次：{beats}")
+        self.assertEqual(texts[texts.index(beats[0]) + 1], screen.body,
+                         "「判决」那一行没有紧挨在判决正文前面")
+
+        store = self._save_isolated()
+        self.assertTrue(store.save(engine))
+        resumed = new_engine()
+        self.assertTrue(store.load(resumed)[0])
+        again = [e.text for e in resumed.state.log
+                 if e.kind == "scene" and e.text.startswith("【判决】")]
+        self.assertEqual(again, beats, "读档后又多记了一遍「判决」标题")
+
+    def test_accusing_a_suspect_who_crosses_cases_stays_in_this_case(self):
+        """冯保与萧衍各在两案里出现，落到的必须是**本案**那张判决屏。"""
+        first = new_engine()
+        play(first, TRUE_ENDING[:-1])
+        self.assertEqual(first.state.case, 1)
+        first.accuse("HD")
+        self.assertEqual(first.state.scene, "verdict_HD")
+
+        third = new_engine()
+        play(third, CASE3_ROUTE)
+        self.assertEqual(third.state.case, 3)
+        self.assertEqual(third.verdict_target("HD"), "verdict3_HD",
+                         "案③ 里指认陛下，被送到别案的判决屏去了")
+        third.accuse("HD")
+        self.assertEqual(third.state.scene, "verdict3_HD")
+
+    def test_the_verdict_table_is_keyed_by_suspect_not_by_screen(self):
+        """11 条 vs 13 张屏不是漏登记，是「一个嫌疑人只放得下一条」。"""
+        screens = set(CONTENT.verdict_scenes)
+        self.assertEqual(len(screens), 13)
+        self.assertEqual(len(CONTENT.verdicts), 11)
+        registered = {row[0] for row in CONTENT.verdicts.values()}
+        self.assertTrue(registered <= screens,
+                        f"表里指到了不存在的判决屏：{registered - screens}")
+        self.assertEqual(screens - registered, {"verdict3_FB", "verdict3_HD"},
+                         "没登记的判决屏变了——是不是又有人跨了两案")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

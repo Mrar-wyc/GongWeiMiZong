@@ -681,6 +681,11 @@
     if (scene.case) { st.case = scene.case; }
     st.interrogating = scene.interlocutor || "";
     upd.scene_changed = true;
+    // 判决过渡场景进来即结算，它的标题没有任何地方显示。与 Python 侧一致，
+    // 记一行进卷宗，结局屏的阅读区里就有那一下「判决」的节拍。
+    if (firstVisit && (this.content.verdict_scenes || []).indexOf(sceneId) >= 0) {
+      st.log.push(["scene", "【判决】" + scene.title]);
+    }
     if (scene.body && firstVisit) { st.log.push(["scene", scene.body]); }
     if (scene.on_enter) { this.applyEffect(scene.on_enter, upd); }
     if (scene.kind === "ending") {
@@ -695,12 +700,39 @@
     return (this.content.verdict_scenes || []).indexOf(this.state.scene) >= 0;
   };
 
+  // 某人**在本案**的判决过渡场景（案号对不上就不去）。与 Python 侧
+  // GameEngine.verdict_target 一致：verdicts 那张表按嫌疑人登记，冯保与
+  // 萧衍各在两案里出现，一张表放不下两个去处（11 条 vs 13 张屏）。
+  Game.prototype.verdictTarget = function (suspectId) {
+    var scenes = this.content.scenes, ids = Object.keys(scenes);
+    var i, j, scene, ch, targetId, target;
+    for (i = 0; i < ids.length; i++) {
+      scene = scenes[ids[i]];
+      for (j = 0; j < (scene.choices || []).length; j++) {
+        ch = scene.choices[j];
+        if (ch.suspect !== suspectId || ch.tag !== "accuse") { continue; }
+        targetId = (ch.effect && ch.effect.scene) || ch.to || "";
+        target = scenes[targetId];
+        if (!target) { continue; }
+        if (target.case && target.case !== this.state.case) { continue; }
+        return targetId;
+      }
+    }
+    var row = this.content.verdicts[suspectId];
+    targetId = row && row[0] ? row[0] : "";
+    target = scenes[targetId];
+    if (target && (!target.case || target.case === this.state.case)) {
+      return targetId;
+    }
+    return "";
+  };
+
   Game.prototype.accuse = function (suspectId) {
     var upd = newUpdate();
     this.state.accused = suspectId;
     if (this.state.flags.indexOf("accused") < 0) { this.state.flags.push("accused"); }
-    var row = this.content.verdicts[suspectId];
-    if (row && row[0]) { this.goTo(row[0], upd); }
+    var targetId = this.verdictTarget(suspectId);
+    if (targetId) { this.goTo(targetId, upd); }
     return upd;
   };
 

@@ -39,7 +39,7 @@
 | `web/src/style.css` | 458 | 网页版**断点都在这儿**（窄屏分页、宽屏三栏、480px）——`ui.js` 里没有宽度判断 |
 | `web/src/driver.js` | 128 | node 下走路线，供 `audit_web.py` 调 |
 | `tools/audit_*.py` | — | 四道体检闸门（§4） |
-| `tests/` | — | 239 项；`tests/webui_harness.js` 在 node 里用最小 DOM 真跑 `web/src/ui.js`；`tests/helpers.py` 只是转手 `autoplay` 的路线，**不要另抄一份** |
+| `tests/` | — | 242 项；`tests/webui_harness.js` 在 node 里用最小 DOM 真跑 `web/src/ui.js` 与 `game.js` 的判决节拍；`tests/helpers.py` 只是转手 `autoplay` 的路线，**不要另抄一份** |
 
 判断要点：**玩家的体验问题 → `story.py` / `dossiers.py`；行为不对 → `engine.py` + `web/src/game.js`
 两边一起改；显示不对 → `tui/app.py` / `web/src/ui.js`（网页版的断点在 `web/src/style.css`）。**
@@ -94,12 +94,16 @@
 - 每条规则的 `case=` 必须写对：案① 的判据（如 `accused_is("WDH")`）不加 `case`
   会把案② 的指认结果抢走。
 - 加一条结局 = 加一条规则 + 一条 `ENDING_ROUTES` 路线 + 让 `audit_story` 扫得到。
+- 判决屏是「进屏即结算」的中转站：正文跟场景一样进卷宗，标题由 `go_to()` 补记
+  `【判决】…` 一行当节拍。指认去哪儿**不查那张表**，而是 `Engine.verdict_target()`
+  按当前案号从指认选项里推（`content.verdicts` 一个嫌疑人只有一条，冯保与萧衍
+  各在两案里出现）。`web/src/game.js` 的 `verdictTarget` 必须同形。
 
 ## 4. 门禁（改完按这个顺序跑）
 
 ```powershell
 python tools/build_web.py --check        # 产物等于当前剧本打的包
-python -m unittest discover -s tests -t .  # 239 项（含下面几道闸）
+python -m unittest discover -s tests -t .  # 242 项（含下面几道闸）
 python tools/audit_gates.py              # 线索/物证登记一致性、门禁引用是否有据
 python tools/audit_web.py                # 跨端差分：27 条路线逐字比对存档与选项表
 python tools/audit_story.py 30000        # 可达性：枚举状态图 + 20 条结局路线（参数是预算步数）
@@ -113,7 +117,7 @@ python tools/audit_logic.py              # 逻辑体检：后门/剧透面/刷�
 
 预期输出（当前基线）：
 
-- `Ran 239 tests … OK`
+- `Ran 242 tests … OK`
 - `审计通过：门禁全部可达，引用全部有据。`
 - `✓ 两端逐步一致：存档与选项表逐字相同，连报错都一致`
 - `场景 64/64`、`档案 91/91`、`线索/物证 103/103（核心 65/65）`、`话题 44/44`、`结局 20/20`、

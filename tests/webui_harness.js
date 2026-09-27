@@ -362,6 +362,28 @@ if (booted) {
     need(byId("cmd"), "折腾一圈之后回不到游戏屏（没有 #cmd）");
   });
 
+  check("判决屏节拍与跨案指认（JS 侧与 Python 一致）", function () {
+    var GAME = win.GongweiGame;
+    var third = new GAME.Game(pack);
+    third.newGame();
+    third.state.case = 3;
+    need(third.verdictTarget("HD") === "verdict3_HD",
+      "案③ 里指认陛下被送到「" + third.verdictTarget("HD") + "」");
+    third.goTo("verdict3_HD");
+    var beats = third.state.log.filter(function (row) {
+      return row[0] === "scene" && String(row[1]).indexOf("【判决】") === 0;
+    });
+    need(beats.length === 1, "判决屏标题记进卷宗的次数是 " + beats.length);
+    need(beats[0][1] === "【判决】" + pack.scenes.verdict3_HD.title,
+      "卷宗里的判决标题是「" + beats[0][1] + "」");
+
+    var first = new GAME.Game(pack);
+    first.newGame();
+    first.state.case = 1;
+    need(first.verdictTarget("HD") === "verdict_HD",
+      "案① 里指认陛下被送到「" + first.verdictTarget("HD") + "」");
+  });
+
   if (SEED_SAVE) {
     check("读回一份结案存档", function () {
       var data = JSON.parse(fs.readFileSync(SEED_SAVE, "utf8"));
