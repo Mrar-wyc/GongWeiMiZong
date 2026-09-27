@@ -339,10 +339,14 @@ class GameEngine:
                 body = body + "\n\n——这份档案不在册上。是你自己把档号拼出来的。"
             self.state.log.append(LogEntry("dossier", body))
             upd.narration.append(body)
+            # 效果只在**第一次**打开时结算。重阅不再发分数与好感：
+            # 否则连读同一份档就能把「评分」和信任门槛一起刷穿
+            # （曾实测：`01-YC-XSE` 连读 13 次把小顺子的信任从 35 顶到 100，
+            # 直接绕过 `xse_fear` 的信任分支）。
+            self.apply_effect(d.effect, upd)
         else:
             self.state.log.append(LogEntry(
                 "system", f"重阅 {did} · {self.state.title_of_dossier(did)}"))
-        self.apply_effect(d.effect, upd)
         for link in d.links:
             self.collect_dossier(link, upd)
         return upd

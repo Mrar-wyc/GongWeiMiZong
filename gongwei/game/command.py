@@ -221,9 +221,18 @@ _VERB_ORDER: List[str] = sorted(_ALL_VERBS, key=len, reverse=True)
 
 
 def _split_verb(text: str) -> Tuple[str, str]:
-    """切出开头的动词与余下部分。动词与参数之间可以没有空格（「阅01-FY-WDH」）。"""
+    """切出开头的动词与余下部分。动词与参数之间可以没有空格（「阅01-FY-WDH」）。
+
+    英文别名不区分大小写（`READ` / `Read` / `LS` 都该认）——网页端一直带 `/i`，
+    终端这边以前只认小写，同一句「READ 01-FY-WDH」两端的结果不一样。
+    中文动词不受影响：只有全 ASCII 的别名才试小写那一路。
+    """
+    low = text.lower()
     for verb in _VERB_ORDER:
         if text.startswith(verb):
+            rest = text[len(verb):]
+            return verb, rest.lstrip(" 　:：,，")
+        if verb.isascii() and low.startswith(verb):
             rest = text[len(verb):]
             return verb, rest.lstrip(" 　:：,，")
     return "", text
@@ -345,7 +354,10 @@ def _build(kind: str, rest: str, raw: str, verb: str) -> Command:
         body = ""
         if kind == EDIT_NOTE:
             _, tail = _strip_leading_number(rest)
-            _, body = _split_two(tail)
+            # 「改 2 香炉里有朱砂」：号子后面**整段**都是新正文。
+            # 以前这里走 `_split_two` 只取第二段，于是正文里没有空格时会被整段丢掉
+            # （`改 2 香炉里有朱砂` 解析出来的正文是空串，界面只能回一句「要改成什么？」）。
+            body = tail.strip()
         return Command(kind=kind, index=idx, arg=body, raw=raw)
 
     if kind == TITLE:

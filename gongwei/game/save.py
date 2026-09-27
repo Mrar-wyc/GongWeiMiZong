@@ -102,9 +102,18 @@ class SaveStore:
             self.last_error = "存档格式不对（顶层不是对象）"
             return None
         version = data.get("v")
-        if version is not None and int(version) > SAVE_VERSION:
-            self.last_error = f"存档版本 {version} 太新，本版本读不了"
-            return None
+        if version is not None:
+            try:
+                too_new = int(version) > SAVE_VERSION
+            except (TypeError, ValueError):
+                # `v` 不是数字（手改坏了、或者别的程序写的）：按「读不动」处理。
+                # 这里**绝不能**让 ValueError 穿出去——`summary()` 与 `load()`
+                # 都从这里进来，而模块头的约定是「绝不因为一个坏档让游戏起不来」。
+                self.last_error = f"存档版本号不是数字：{version!r}"
+                return None
+            if too_new:
+                self.last_error = f"存档版本 {version} 太新，本版本读不了"
+                return None
         return data
 
     # -- 写 --------------------------------------------------------------

@@ -167,6 +167,10 @@ CASE2_ACT8: List[str] = [
     "#08-DL-LINK", "#08-DL-VERDICT", "#08-JG-ROAD", "#08-DL-SMB",
 ]
 
+#: 第八幕少读 ``#08-DL-LEAF`` 的那一串：那份残账给的是 ``jinghe_leaf``，
+#: 抽掉它，掌局的供述还拿得到（``#08-SY-CONF``），第三案的线头却断了。
+CASE2_ACT8_THIN: List[str] = [s for s in CASE2_ACT8 if s != "#08-DL-LEAF"]
+
 #: 案② 的完整走法，**收尾停在第八幕的结案厅**（还没指认）。
 CASE2_ROUTE: List[str] = CASE2_ACT6 + CASE2_ACT7 + CASE2_ACT8
 
@@ -184,6 +188,12 @@ CASE2_HEAD: List[str] = OPENING_ROUTE + ACT1_SWEEP_TAIL + [CASE2_ENTRY]
 
 #: 只把第八幕的结案厅走到的短路线（手上没有掌局的供述）。
 CASE2_SHORT_HEAD: List[str] = CASE2_HEAD + CASE2_SHORT_ROUTE
+
+#: 案② 的中间台阶（结局「一页之差」）：有掌局的供述，但没有景和五年那页残账。
+CASE2_THIN_ROUTE: List[str] = (
+    CASE2_HEAD + CASE2_ACT6 + CASE2_ACT7 + CASE2_ACT8_THIN
+    + ["「凶手是 —— 尚药局掌局"]
+)
 
 
 # --------------------------------------------------------------------------
@@ -306,9 +316,11 @@ ENDING_ROUTES: Dict[str, List[str]] = {
         "检查 · 正殿案上的安神茶盏",
         "传唤 · 太监总管", "@0f", "@0f", "@0f", "@0f", "@0f", "@0f", "作揖告退",
         "整理证物", "「凶手是 —— 陛下"],
-    # —— 案② 的五条：短走法（手上没有掌局的供述）上分叉 ——
+    # —— 案② 的六条：短走法（手上没有掌局的供述）上分叉 ——
     # 两案连打到底 → 两案同钉（唯一拿满 43 条核心线索的走法）
     "ending2_truth": EVERYTHING_ROUTE,
+    # 供述到手、残页没拿到 → 一页之差（中间台阶）
+    "ending2_thin": CASE2_THIN_ROUTE,
     # 手上没有供述就指认掌局 → 又是暴病
     "ending2_pressed": CASE2_SHORT_HEAD + ["「凶手是 —— 尚药局掌局"],
     # 指认柳青 / 贺小五 → 错的药方

@@ -97,12 +97,16 @@
   var DOSSIER_RE = /^\d{2}-[A-Za-z]{2,4}(?:-[A-Za-z0-9]+)*$/;
 
   function canonDossier(text) {
-    var t = text.trim().toUpperCase().replace(/\s+/g, "");
-    return t;
+    // 与终端侧的 `command.py: canon_dossier_id` 对齐：NFKC 折全角（０１－ＦＹ）、
+    // 各种分隔符一律折成连字符（01_fy_wdh）、合并连续连字符、去掉首尾连字符。
+    return String(text).normalize("NFKC").toUpperCase()
+      .replace(/[-_—–~·\s]+/g, "-")
+      .replace(/-{2,}/g, "-")
+      .replace(/^-+|-+$/g, "");
   }
 
   function looksLikeDossier(text) {
-    if (DOSSIER_RE.test(text.trim())) { return true; }
+    if (DOSSIER_RE.test(canonDossier(text))) { return true; }
     return game.dossierExists(canonDossier(text));
   }
 
@@ -124,9 +128,9 @@
 
     if (looksLikeDossier(text)) { readDossier(canonDossier(text)); return; }
 
-    var m = /^(?:读|看|阅|调阅|打开|open)\s*(.+)$/i.exec(text);
-    if (m) { readDossier(canonDossier(m[1])); return; }
-
+    // 系统指令必须排在「阅档」正则**之前**：`读档` / `读取` 都以读取动词开头，
+    // 先跑 READ 就会被吃成「阅 档」→ readDossier("档")，网页端读档入口直接废掉。
+    // 终端侧的 command.py 一向按「长别名优先」匹配，所以只有网页中招。
     if (/^(档目|目录|档案|卷宗|目|list|ls)$/i.test(text)) { showIndex(); return; }
     if (/^(帮助|说明|help|\?|？)$/i.test(text)) { ui.overlay = { kind: "help" }; renderOverlay(); return; }
     if (/^(关于|about)$/i.test(text)) { ui.overlay = { kind: "about" }; renderOverlay(); return; }
@@ -134,6 +138,9 @@
     if (/^(读档|读取|load|l)$/i.test(text)) { ui.overlay = { kind: "save" }; renderOverlay(); return; }
     if (/^(重来|重开|重新开始|restart)$/i.test(text)) { ui.overlay = { kind: "restart" }; renderOverlay(); return; }
     if (/^(离开|退出|返回标题|quit|q)$/i.test(text)) { backToTitle(); return; }
+
+    var m = /^(?:读|看|阅|调阅|打开|启|read|open|cat)\s*(.+)$/i.exec(text);
+    if (m) { readDossier(canonDossier(m[1])); return; }
 
     m = /^(?:搜|查|找|检索|search)\s*(.+)$/i.exec(text);
     if (m) { doSearch(m[1]); return; }
@@ -144,6 +151,20 @@
       toast("已记下。");
       ui.tab = "notes";
       render();
+      return;
+    }
+
+    m = /^(?:改|修改|改写|edit)\s*(\d+)\s+(.+)$/i.exec(text);
+    if (m) {
+      var ei = parseInt(m[1], 10) - 1;
+      if (ei >= 0 && ei < game.state.notes.length) {
+        game.state.notes[ei] = m[2].trim();
+        toast("改好了。");
+        ui.tab = "notes";
+        render();
+      } else {
+        toast("记事簿上没有第 " + m[1] + " 条。", "error");
+      }
       return;
     }
 
@@ -823,7 +844,7 @@
     } else if (kind === "about") {
       sheet.appendChild(el("h3", null, "关于本作"));
       sheet.appendChild(el("p", null, PACK.title + " · " + PACK.subtitle));
-      sheet.appendChild(el("p", null, "一桩密室毒杀，牵出十二年前的旧案；三案八幕，" +
+      sheet.appendChild(el("p", null, "一桩密室毒杀，牵出十二年前的旧案；三案十一幕，" +
         "卷宗靠你自己一份份调出来。"));
       var stat = el("table");
       [["档案", Object.keys(PACK.dossiers).length + " 份"],

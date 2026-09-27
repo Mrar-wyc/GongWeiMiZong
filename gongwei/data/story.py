@@ -527,7 +527,7 @@ HALL = Scene(
                locked_hint="你还不知道该翻哪一卷（需先发现「采薇」这条线）"),
         Choice(label="回到正殿 · 再验一遍现场", to="crime_scene", detail="有些东西要看过第二遍才认得"),
         Choice(label="整理证物 · 提笔结案", to="accuse_hall", tag="accuse",
-               detail="写下那个名字。写下之后，就再没有回头路"),
+               detail="写下那个名字。名字一出口，就再没有回头路"),
     ],
 )
 
@@ -663,6 +663,11 @@ ACCUSE_HALL = Scene(
         _accuse_choice("HH", "「凶手是 —— 中宫皇后 萧氏」", "戌时私访，为太子之死灭口"),
         _accuse_choice("GF", "「凶手是 —— 贵妃 柳氏」", "争宠下毒，送汤为饵"),
         _accuse_choice("HD", "「凶手是 —— 陛下」", "……这句话说出口，就没有回头路了"),
+        # 「名字还没写下去」时的回头路。少了它，玩家一旦踏进结案厅而证据没备齐，
+        # 案① 的九个枢纽（侧殿、正殿、药局、旧档库、五场问询）就再也回不去了
+        # ——而「铁证如山」的三条判据（动机、玉扳指、亲口认罪）全都产在那里。
+        Choice(label="「臣请再查。」· 回侧殿", to="interrogate_hall",
+               detail="名字还没有写下去，卷宗还能翻"),
         Choice(label="「此案 —— 暂无确证，臣请再查」", to="",
                detail="承认查不出来，把案子从自己手里推出去",
                effect=E(flags=("gave_up",), scene="ending_bystander")),
@@ -680,6 +685,7 @@ ACCUSE_HALL = Scene(
                locked_if=missing_dossier(FIRST_ACT_SUMMARY),
                locked_hint="需先把凤仪殿这一案查到收手（读完「第一幕勘验总录」）",
                visible_if=core_count_at_least(8),
+               repeatable=False,   # 收益只有档案收录与 flag，都是幂等的
                effect=E(flags=("case2_entered",),
                         dossiers=("06-DL-SMB", "06-YK-GYN"),
                         scene="case2_open")),
@@ -1096,9 +1102,14 @@ CASE2_ACCUSE = Scene(
                tag="accuse",
                detail="先把第二案按下，去看第三具尸首（第九幕 · 经卷阁）",
                visible_if=has_clue("jinghe_seal"),
+               repeatable=False,   # 同上：收录与 flag 都幂等
                effect=E(flags=("case3_entered",),
                         dossiers=("09-DL-SMB", "09-JG-XYP"),
                         scene="case3_open")),
+        # 同案①：结案厅里留一条回头路，否则掌局的供述与那页残账一旦漏掉，
+        # 「两案同钉」就永远拿不到了。
+        Choice(label="「臣请再查。」· 回尚药局前厅", to="case2_hall",
+               detail="名字还没有写下去，卷宗还能翻"),
         Choice(label="「这两桩药局的死，臣只能写到这儿。」", to="",
                detail="两具尸首，一个不肯说的名字（结局 · 只写两个名字）",
                effect=E(flags=("gave_up2",), scene="ending2_quiet")),
@@ -1527,6 +1538,8 @@ CASE3_ACCUSE = Scene(
                detail="……景和五年那三个朱字，是今上的笔",
                visible_if=has_clue("emperor_ink"),
                suspect="HD", effect=E(scene="verdict3_HD")),
+        Choice(label="「臣请再查。」· 回阁前问人", to="case3_hall",
+               detail="名字还没有写下去，卷宗还能翻"),
         Choice(label="「这三桩案子 —— 臣只能写到这儿。」", to="",
                detail="把底稿收进袖子（结局 · 合上卷宗）",
                effect=E(flags=("gave_up3",), scene="ending3_quiet")),
@@ -1758,16 +1771,20 @@ HALL.choices.insert(7, acting(
 # 尚药局：选项
 # --------------------------------------------------------------------------
 
+# 这五条是**直接写 Choice** 的：绕过了 `acting()` 的
+# `repeatable = not (clues or items or dossiers or score or trust)` 自动规则，
+# 所以必须显式写 `repeatable=False`。否则线索虽然只给一次（引擎去重），
+# `score` 却每点一次就加一次 —— 实测连点五次 +10 分，且无上限。
 PHARMACY.choices = [
     Choice(label="翻查安神类药材领用簿", to="pharmacy",
-           detail="苦杏仁油去了哪里",
+           detail="苦杏仁油去了哪里", repeatable=False,
            effect=E(
                text="你翻到「安神」那一册。苦杏仁油在册上是个不起眼的小条目："
                     "「苦杏仁油，安神定惊，入汤剂，一钱至一钱半。多服令人气绝。」\n"
                     "小字注得很清楚，只是这一行下面被朱笔勾过两次。",
                clues=("almond_oil",), score=2)),
     Choice(label="核对取用记录与签押", to="pharmacy",
-           detail="谁取的、谁写的",
+           detail="谁取的、谁写的", repeatable=False,
            effect=E(
                text="取用记录三年七次，记的名都是「王德海」。\n"
                     "你把这七处签押排在一起看：第一笔和第二笔是一样的，"
@@ -1775,7 +1792,7 @@ PHARMACY.choices = [
                     "一个人不会在三年里把自己的名字写成两种写法。",
                clues=("ledger_gap",), score=3)),
     Choice(label="问掌籍 · 朱砂入炉会怎样", to="pharmacy",
-           detail="红粉是不是毒",
+           detail="红粉是不是毒", repeatable=False,
            effect=E(
                text="掌籍老太监听完就摇头：「朱砂入炉？那是方士的把戏。"
                     "闻久了头昏、目眩、心里发慌，可它毒不死人，银针也验不出来。」\n"
@@ -1788,9 +1805,10 @@ PHARMACY.choices = [
 # 掖庭旧档：选项
 # --------------------------------------------------------------------------
 
+# 同上：直接写 Choice，收益给一次，必须显式关掉重复。
 ARCHIVE.choices = [
     Choice(label="调阅景和五年「采薇案」卷宗", to="archive",
-           detail="那张笺纸上写的名字",
+           detail="那张笺纸上写的名字", repeatable=False,
            effect=E(
                text="卷宗很薄。景和五年，宫人采薇「窃内帑金饰」，杖八十，毙于掖庭。\n"
                     "你翻到验伤单，又翻到证人供词——两份的字迹是同一个人写的："
@@ -1799,7 +1817,7 @@ ARCHIVE.choices = [
                     "掖庭名册里，她的名字旁边标注着「哑」字。",
                clues=("old_record",), flags=("knows_caiwei",), score=4)),
     Choice(label="查采薇其人的旧档与经手人", to="archive",
-           detail="谁办的这桩案子",
+           detail="谁办的这桩案子", repeatable=False,
            visible_if=has_flag("knows_caiwei"),
            effect=E(
                text="景和五年的掖庭管事名录上，采薇的顶头管事写着三个字：王德海。\n"
@@ -1810,7 +1828,7 @@ ARCHIVE.choices = [
     Choice(label="回侧殿", to="interrogate_hall", detail="继续问询与查证"),
 ]
 
-# ---------------- 案② 的五个收尾（第八幕） ----------------
+# ---------------- 案② 的六个收尾（第八幕） ----------------
 
 _ending("ending2_truth", "结局 · 两案同钉", (
     "你把两案的纸摊在同一张案上。\n"
@@ -1831,6 +1849,23 @@ _ending("ending2_truth", "结局 · 两案同钉", (
     "三个月后你听说，经卷阁闭了。又过了半年，东宫废址的墙塌了一角，"
     "有人在里面挖出半箱账册。\n"
     "「两案并作一案：药是同一双手下的，名字也写在同一页纸上。」"
+), case=2, act=8)
+
+_ending("ending2_thin", "结局 · 一页之差", (
+    "你把郑守拙的话原样誊了下来。\n"
+    "他承认字是他描的，承认七次取用里有三次是他签的押——"
+    "可他始终没说那页纸是从哪儿来的。\n"
+    "「药出有主。」你把私账翻到最后一页，「主是谁？」\n"
+    "他抬眼看你，没有答。\n"
+    "内官监当天就把底稿收走了。冯保读得比上一回慢，"
+    "读到「描」字的时候停了一下，什么也没改。\n"
+    "结案文书上写的是：尚药局掌局郑守拙，私刻药引、伪造簿册，"
+    "两案并发，拟定绞。\n"
+    "「药是同一双手下的」——这一句你没写进去。"
+    "写不进去：你手上没有那一页。\n"
+    "三个月后经卷阁封了。你托人问过那半箱账册，"
+    "回话是「搬运时落水，字都泡了」。\n"
+    "只有你自己还记得：那一横，起笔很重。"
 ), case=2, act=8)
 
 _ending("ending2_pressed", "结局 · 又是暴病", (
@@ -2406,8 +2441,11 @@ TOPIC_SPECS: List[Tuple[str, str, str, str, Effect, bool, str]] = [
 def build_topics() -> Dict[str, Topic]:
     topics: Dict[str, Topic] = {}
     for tid, owner, label, response, effect, present, _hint in TOPIC_SPECS:
+        # 回话**只**放在 `Topic.response` 上，不要同时挂到 `effect.text`：
+        # `GameEngine.choose()` 已经按 `response` 写了一条旁白，`apply_effect()`
+        # 又会把 `effect.text` 写一条，同一段回话会在卷宗里连着出现两遍
+        # （曾实测 44/44 条话题全部重复）。两端对称，改这里一处即可。
         eff = Effect(
-            text=response,
             add_clues=effect.add_clues,
             add_items=effect.add_items,
             add_dossiers=effect.add_dossiers,
@@ -2484,10 +2522,14 @@ TOPIC_GATES: Dict[str, Tuple[object, str]] = {
         "需先取得「贵妃的汤」这条口供",
     ),
     "gf_who": (
-        # 她是被人捧着长大的，只有顺着毛问才肯说。
-        # 门槛必须 ≤ 20(初始) + 5(问汤)：贵妃信任的全部来源就只有 gf_soup
-        # 这一处 +5（gf_poison 反而是 -5），写高了这条线永远解不开。
-        all_of(trust_at_least("GF", 25), has_clue("empress_last_word")),
+        # 她是被人捧着长大的，只有顺着毛问才肯说 —— 所以门槛里要有「问过那碗汤」
+        # 这件事本身，而不只是「信任够高」。
+        # 信任下限取 20 而不是 25：贵妃信任的全部来源只有 gf_soup 的 +5
+        # （gf_poison 是 -5，初始 20），按 25 写就是零余量 —— 先问了安胎药的人
+        # 会永久锁死这条线，而界面上看不出原因。
+        all_of(trust_at_least("GF", 20),
+               has_clue("consort_soup"),
+               has_clue("empress_last_word")),
         "需先问过「您送的那碗汤」，且已知「戌时三刻皇后私访」",
     ),
     "hd_ask": (always, ""),
@@ -2632,7 +2674,7 @@ _mk("ending_pressured", "结局 · 按下", "真凶未受审，案子被按了�
            clue_absent("killer_knowledge")),
     "中")
 
-# ---------------- 案② 的五条收尾（判定顺序即优先级） ----------------
+# ---------------- 案② 的六条收尾（判定顺序即优先级） ----------------
 # 案① 的规则都带 case=1，案② 带 case=2；pick_ending() 只在本案的规则里挑，
 # 所以两案的结局不会互相抢（案② 里 accused_is("WDH") 永远不成立）。
 _mk("ending2_lightout", "结局 · 灯灭", "你说出了最该说的那句话，然后就没有然后了",
@@ -2641,6 +2683,16 @@ _mk("ending2_truth", "结局 · 两案同钉", "药是同一双手下的，名�
     all_of(accused_is("ZZZ"), core_count_at_least(12),
            has_clue("zzz_confession"), has_clue("jinghe_leaf")),
     "上上", case=2)
+# 同样是「一条台阶」（与案① 的「按下 → 尘埃落定 → 铁证如山」同形）：
+#   指认郑守拙，却拿不出他的口供            → 又是暴病（纸被人改过）
+#   拿得到口供，手上却没有景和五年那页残账   → 一页之差（案子结了，线头断了）
+#   口供与残账都在                          → 两案同钉
+# 少了中间这一级时，「口供到手但残页缺失」会掉进兜底 ending2_quiet
+# （「只写两个名字」），与「根本没查出来」同奖。
+_mk("ending2_thin", "结局 · 一页之差", "供述到手了，那一页还在别人手里",
+    all_of(accused_is("ZZZ"), has_flag("accused"),
+           has_clue("zzz_confession")),
+    "中上", case=2)
 _mk("ending2_pressed", "结局 · 又是暴病", "你写的名字是真的，送出去的纸是假的",
     all_of(accused_is("ZZZ"), has_flag("accused"),
            clue_absent("zzz_confession")),

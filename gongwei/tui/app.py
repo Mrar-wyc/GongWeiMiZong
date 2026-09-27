@@ -336,8 +336,10 @@ class GameApp:
             self._cmd_search(cmd.arg)
         elif kind == "note":
             self._cmd_note(cmd.arg)
+        elif kind == "edit_note":
+            self._cmd_edit_note(cmd)
         elif kind == "delete_note":
-            self._cmd_delete_note()
+            self._cmd_delete_note(cmd)
         elif kind == "review":
             self.read_mode = "log"
             self.notify(f"已知线索 {len(self.state.clues)} 条，核心 "
@@ -414,12 +416,38 @@ class GameApp:
         self.state.notes.append(text.strip())
         self.notify(f"记下了（第 {len(self.state.notes)} 条）。", "ok")
 
-    def _cmd_delete_note(self) -> None:
-        if not self.state.notes:
+    def _cmd_delete_note(self, cmd: Command) -> None:
+        """按条目号删。以前这里无脑 `pop()`：敲「删 1」删掉的其实是最后一条。"""
+        notes = self.state.notes
+        idx = cmd.index
+        if not notes:
             self.notify("没有笔记可删。", "error")
             return
-        gone = self.state.notes.pop()
-        self.notify(f"撕掉了：{truncate(gone, 24)}", "ok")
+        if idx is None or idx < 1 or idx > len(notes):
+            self.notify(f"记事簿上没有第 {idx} 条。", "error")
+            return
+        gone = notes.pop(idx - 1)
+        self.notify(f"撕掉了第 {idx} 条：{truncate(gone, 24)}", "ok")
+
+    def _cmd_edit_note(self, cmd: Command) -> None:
+        """改写第 N 条笔记（`index == -1` 表示改写最后一条）。
+
+        解析层一直认得「改」，但 `_dispatch` 里没有这一支，于是指令被静默丢掉。
+        """
+        notes = self.state.notes
+        if not notes:
+            self.notify("还没有笔记可改。", "error")
+            return
+        idx = cmd.index if cmd.index and cmd.index > 0 else len(notes)
+        if idx > len(notes):
+            self.notify(f"记事簿上没有第 {idx} 条。", "error")
+            return
+        text = cmd.arg.strip()
+        if not text:
+            self.notify("要改成什么？例如：改 2 香炉里有朱砂", "error")
+            return
+        notes[idx - 1] = text
+        self.notify(f"第 {idx} 条改成了：{truncate(text, 24)}", "ok")
 
     def _cmd_act(self, cmd: Command) -> None:
         """把 ask/show/go/accuse/back 落到当前选项表上。"""
@@ -427,8 +455,9 @@ class GameApp:
             self._close_dossier()
             return
         if cmd.kind == "title":
-            if not self.editor.buffer and cmd.arg:
-                self.state.dossier_titles[self.state.open_dossier or ""] = cmd.arg
+            # `arg` 是时辰码、`what` 才是标题正文；写 `arg` 会把档号当成标题。
+            if not self.editor.buffer and cmd.what:
+                self.state.dossier_titles[self.state.open_dossier or ""] = cmd.what
                 self.notify("换了个标题。", "ok")
             return
         if cmd.kind == "act":

@@ -346,10 +346,11 @@
       }
       this.state.log.push(["dossier", body]);
       upd.narration.push(body);
+      // 与 Python 引擎同构：效果只在第一次打开时结算。
+      this.applyEffect(d.effect, upd);
     } else {
       this.state.log.push(["system", "重阅 " + did + " · " + this.titleOfDossier(did)]);
     }
-    this.applyEffect(d.effect, upd);
     for (var i = 0; i < (d.links || []).length; i++) {
       this.collectDossier(d.links[i], upd, false);
     }
