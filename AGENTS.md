@@ -106,6 +106,11 @@ python tools/audit_story.py 30000        # 可达性：枚举状态图 + 20 条�
 python tools/audit_logic.py              # 逻辑体检：后门/剧透面/刷分/死胡同/结局判定
 ```
 
+> **这六条本地不必默认全跑。** `audit_story.py` 是唯一吃内存的一条——它要在内存里
+> 穷举整张状态图并给每个状态做指纹去重，步数预算越大驻留得越多。
+> `.github/workflows/gates.yml` 已经每次 push 自动跑全套（Windows + Linux 两条腿），
+> 本地按需单跑某一条就够，别默认全套。
+
 预期输出（当前基线）：
 
 - `Ran 235 tests … OK`
