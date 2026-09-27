@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#F5E6D3">
+<meta name="description" content="宫闱迷踪 · 古风宫廷推理 —— 一份单文件的网页探案游戏：敲档号阅卷宗，凭证据指认真凶。">
+<title>宫闱迷踪 · 古风宫廷推理</title>
+<style>
+__STYLE__
+</style>
+</head>
+<body data-tab="log">
+<noscript>
+  <p style="padding:24px;font-family:serif">这一卷要开着 JavaScript 才能翻。请在浏览器设置里允许脚本后重开此页。</p>
+</noscript>
+
+<div id="app"></div>
+
+<!-- 剧本数据：与终端版由 tools/audit_web.py 逐步比对，保证同一套判定 -->
+<script id="pack" type="application/json">__PACK__</script>
+<script>
+(function () {
+  var node = document.getElementById("pack");
+  try {
+    window.__GONGWEI_PACK__ = JSON.parse(node.textContent);
+  } catch (err) {
+    document.body.innerHTML = "<p style='padding:20px'>剧本数据读不出来：" + err.message + "</p>";
+  }
+})();
+</script>
+
+<!-- 引擎：gongwei/game/engine.py 的 JS 对等实现（UMD） -->
+<script>
+__GAME_JS__
+</script>
+
+<!-- 界面 -->
+<script>
+__UI_JS__
+</script>
+</body>
+</html>

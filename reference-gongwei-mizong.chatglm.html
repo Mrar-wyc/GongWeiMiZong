@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>宫闱迷踪 — 古风宫廷推理</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        'paper': '#F5E6D3',
+        'paper-dark': '#E8D5B7',
+        'ink': '#2C1810',
+        'ink-light': '#5C4033',
+        'gold': '#C9A961',
+        'gold-dark': '#A68A3D',
+        'crimson': '#8B2C2C',
+        'crimson-dark': '#6B1F1F',
+        'jade': '#5B7A6F',
+        'jade-dark': '#3F5A50',
+      },
+      fontFamily: {
+        'serif': ['"Noto Serif SC"', 'serif'],
+        'display': ['"Ma Shan Zheng"', 'cursive'],
+      }
+    }
+  }
+}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600;700;900&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+<style>
+  body {
+    font-family: 'Noto Serif SC', serif;
+    background-color: #F5E6D3;
+    background-image:
+      radial-gradient(circle at 20% 50%, rgba(201, 169, 97, 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(139, 44, 44, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 50% 20%, rgba(91, 122, 111, 0.05) 0%, transparent 50%);
+  }
+
+  .paper-texture {
+    background-color: #F5E6D3;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(139, 69, 19, 0.02) 2px, rgba(139, 69, 19, 0.02) 4px),
+      radial-gradient(ellipse at top, rgba(201, 169, 97, 0.15), transparent);
+    position: relative;
+  }
+
+  .glass-panel {
+    background: rgba(245, 230, 211, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(201, 169, 97, 0.3);
+    box-shadow:
+      0 4px 30px rgba(44, 24, 16, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+
+  .ancient-border {
+    border: 2px solid #C9A961;
+    border-radius: 12px;
+    position: relative;
+  }
+
+  .ancient-border::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: -1px; right: -1px; bottom: -1px;
+    border: 1px solid rgba(201, 169, 97, 0.4);
+    border-radius: 11px;
+    pointer-events: none;
+  }
+
+  .seal {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    background: #8B2C2C;
+    color: #F5E6D3;
+    border-radius: 8px;
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: 14px;
+    transform: rotate(-5deg);
+    box-shadow: 0 2px 8px rgba(139, 44, 44, 0.3);
+    border: 2px solid #6B1F1F;
+  }
+
+  /* ===== 内联 SVG 图标系统（替代 Font Awesome） ===== */
+  .icon {
+    width: 1em;
+    height: 1em;
+    display: inline-block;
+    vertical-align: -0.125em;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+  }
+
+  /* 顶部导航按钮 */
+  .header-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.85rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(201, 169, 97, 0.45);
+    background: rgba(255, 255, 255, 0.35);
+    color: #5C4033;
+    font-size: 0.875rem;
+    transition: all 0.25s ease;
+    cursor: pointer;
+  }
+  .header-btn:hover {
+    background: rgba(201, 169, 97, 0.18);
+    border-color: #C9A961;
+    color: #2C1810;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(201, 169, 97, 0.25);
+  }
+  .header-btn .icon { color: #A68A3D; }
+  .header-btn:hover .icon { color: #8B2C2C; }
+
+  /* 场景信息小徽章 */
+  .scene-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid rgba(201, 169, 97, 0.45);
+    background: rgba(255, 255, 255, 0.35);
+    color: #5C4033;
+    font-size: 0.75rem;
+  }
+  .scene-chip .icon { color: #A68A3D; }
+
+  /* 面板标题装饰图标 */
+  .ornament-icon {
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #C9A961;
+    flex-shrink: 0;
+  }
+
+  /* 线索类型图标容器 */
+  .clue-icon {
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    flex-shrink: 0;
+    font-size: 14px;
+  }
+  .clue-icon-poison { background: rgba(91, 122, 111, 0.15); color: #3F5A50; border: 1px solid rgba(91, 122, 111, 0.3); }
+  .clue-icon-lock   { background: rgba(139, 44, 44, 0.12); color: #6B1F1F; border: 1px solid rgba(139, 44, 44, 0.3); }
+  .clue-icon-fire   { background: rgba(201, 169, 97, 0.2); color: #A68A3D; border: 1px solid rgba(201, 169, 97, 0.4); }
+  .clue-icon-trace  { background: rgba(92, 64, 51, 0.12);  color: #5C4033; border: 1px solid rgba(92, 64, 51, 0.3); }
+  .clue-icon-letter { background: rgba(139, 44, 44, 0.12); color: #8B2C2C; border: 1px solid rgba(139, 44, 44, 0.3); }
+
+  /* 弹窗关闭按钮 */
+  .close-btn {
+    width: 2.25rem;
+    height: 2.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: 1px solid rgba(201, 169, 97, 0.45);
+    background: rgba(255, 255, 255, 0.35);
+    color: #5C4033;
+    font-size: 0.95rem;
+    transition: all 0.25s ease;
+    cursor: pointer;
+  }
+  .close-btn:hover {
+    background: rgba(139, 44, 44, 0.08);
+    border-color: #8B2C2C;
+    color: #8B2C2C;
+    transform: rotate(90deg);
+  }
+
+  /* 选项按钮 */
+  .choice-btn {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  .choice-btn::before {
+    content: '';
+    position: absolute;
+    left: -100%;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(201, 169, 97, 0.2), transparent);
+    transition: left 0.5s ease;
+  }
+  .choice-btn:hover::before { left: 100%; }
+  .choice-btn:hover {
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(201, 169, 97, 0.3);
+  }
+
+  .clue-card { transition: all 0.3s ease; cursor: pointer; }
+  .clue-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(44, 24, 16, 0.15);
+  }
+
+  .affinity-bar {
+    height: 6px;
+    background: rgba(139, 44, 44, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .affinity-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #8B2C2C, #C9A961);
+    border-radius: 3px;
+    transition: width 0.5s ease;
+  }
+
+  .chapter-decoration { position: relative; text-align: center; }
+  .chapter-decoration::before,
+  .chapter-decoration::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #C9A961, transparent);
+  }
+  .chapter-decoration::before { left: 0; }
+  .chapter-decoration::after { right: 0; }
+
+  .item-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(201, 169, 97, 0.1);
+    border: 1px solid rgba(201, 169, 97, 0.3);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+  }
+  .item-icon:hover {
+    background: rgba(201, 169, 97, 0.2);
+    transform: scale(1.05);
+  }
+
+  .modal-enter { animation: modalEnter 0.3s ease; }
+  @keyframes modalEnter {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .fade-in { animation: fadeIn 0.5s ease; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: #E8D5B7; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb { background: #C9A961; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #A68A3D; }
+
+  @media (max-width: 768px) {
+    .desktop-only { display: none; }
+  }
+  @media (min-width: 769px) {
+    .mobile-only { display: none; }
+  }
+</style>
+</head>
+<body class="min-h-screen paper-texture">
+
+<!-- ===== SVG 图标库（内联，无外部依赖，绝不再出现叉叉） ===== -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="i-scroll" viewBox="0 0 24 24">
+    <path d="M19 17V5a2 2 0 0 0-2-2H4"/>
+    <path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/>
+  </symbol>
+  <symbol id="i-needle" viewBox="0 0 24 24">
+    <path d="m18 2 4 4"/><path d="m17 7 3-3"/><path d="m14 4 6 6"/>
+    <path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5"/>
+    <path d="m9 11 4 4"/><path d="m5 19-3 3"/>
+  </symbol>
+  <symbol id="i-book" viewBox="0 0 24 24">
+    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+  </symbol>
+  <symbol id="i-question" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="10"/>
+    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+    <line x1="12" y1="17" x2="12.01" y2="17"/>
+  </symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24">
+    <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+    <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+  </symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+  </symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24">
+    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+  </symbol>
+  <symbol id="i-footprint" viewBox="0 0 24 24">
+    <path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z"/>
+    <path d="M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z"/>
+    <path d="M16 17h4"/><path d="M4 13h4"/>
+  </symbol>
+  <symbol id="i-feather" viewBox="0 0 24 24">
+    <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/>
+    <line x1="16" y1="8" x2="2" y2="22"/>
+    <line x1="17.5" y1="15" x2="9" y2="15"/>
+  </symbol>
+  <symbol id="i-bulb" viewBox="0 0 24 24">
+    <path d="M9 18h6"/><path d="M10 22h4"/>
+    <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5.76.76 1.23 1.52 1.41 2.5"/>
+  </symbol>
+  <symbol id="i-user" viewBox="0 0 24 24">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+    <circle cx="12" cy="7" r="4"/>
+  </symbol>
+  <symbol id="i-crown" viewBox="0 0 24 24">
+    <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.735H5.81a1 1 0 0 1-.957-.735L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/>
+    <path d="M5 21h14"/>
+  </symbol>
+  <symbol id="i-sparkles" viewBox="0 0 24 24">
+    <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
+    <path d="M20 3v4"/><path d="M22 5h-4"/>
+  </symbol>
+  <symbol id="i-gem" viewBox="0 0 24 24">
+    <path d="M6 3h12l4 6-10 13L2 9Z"/>
+    <path d="M11 3 8 9l4 13 4-13-3-6"/>
+    <path d="M2 9h20"/>
+  </symbol>
+  <symbol id="i-trend" viewBox="0 0 24 24">
+    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+    <polyline points="16 7 22 7 22 13"/>
+  </symbol>
+  <symbol id="i-close" viewBox="0 0 24 24">
+    <line x1="18" y1="6" x2="6" y2="18"/>
+    <line x1="6" y1="6" x2="18" y2="18"/>
+  </symbol>
+  <symbol id="i-gavel" viewBox="0 0 24 24">
+    <path d="m14 13-7.5 7.5c-.83.83-2.17.83-3 0a2.12 2.12 0 0 1 0-3L11 10"/>
+    <path d="m16 16 6-6"/><path d="m8 8 6-6"/>
+    <path d="m9 7 8 8"/><path d="m21 11-8-8"/>
+  </symbol>
+  <symbol id="i-keyboard" viewBox="0 0 24 24">
+    <rect width="20" height="16" x="2" y="4" rx="2"/>
+    <path d="M6 8h.01"/><path d="M10 8h.01"/><path d="M14 8h.01"/><path d="M18 8h.01"/>
+    <path d="M6 12h.01"/><path d="M10 12h.01"/><path d="M14 12h.01"/><path d="M18 12h.01"/>
+    <path d="M7 16h10"/>
+  </symbol>
+  <symbol id="i-volume" viewBox="0 0 24 24">
+    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+  </symbol>
+  <symbol id="i-dot" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="6" fill="currentColor" stroke="none"/>
+  </symbol>
+  <symbol id="i-check" viewBox="0 0 24 24">
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+    <polyline points="22 4 12 14.01 9 11.01"/>
+  </symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+    <circle cx="12" cy="10" r="3"/>
+  </symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="10"/>
+    <polyline points="12 6 12 12 16 14"/>
+  </symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </symbol>
+  <symbol id="i-chevron-up" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></symbol>
+  <symbol id="i-bookopen" viewBox="0 0 24 24">
+    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+  </symbol>
+  <symbol id="i-compass" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="10"/>
+    <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+  </symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+  </symbol>
+  <symbol id="i-briefcase" viewBox="0 0 24 24">
+    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+  </symbol>
+  <symbol id="i-search" viewBox="0 0 24 24">
+    <circle cx="11" cy="11" r="8"/>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+  </symbol>
+  <symbol id="i-users" viewBox="0 0 24 24">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+    <circle cx="9" cy="7" r="4"/>
+    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </symbol>
+  <symbol id="i-save" viewBox="0 0 24 24">
+    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+    <polyline points="17 21 17 13 7 13 7 21"/>
+    <polyline points="7 3 7 8 15 8"/>
+  </symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24">
+    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+  </symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+  </symbol>
+</svg>
+
+<!-- 顶部导航栏 -->
+<header class="glass-panel sticky top-0 z-50 px-4 py-3 md:px-8 md:py-4">
+  <div class="max-w-7xl mx-auto flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="seal text-xs">宫闱<br>迷踪</div>
+      <div>
+        <h1 class="font-display text-xl md:text-2xl text-ink">宫闱迷踪</h1>
+        <p class="text-xs text-ink-light hidden md:block">古风宫廷推理 · 第一章</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2 md:gap-3">
+      <button onclick="openSaveModal()" class="header-btn">
+        <svg class="icon text-base"><use href="#i-save"/></svg>
+        <span class="hidden md:inline">存档</span>
+      </button>
+      <button onclick="openLoadModal()" class="header-btn">
+        <svg class="icon text-base"><use href="#i-folder"/></svg>
+        <span class="hidden md:inline">读档</span>
+      </button>
+      <button onclick="openSettings()" class="header-btn">
+        <svg class="icon text-base"><use href="#i-gear"/></svg>
+        <span class="hidden md:inline">设置</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- 主游戏区域 -->
+<main class="max-w-7xl mx-auto px-4 py-6 md:px-8 md:py-8">
+
+  <!-- 章节标题 -->
+  <div class="chapter-decoration mb-6 md:mb-8">
+    <div class="inline-block">
+      <p class="text-xs text-gold-dark tracking-widest mb-1">CHAPTER ONE</p>
+      <h2 class="font-display text-2xl md:text-3xl text-ink">第一章 · 凤仪殿血案</h2>
+      <p class="text-sm text-ink-light mt-1">永安三年 · 春 · 子时</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- 左侧：主故事区域 -->
+    <div class="lg:col-span-2 space-y-6">
+
+      <!-- 场景描述 -->
+      <div class="glass-panel ancient-border p-6 md:p-8 rounded-xl">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="ornament-icon"><svg class="icon text-xl"><use href="#i-bookopen"/></svg></div>
+          <span class="text-sm text-ink-light font-medium">场景叙述</span>
+        </div>
+
+        <div id="story-text" class="text-ink leading-relaxed text-base md:text-lg space-y-4">
+          <p class="fade-in">夜色如墨，凤仪殿内烛火摇曳。</p>
+          <p class="fade-in">你——大理寺少卿沈墨白，被急召入宫。太监总管王德海在殿外迎接你，面色惨白，声音颤抖：</p>
+          <p class="fade-in font-display text-lg text-crimson">"沈大人，您可算来了……贤妃娘娘她……她在寝殿内……"</p>
+          <p class="fade-in">王德海说不下去了，只是用颤抖的手指向殿门。你推门而入，一股浓重的血腥味扑面而来。</p>
+          <p class="fade-in">贤妃娘娘倒卧在床榻之侧，面色青紫，嘴角残留黑色血迹。殿内门窗皆从内侧锁闭，香炉中余烟袅袅，案上尚有半盏残茶。</p>
+          <p class="fade-in">这便是你踏入这深宫迷局的第一步。从此刻起，每一个选择都将影响你的命运，乃至整个王朝的走向……</p>
+        </div>
+
+        <!-- 当前场景信息 -->
+        <div class="mt-6 pt-4 border-t border-gold/20 flex flex-wrap items-center gap-3">
+          <span class="scene-chip">
+            <svg class="icon"><use href="#i-pin"/></svg> 凤仪殿 · 内殿
+          </span>
+          <span class="scene-chip">
+            <svg class="icon"><use href="#i-clock"/></svg> 子时三刻
+          </span>
+          <span class="scene-chip">
+            <svg class="icon"><use href="#i-moon"/></svg> 月黑风高
+          </span>
+        </div>
+      </div>
+
+      <!-- 选项区域 -->
+      <div class="glass-panel ancient-border p-6 md:p-8 rounded-xl">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="ornament-icon"><svg class="icon text-xl"><use href="#i-compass"/></svg></div>
+          <span class="text-sm text-ink-light font-medium">你的选择</span>
+        </div>
+
+        <div class="space-y-3" id="choices">
+          <button onclick="makeChoice(1)" class="choice-btn w-full text-left p-4 glass-panel rounded-lg text-ink hover:border-gold border border-transparent transition">
+            <div class="flex items-start gap-3">
+              <span class="text-gold font-display text-lg">壹</span>
+              <div>
+                <p class="font-medium">检查贤妃遗体，寻找死因线索</p>
+                <p class="text-xs text-ink-light mt-1">仔细查验伤口与中毒迹象</p>
+              </div>
+            </div>
+          </button>
+
+          <button onclick="makeChoice(2)" class="choice-btn w-full text-left p-4 glass-panel rounded-lg text-ink hover:border-gold border border-transparent transition">
+            <div class="flex items-start gap-3">
+              <span class="text-gold font-display text-lg">贰</span>
+              <div>
+                <p class="font-medium">询问王德海案发经过</p>
+                <p class="text-xs text-ink-light mt-1">从目击者口中获取信息</p>
+              </div>
+            </div>
+          </button>
+
+          <button onclick="makeChoice(3)" class="choice-btn w-full text-left p-4 glass-panel rounded-lg text-ink hover:border-gold border border-transparent transition">
+            <div class="flex items-start gap-3">
+              <span class="text-gold font-display text-lg">叁</span>
+              <div>
+                <p class="font-medium">检查殿内门窗与密室构造</p>
+                <p class="text-xs text-ink-light mt-1">验证密室杀人的可能性</p>
+              </div>
+            </div>
+          </button>
+
+          <button onclick="makeChoice(4)" class="choice-btn w-full text-left p-4 glass-panel rounded-lg text-ink hover:border-gold border border-transparent transition">
+            <div class="flex items-start gap-3">
+              <span class="text-gold font-display text-lg">肆</span>
+              <div>
+                <p class="font-medium">检查案上残茶与香炉</p>
+                <p class="text-xs text-ink-light mt-1">分析毒物来源</p>
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- 对话记录 -->
+      <div class="glass-panel ancient-border p-6 md:p-8 rounded-xl">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <div class="ornament-icon"><svg class="icon text-xl"><use href="#i-chat"/></svg></div>
+            <span class="text-sm text-ink-light font-medium">对话记录</span>
+          </div>
+          <button onclick="toggleDialogHistory(this)" class="text-xs text-gold hover:text-gold-dark transition flex items-center gap-1">
+            <svg class="icon"><use href="#i-chevron-up" id="dialog-chevron"/></svg> 收起
+          </button>
+        </div>
+
+        <div id="dialog-history" class="space-y-3 text-sm">
+          <div class="p-3 bg-paper-dark/30 rounded-lg">
+            <p class="text-xs text-gold-dark mb-1">王德海 · 太监总管</p>
+            <p class="text-ink">"沈大人，您可算来了……贤妃娘娘她……她在寝殿内……"</p>
+          </div>
+          <div class="p-3 bg-paper-dark/30 rounded-lg text-right">
+            <p class="text-xs text-jade-dark mb-1">沈墨白 · 你</p>
+            <p class="text-ink">"带路。"</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 右侧：游戏面板 -->
+    <div class="space-y-6">
+
+      <!-- 移动端标签切换 -->
+      <div class="mobile-only flex gap-2 glass-panel rounded-lg p-1">
+        <button onclick="switchTab('inventory')" id="tab-inventory" class="flex-1 py-2 text-sm rounded-md bg-gold/20 text-ink font-medium">物品</button>
+        <button onclick="switchTab('clues')" id="tab-clues" class="flex-1 py-2 text-sm rounded-md text-ink-light">线索</button>
+        <button onclick="switchTab('characters')" id="tab-characters" class="flex-1 py-2 text-sm rounded-md text-ink-light">人物</button>
+      </div>
+
+      <!-- 物品栏 -->
+      <div id="panel-inventory" class="glass-panel ancient-border p-5 rounded-xl">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="ornament-icon"><svg class="icon text-xl"><use href="#i-briefcase"/></svg></div>
+          <h3 class="font-display text-lg text-ink">随身物品</h3>
+        </div>
+
+        <div class="grid grid-cols-4 gap-3">
+          <div class="item-icon group relative" title="官凭文书">
+            <svg class="icon text-xl text-gold"><use href="#i-scroll"/></svg>
+            <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-ink text-paper text-xs rounded opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap">官凭文书</div>
+          </div>
+          <div class="item-icon group relative" title="验尸银针">
+            <svg class="icon text-xl text-crimson"><use href="#i-needle"/></svg>
+            <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-ink text-paper text-xs rounded opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap">验尸银针</div>
+          </div>
+          <div class="item-icon group relative" title="记事簿">
+            <svg class="icon text-xl text-jade"><use href="#i-book"/></svg>
+            <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-ink text-paper text-xs rounded opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap">记事簿</div>
+          </div>
+          <div class="item-icon group relative opacity-40" title="未获得">
+            <svg class="icon text-xl text-ink-light"><use href="#i-question"/></svg>
+          </div>
+        </div>
+
+        <p class="text-xs text-ink-light mt-3 text-center">3 / 12 件物品</p>
+      </div>
+
+      <!-- 线索推理 -->
+      <div id="panel-clues" class="glass-panel ancient-border p-5 rounded-xl hidden md:block">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <div class="ornament-icon"><svg class="icon text-xl"><use href="#i-search"/></svg></div>
+            <h3 class="font-display text-lg text-ink">线索推理</h3>
+          </div>
+          <span class="text-xs text-ink-light bg-paper-dark/50 px-2 py-1 rounded">5 / 20</span>
+        </div>
+
+        <div class="space-y-2">
+          <div class="clue-card p-3 bg-paper-dark/30 rounded-lg border border-gold/20">
+            <div class="flex items-start gap-2">
+              <div class="clue-icon clue-icon-poison"><svg class="icon"><use href="#i-leaf"/></svg></div>
+              <div>
+                <p class="text-sm font-medium text-ink">残茶中的异味</p>
+                <p class="text-xs text-ink-light mt-1">茶水中隐约有苦杏仁味，疑似氰化物中毒</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="clue-card p-3 bg-paper-dark/30 rounded-lg border border-gold/20">
+            <div class="flex items-start gap-2">
+              <div class="clue-icon clue-icon-lock"><svg class="icon"><use href="#i-lock"/></svg></div>
+              <div>
+                <p class="text-sm font-medium text-ink">门窗反锁</p>
+                <p class="text-xs text-ink-light mt-1">殿门从内侧栓死，窗户亦然，形成密室</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="clue-card p-3 bg-paper-dark/30 rounded-lg border border-gold/20">
+            <div class="flex items-start gap-2">
+              <div class="clue-icon clue-icon-fire"><svg class="icon"><use href="#i-flame"/></svg></div>
+              <div>
+                <p class="text-sm font-medium text-ink">香炉余烟</p>
+                <p class="text-xs text-ink-light mt-1">龙涎香中混有不明成分，尚待化验</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="clue-card p-3 bg-paper-dark/30 rounded-lg border border-gold/20">
+            <div class="flex items-start gap-2">
+              <div class="clue-icon clue-icon-trace"><svg class="icon"><use href="#i-footprint"/></svg></div>
+              <div>
+                <p class="text-sm font-medium text-ink">地面足迹</p>
+                <p class="text-xs text-ink-light mt-1">窗下发现半枚泥印，非宫中鞋履纹样</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="clue-card p-3 bg-paper-dark/30 rounded-lg border border-gold/20">
+            <div class="flex items-start gap-2">
+              <div class="clue-icon clue-icon-letter"><svg class="icon"><use href="#i-feather"/></svg></div>
+              <div>
+                <p class="text-sm font-medium text-ink">枕下密信</p>
+                <p class="text-xs text-ink-light mt-1">贤妃枕下藏有半封未写完的密信</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="openReasoningPanel()" class="w-full mt-4 py-2 bg-gold/20 hover:bg-gold/30 text-ink rounded-lg text-sm font-medium transition flex items-center justify-center gap-2">
+          <svg class="icon"><use href="#i-bulb"/></svg> 开始推理
+        </button>
+      </div>
+
+      <!-- 人物关系 -->
+      <div id="panel-characters" class="glass-panel ancient-border p-5 rounded-xl hidden md:block">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="ornament-icon"><svg class="icon text-xl"><use href="#i-users"/></svg></div>
+          <h3 class="font-display text-lg text-ink">人物关系</h3>
+        </div>
+
+        <div class="space-y-4">
+          <!-- 王德海 -->
+          <div class="p-3 bg-paper-dark/30 rounded-lg">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="w-10 h-10 rounded-full bg-crimson/15 border border-crimson/25 flex items-center justify-center">
+                <svg class="icon text-lg text-crimson"><use href="#i-user"/></svg>
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-medium text-ink">王德海</p>
+                <p class="text-xs text-ink-light">太监总管</p>
+              </div>
+            </div>
+            <div class="affinity-bar"><div class="affinity-fill" style="width: 45%"></div></div>
+            <div class="flex justify-between text-xs mt-1">
+              <span class="text-ink-light">信任度</span>
+              <span class="text-gold-dark">45 / 100</span>
+            </div>
+          </div>
+
+          <!-- 皇后 -->
+          <div class="p-3 bg-paper-dark/30 rounded-lg">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="w-10 h-10 rounded-full bg-gold/15 border border-gold/30 flex items-center justify-center">
+                <svg class="icon text-lg text-gold-dark"><use href="#i-crown"/></svg>
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-medium text-ink">皇后萧氏</p>
+                <p class="text-xs text-ink-light">中宫之主</p>
+              </div>
+            </div>
+            <div class="affinity-bar"><div class="affinity-fill" style="width: 30%"></div></div>
+            <div class="flex justify-between text-xs mt-1">
+              <span class="text-ink-light">信任度</span>
+              <span class="text-gold-dark">30 / 100</span>
+            </div>
+          </div>
+
+          <!-- 贵妃 -->
+          <div class="p-3 bg-paper-dark/30 rounded-lg">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="w-10 h-10 rounded-full bg-jade/15 border border-jade/30 flex items-center justify-center">
+                <svg class="icon text-lg text-jade-dark"><use href="#i-sparkles"/></svg>
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-medium text-ink">贵妃柳氏</p>
+                <p class="text-xs text-ink-light">四妃之首</p>
+              </div>
+            </div>
+            <div class="affinity-bar"><div class="affinity-fill" style="width: 20%"></div></div>
+            <div class="flex justify-between text-xs mt-1">
+              <span class="text-ink-light">信任度</span>
+              <span class="text-gold-dark">20 / 100</span>
+            </div>
+          </div>
+
+          <!-- 皇帝 -->
+          <div class="p-3 bg-paper-dark/30 rounded-lg">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="w-10 h-10 rounded-full bg-ink/10 border border-ink/20 flex items-center justify-center">
+                <svg class="icon text-lg text-ink"><use href="#i-gem"/></svg>
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-medium text-ink">皇帝萧衍</p>
+                <p class="text-xs text-ink-light">九五之尊</p>
+              </div>
+            </div>
+            <div class="affinity-bar"><div class="affinity-fill" style="width: 50%"></div></div>
+            <div class="flex justify-between text-xs mt-1">
+              <span class="text-ink-light">信任度</span>
+              <span class="text-gold-dark">50 / 100</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 游戏进度 -->
+      <div class="glass-panel ancient-border p-5 rounded-xl">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="ornament-icon"><svg class="icon text-xl"><use href="#i-trend"/></svg></div>
+          <h3 class="font-display text-lg text-ink">游戏进度</h3>
+        </div>
+
+        <div class="space-y-3">
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-ink-light">章节进度</span>
+              <span class="text-gold-dark">1 / 8 章</span>
+            </div>
+            <div class="affinity-bar"><div class="affinity-fill" style="width: 12.5%"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-ink-light">线索收集</span>
+              <span class="text-gold-dark">5 / 20 条</span>
+            </div>
+            <div class="affinity-bar"><div class="affinity-fill" style="width: 25%"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-ink-light">推理完成</span>
+              <span class="text-gold-dark">0 / 5 个</span>
+            </div>
+            <div class="affinity-bar"><div class="affinity-fill" style="width: 0%"></div></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- 存档弹窗 -->
+<div id="save-modal" class="fixed inset-0 bg-ink/50 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+  <div class="glass-panel ancient-border rounded-xl p-6 md:p-8 max-w-md w-full modal-enter">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-display text-xl text-ink">保存进度</h3>
+      <button onclick="closeSaveModal()" class="close-btn" aria-label="关闭">
+        <svg class="icon"><use href="#i-close"/></svg>
+      </button>
+    </div>
+
+    <div class="space-y-3">
+      <div class="p-4 bg-paper-dark/30 rounded-lg cursor-pointer hover:bg-paper-dark/50 transition">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="font-medium text-ink">存档位 一</p>
+            <p class="text-xs text-ink-light mt-1">第一章 · 凤仪殿血案 · 子时三刻</p>
+          </div>
+          <span class="text-xs text-gold-dark">2024-01-15 14:30</span>
+        </div>
+      </div>
+      <div class="p-4 bg-paper-dark/30 rounded-lg cursor-pointer hover:bg-paper-dark/50 transition">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="font-medium text-ink">存档位 二</p>
+            <p class="text-xs text-ink-light mt-1">空</p>
+          </div>
+          <span class="text-xs text-ink-light">—</span>
+        </div>
+      </div>
+      <div class="p-4 bg-paper-dark/30 rounded-lg cursor-pointer hover:bg-paper-dark/50 transition">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="font-medium text-ink">存档位 三</p>
+            <p class="text-xs text-ink-light mt-1">空</p>
+          </div>
+          <span class="text-xs text-ink-light">—</span>
+        </div>
+      </div>
+    </div>
+
+    <button onclick="saveGame()" class="w-full mt-4 py-3 bg-gold hover:bg-gold-dark text-paper rounded-lg font-medium transition flex items-center justify-center gap-2">
+      <svg class="icon"><use href="#i-save"/></svg> 保存到当前存档位
+    </button>
+  </div>
+</div>
+
+<!-- 读档弹窗 -->
+<div id="load-modal" class="fixed inset-0 bg-ink/50 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+  <div class="glass-panel ancient-border rounded-xl p-6 md:p-8 max-w-md w-full modal-enter">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-display text-xl text-ink">读取存档</h3>
+      <button onclick="closeLoadModal()" class="close-btn" aria-label="关闭">
+        <svg class="icon"><use href="#i-close"/></svg>
+      </button>
+    </div>
+
+    <div class="space-y-3">
+      <div class="p-4 bg-paper-dark/30 rounded-lg cursor-pointer hover:bg-paper-dark/50 transition">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="font-medium text-ink">存档位 一</p>
+            <p class="text-xs text-ink-light mt-1">第一章 · 凤仪殿血案 · 子时三刻</p>
+          </div>
+          <span class="text-xs text-gold-dark">2024-01-15 14:30</span>
+        </div>
+      </div>
+      <div class="p-4 bg-paper-dark/20 rounded-lg opacity-50">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="font-medium text-ink">存档位 二</p>
+            <p class="text-xs text-ink-light mt-1">空</p>
+          </div>
+          <span class="text-xs text-ink-light">—</span>
+        </div>
+      </div>
+      <div class="p-4 bg-paper-dark/20 rounded-lg opacity-50">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="font-medium text-ink">存档位 三</p>
+            <p class="text-xs text-ink-light mt-1">空</p>
+          </div>
+          <span class="text-xs text-ink-light">—</span>
+        </div>
+      </div>
+    </div>
+
+    <button onclick="loadGame()" class="w-full mt-4 py-3 bg-gold hover:bg-gold-dark text-paper rounded-lg font-medium transition flex items-center justify-center gap-2">
+      <svg class="icon"><use href="#i-folder"/></svg> 读取选中存档
+    </button>
+  </div>
+</div>
+
+<!-- 推理面板 -->
+<div id="reasoning-modal" class="fixed inset-0 bg-ink/50 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+  <div class="glass-panel ancient-border rounded-xl p-6 md:p-8 max-w-2xl w-full modal-enter max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-display text-xl text-ink">推理面板</h3>
+      <button onclick="closeReasoningPanel()" class="close-btn" aria-label="关闭">
+        <svg class="icon"><use href="#i-close"/></svg>
+      </button>
+    </div>
+
+    <p class="text-sm text-ink-light mb-4">选择线索进行组合推理，揭开真相的一角……</p>
+
+    <div class="grid grid-cols-2 gap-3 mb-6">
+      <div class="p-3 bg-paper-dark/30 rounded-lg border-2 border-gold cursor-pointer">
+        <div class="flex items-center gap-2">
+          <div class="clue-icon clue-icon-poison"><svg class="icon"><use href="#i-leaf"/></svg></div>
+          <span class="text-sm text-ink">残茶异味</span>
+        </div>
+      </div>
+      <div class="p-3 bg-paper-dark/30 rounded-lg border-2 border-transparent cursor-pointer">
+        <div class="flex items-center gap-2">
+          <div class="clue-icon clue-icon-lock"><svg class="icon"><use href="#i-lock"/></svg></div>
+          <span class="text-sm text-ink">门窗反锁</span>
+        </div>
+      </div>
+      <div class="p-3 bg-paper-dark/30 rounded-lg border-2 border-transparent cursor-pointer">
+        <div class="flex items-center gap-2">
+          <div class="clue-icon clue-icon-fire"><svg class="icon"><use href="#i-flame"/></svg></div>
+          <span class="text-sm text-ink">香炉余烟</span>
+        </div>
+      </div>
+      <div class="p-3 bg-paper-dark/30 rounded-lg border-2 border-transparent cursor-pointer">
+        <div class="flex items-center gap-2">
+          <div class="clue-icon clue-icon-trace"><svg class="icon"><use href="#i-footprint"/></svg></div>
+          <span class="text-sm text-ink">地面足迹</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-4 bg-ink/5 rounded-lg mb-4">
+      <p class="text-sm text-ink-light">已选择线索：<span class="text-ink font-medium">残茶异味</span></p>
+    </div>
+
+    <div class="space-y-2">
+      <p class="text-sm font-medium text-ink mb-2">推理结论：</p>
+      <button class="w-full text-left p-3 bg-paper-dark/30 rounded-lg hover:bg-paper-dark/50 transition text-sm text-ink">
+        贤妃系饮下毒茶而亡，凶手利用密室制造自杀假象
+      </button>
+      <button class="w-full text-left p-3 bg-paper-dark/30 rounded-lg hover:bg-paper-dark/50 transition text-sm text-ink">
+        毒茶系贤妃自饮，香炉中的毒烟才是真正死因
+      </button>
+      <button class="w-full text-left p-3 bg-paper-dark/30 rounded-lg hover:bg-paper-dark/50 transition text-sm text-ink">
+        残茶与香炉均为障眼法，真凶另有作案手法
+      </button>
+    </div>
+
+    <button onclick="submitReasoning()" class="w-full mt-4 py-3 bg-crimson hover:bg-crimson-dark text-paper rounded-lg font-medium transition flex items-center justify-center gap-2">
+      <svg class="icon"><use href="#i-gavel"/></svg> 提交推理
+    </button>
+  </div>
+</div>
+
+<!-- 底部信息 -->
+<footer class="glass-panel mt-8 py-4 px-4 md:px-8">
+  <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2 text-xs text-ink-light">
+    <p>© 宫闱迷踪 · 古风宫廷推理文字冒险</p>
+    <div class="flex items-center gap-4">
+      <span class="flex items-center gap-1.5"><svg class="icon"><use href="#i-keyboard"/></svg> 键盘快捷键</span>
+      <span class="flex items-center gap-1.5"><svg class="icon"><use href="#i-volume"/></svg> 音效已关闭</span>
+      <span class="flex items-center gap-1.5"><svg class="icon text-jade"><use href="#i-dot"/></svg> 自动存档已开启</span>
+    </div>
+  </div>
+</footer>
+
+<!-- Toast 提示 -->
+<div id="toast" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 hidden">
+  <div class="glass-panel ancient-border px-6 py-3 rounded-lg flex items-center gap-3">
+    <svg class="icon text-xl text-jade"><use href="#i-check"/></svg>
+    <span id="toast-message" class="text-ink text-sm"></span>
+  </div>
+</div>
+
+<script>
+// 游戏状态管理
+const gameState = {
+  chapter: 1,
+  scene: '凤仪殿',
+  time: '子时三刻',
+  inventory: ['官凭文书', '验尸银针', '记事簿'],
+  clues: ['残茶异味', '门窗反锁', '香炉余烟', '地面足迹', '枕下密信'],
+  characters: {
+    '王德海': { trust: 45, role: '太监总管' },
+    '皇后萧氏': { trust: 30, role: '中宫之主' },
+    '贵妃柳氏': { trust: 20, role: '四妃之首' },
+    '皇帝萧衍': { trust: 50, role: '九五之尊' }
+  },
+  choices: [],
+  reasoning: []
+};
+
+// 选择处理
+function makeChoice(choiceId) {
+  const choices = {
+    1: {
+      text: '你俯身检查贤妃遗体。面色青紫，嘴角残留黑色血迹，颈部无勒痕，胸口无外伤。你取出验尸银针，刺入遗体指尖——银针变黑，确系中毒身亡。',
+      clue: '银针验毒结果',
+      trust: { '王德海': 5 }
+    },
+    2: {
+      text: '你转向王德海，询问案发经过。王德海颤声说道："今夜戌时，娘娘遣退了所有宫人，说要独自歇息。亥时末，老奴来送宵夜，敲门不应，方才……方才发现……"',
+      clue: '贤妃最后行踪',
+      trust: { '王德海': -5 }
+    },
+    3: {
+      text: '你仔细检查殿内门窗。殿门从内侧以铁栓锁死，窗户亦从内侧插销闭合。你注意到窗棂上有一处细微的刮痕，似是被利器撬动过。',
+      clue: '窗棂刮痕',
+      trust: {}
+    },
+    4: {
+      text: '你走到案前，端起残茶凑近鼻端——一股苦杏仁味若有若无。你又查看香炉，炉中龙涎香灰尚温，其中似混有不明粉末，色泽微红。',
+      clue: '香炉红色粉末',
+      trust: {}
+    }
+  };
+
+  const choice = choices[choiceId];
+  if (!choice) return;
+
+  const dialogHistory = document.getElementById('dialog-history');
+  const newDialog = document.createElement('div');
+  newDialog.className = 'p-3 bg-paper-dark/30 rounded-lg text-right fade-in';
+  newDialog.innerHTML = `
+    <p class="text-xs text-jade-dark mb-1">沈墨白 · 你</p>
+    <p class="text-ink">${choice.text}</p>
+  `;
+  dialogHistory.appendChild(newDialog);
+
+  const storyText = document.getElementById('story-text');
+  storyText.innerHTML = `<p class="fade-in">${choice.text}</p><p class="fade-in text-ink-light text-sm mt-4">（获得新线索：${choice.clue}）</p>`;
+
+  for (const [name, change] of Object.entries(choice.trust)) {
+    if (gameState.characters[name]) {
+      gameState.characters[name].trust = Math.max(0, Math.min(100, gameState.characters[name].trust + change));
+    }
+  }
+
+  showToast(`获得新线索：${choice.clue}`);
+  updateUI();
+}
+
+function updateUI() {
+  console.log('游戏状态已更新', gameState);
+}
+
+function showToast(message) {
+  const toast = document.getElementById('toast');
+  const toastMessage = document.getElementById('toast-message');
+  toastMessage.textContent = message;
+  toast.classList.remove('hidden');
+  toast.classList.add('fade-in');
+  setTimeout(() => { toast.classList.add('hidden'); }, 3000);
+}
+
+// 存档功能
+function openSaveModal() {
+  document.getElementById('save-modal').classList.remove('hidden');
+  document.getElementById('save-modal').classList.add('flex');
+}
+function closeSaveModal() {
+  document.getElementById('save-modal').classList.add('hidden');
+  document.getElementById('save-modal').classList.remove('flex');
+}
+function saveGame() {
+  const saveData = { state: gameState, timestamp: new Date().toLocaleString('zh-CN') };
+  localStorage.setItem('gongwei_save', JSON.stringify(saveData));
+  closeSaveModal();
+  showToast('游戏进度已保存');
+}
+
+// 读档功能
+function openLoadModal() {
+  document.getElementById('load-modal').classList.remove('hidden');
+  document.getElementById('load-modal').classList.add('flex');
+}
+function closeLoadModal() {
+  document.getElementById('load-modal').classList.add('hidden');
+  document.getElementById('load-modal').classList.remove('flex');
+}
+function loadGame() {
+  const saveData = localStorage.getItem('gongwei_save');
+  if (saveData) {
+    const data = JSON.parse(saveData);
+    Object.assign(gameState, data.state);
+    closeLoadModal();
+    showToast('存档已读取');
+    updateUI();
+  } else {
+    showToast('未找到存档');
+  }
+}
+
+// 推理面板
+function openReasoningPanel() {
+  document.getElementById('reasoning-modal').classList.remove('hidden');
+  document.getElementById('reasoning-modal').classList.add('flex');
+}
+function closeReasoningPanel() {
+  document.getElementById('reasoning-modal').classList.add('hidden');
+  document.getElementById('reasoning-modal').classList.remove('flex');
+}
+function submitReasoning() {
+  closeReasoningPanel();
+  showToast('推理已提交，请等待结果……');
+}
+
+// 设置
+function openSettings() {
+  showToast('设置功能开发中……');
+}
+
+// 对话记录折叠（同步切换箭头图标）
+function toggleDialogHistory(btn) {
+  const history = document.getElementById('dialog-history');
+  const chevron = btn.querySelector('use');
+  if (history.style.display === 'none') {
+    history.style.display = 'block';
+    chevron.setAttribute('href', '#i-chevron-up');
+    btn.lastChild.textContent = ' 收起';
+  } else {
+    history.style.display = 'none';
+    chevron.setAttribute('href', '#i-chevron-down');
+    btn.lastChild.textContent = ' 展开';
+  }
+}
+
+// 移动端标签切换
+function switchTab(tab) {
+  const tabs = ['inventory', 'clues', 'characters'];
+  tabs.forEach(t => {
+    document.getElementById(`panel-${t}`).classList.add('hidden');
+    document.getElementById(`tab-${t}`).classList.remove('bg-gold/20', 'text-ink', 'font-medium');
+    document.getElementById(`tab-${t}`).classList.add('text-ink-light');
+  });
+  document.getElementById(`panel-${tab}`).classList.remove('hidden');
+  document.getElementById(`panel-${tab}`).classList.add('block');
+  document.getElementById(`tab-${tab}`).classList.add('bg-gold/20', 'text-ink', 'font-medium');
+  document.getElementById(`tab-${tab}`).classList.remove('text-ink-light');
+}
+
+// 键盘快捷键
+document.addEventListener('keydown', (e) => {
+  if (e.key >= '1' && e.key <= '4') {
+    makeChoice(parseInt(e.key));
+  } else if (e.key === 's' && e.ctrlKey) {
+    e.preventDefault();
+    openSaveModal();
+  } else if (e.key === 'l' && e.ctrlKey) {
+    e.preventDefault();
+    openLoadModal();
+  }
+});
+
+console.log('宫闱迷踪 · 游戏已启动');
+</script>
+
+</body>
+</html>
