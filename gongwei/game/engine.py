@@ -503,10 +503,28 @@ class GameEngine:
     def topics_for(self, cid: str) -> List[Topic]:
         return self._topic_by_char.get(cid, [])
 
+    def topic_case(self, topic: Topic) -> int:
+        """话题属于哪一案：看它发出的档案落在哪一幕（案号由 ``act_case`` 推）。
+
+        冯保在案②、案③ 都上桌（``Character.case`` 是 (2, 3)），所以按人物分案不够用；
+        而「这个话题会把哪一幕的档案交出去」本来就写在数据里，直接读它。
+        """
+        case = 1
+        for did in topic.effect.add_dossiers or ():
+            if did in self.content.dossiers:
+                case = max(case, self.dossier_case(did))
+        return case
+
+    def topic_belongs_here(self, topic: Topic) -> bool:
+        """后面几案的话题不摆上这一案的桌（否则白拿线索、白收录档案，剧情锁形同虚设）。"""
+        return self.topic_case(topic) <= self.state.case
+
     def _interrogation_choices(self, cid: str) -> List[Tuple[Choice, Optional[str]]]:
         out: List[Tuple[Choice, Optional[str]]] = []
         scene_hall = getattr(self.scene, "hall", "")
         for topic in self.topics_for(cid):
+            if not self.topic_belongs_here(topic):
+                continue                     # 案③ 的问题不摆在案② 的桌上
             gate = self._topic_gate.get(topic.id)
             enabled = True
             hint = ""
@@ -658,11 +676,17 @@ class GameEngine:
         """按规则表取第一个命中的结局（只在本案的规则里挑）。
 
         规则表全不命中时退回「查不出来」——那是剧本里语义上的兜底，
-        而**不是**列表最后一条（最后一条是「辞官」，只能由 resign flag 触发）。
+        而**不是**列表最后一条（每案最后一条才是该案的兜底）。
+
+        本案一条规则都没登记，说明剧本把某条 ``_mk(..., case=)`` 写错了：
+        这时**不能**拿别案的规则来抢（例如 ``state.case=9, accused="HD"``
+        会命中案① 的「不可说」）。
         """
         fallback = "ending_bystander"
         rules = [e for e in self.content.endings if e.case == self.state.case]
         if not rules:
+            if any(e.id == fallback for e in self.content.endings):
+                return fallback
             rules = list(self.content.endings)
         if any(e.id == fallback for e in rules):
             preferred = fallback

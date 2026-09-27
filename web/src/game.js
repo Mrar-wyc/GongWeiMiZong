@@ -299,6 +299,24 @@
     return m[String(d.act)] || 1;
   };
 
+  // 话题属于哪一案：看它发出的档案落在哪一幕。冯保在案②、案③ 都上桌，
+  // 所以按人物分案不够用；「这个话题会把哪一幕的档案交出去」本来就写在数据里。
+  Game.prototype.topicCase = function (topic) {
+    var case_ = 1, ids = (topic.effect && topic.effect.add_dossiers) || [];
+    for (var i = 0; i < ids.length; i++) {
+      var did = ids[i];
+      if (this.content.dossiers[did]) {
+        case_ = Math.max(case_, this.dossierCase(did));
+      }
+    }
+    return case_;
+  };
+
+  // 后面几案的话题不摆上这一案的桌（否则白拿线索、白收录档案，剧情锁形同虚设）。
+  Game.prototype.topicBelongsHere = function (topic) {
+    return this.topicCase(topic) <= this.state.case;
+  };
+
   Game.prototype.canReadDossier = function (did) {
     var d = this.content.dossiers[did];
     if (!d) { return false; }
@@ -527,6 +545,7 @@
     var topics = this.topicsFor(cid);
     for (var i = 0; i < topics.length; i++) {
       var topic = topics[i];
+      if (!this.topicBelongsHere(topic)) { continue; }  // 案③ 的问题不摆在案② 的桌上
       var enabled = true, hint = "";
       if (topic.gate && !evalAst(topic.gate, st)) {
         enabled = false;
@@ -691,7 +710,14 @@
     for (i = 0; i < all.length; i++) {
       if ((all[i].case || 1) === this.state.case) { list.push(all[i]); }
     }
-    if (!list.length) { list = all.slice(); }
+    if (!list.length) {
+      // 与 Python 侧一致：本案一条规则都没登记，是剧本把 case= 写错了；
+      // 这时不能拿别案的规则来抢（案① 的「不可说」会在别案里命中）。
+      for (i = 0; i < all.length; i++) {
+        if (all[i].id === fallback) { return fallback; }
+      }
+      list = all.slice();
+    }
     var preferred = fallback, found = false;
     for (i = 0; i < list.length; i++) {
       if (list[i].id === fallback) { found = true; }

@@ -25,6 +25,17 @@
 一度把 ``ending_pressured`` / ``ending2_pressed`` 这两条**证据薄**的结局漏报成
 死结局 —— 补上路线这一遍，它们就再也不会因为预算而误报。
 
+**从哪儿开始撒网**：只从 ``new_game()`` 出发时，深度优先会在案② 之前耗尽预算
+（实测 400000 步、三十万个状态，最深只到第六幕），案② 后半与案③ 的内容全靠
+那十九条路线兜着 —— 路线没读的档、没走的判决屏就会报「未触达」。所以这里用
+剧本自带的路线前缀造几个**深水起点**（案② 药局前厅 / 案② 结案厅 / 案③ 阁前 /
+案③ 结案厅），每个起点再撒一遍网：从案③ 结案厅往外摸，才摸得到卷尾那四份
+总录，也才走得到「指认贺小五」「指认陆文昭」这两张没人写路线的判决屏。
+
+**「从未解开过的门禁」按 ``(场景, 选项文本)`` 计数**：同一个文本在三个场景里
+各写一遍（`移步 · 药局前厅` 就是），只按文本计数会把「这三个里有一个亮过」
+错当成「每个场景都亮过」，于是漏报。
+
 用法::
 
     python tools/audit_story.py [预算步数] [--lint-only]
@@ -36,7 +47,7 @@ from __future__ import annotations
 
 import sys
 from collections import deque
-from typing import Callable, List, Tuple
+from typing import Callable, List, Optional, Tuple
 
 sys.path.insert(0, ".")
 
@@ -47,32 +58,26 @@ BUDGET = 400000
 
 
 def pack(state) -> dict:
-    """把状态压成一个「重新计算一遍就等价」的最小字典。"""
-    return {
-        "scene": state.scene,
-        "time": state.time,
-        "place": state.place,
-        "clues": list(state.clues),
-        "items_owned": list(state.items_owned),
-        "trust": dict(state.trust),
-        "flags": sorted(state.flags),
-        "visited": sorted(state.visited),
-        "topics_asked": list(state.topics_asked),
-        "accused": state.accused,
-        "score": state.score,
-        "turn": state.turn,
-        # 与 ``GameState.to_save()`` 同形：did -> [read, guessed]。
-        # 只留「读过或猜出来」的，指纹才不会被一堆 False 撑大。
-        "dossiers": {did: [st.read, st.guessed]
-                     for did, st in sorted(state.dossier_states.items())
-                     if st.read or st.guessed},
-    }
+    """把状态压成一个「重新计算一遍就等价」的字典。
+
+    直接取 ``GameState.to_save()``，只摘掉三样纯显示用的东西（卷宗、档名缓存、
+    幕名缓存）——它们不影响任何判定，却会让栈里的每一格都拖着几百行正文。
+
+    **不能少字段**：这个字典就是撒网里「一步之后的世界」。少了 ``case``、
+    ``ending``、``seen_choices``，恢复出来的状态就会和玩家真到的那一格不一样，
+    撒网走出来的结论也就不再作数（历史上 61/63、87/91 的假缺口正是这么来的）。
+    """
+    raw = state.to_save()
+    for key in ("log", "dossier_titles", "act_titles"):
+        raw.pop(key, None)
+    return raw
 
 
 def fingerprint(raw: dict) -> tuple:
     trust = tuple(sorted((cid, v // 20) for cid, v in raw["trust"].items()))
     return (
         raw["scene"],
+        raw["case"],
         tuple(sorted(raw["clues"])),
         tuple(sorted(raw["items_owned"])),
         tuple(raw["flags"]),
@@ -116,8 +121,12 @@ def lint() -> List[str]:
     return problems
 
 
-def search(budget: int, reverse: bool) -> dict:
+def search(budget: int, reverse: bool, seed: Optional[dict] = None) -> dict:
     """深度优先枚举可达状态，返回摸到的东西。
+
+    ``seed`` 是 ``pack()`` 出来的一份状态：给了它就从那儿往外摸，而不是从开局。
+    只从开局出发时，深度优先会被案① 的分支吃光预算（实测最深只到第六幕），
+    案② 后半与案③ 全靠路线兜着 —— 深水起点就是给撒网补上这一段。
 
     为什么要按**两种顺序**各跑一遍：剧本里有两种玩家。一种把能挖的都挖到手再
     结案；另一种问两句就提笔。深度优先只走一条路，顺序枚举时它一头扎进「收集
@@ -132,6 +141,8 @@ def search(budget: int, reverse: bool) -> dict:
     """
     engine = GameEngine(CONTENT, gates=TOPIC_GATES)
     engine.new_game()
+    if seed is not None:
+        engine.state = type(engine.state).from_save(seed, CONTENT)
 
     start = pack(engine.state)
     seen: set = {fingerprint(start)}
@@ -155,19 +166,25 @@ def search(budget: int, reverse: bool) -> dict:
 
         opts = engine.options()
         for opt in opts:
+            spot = (raw["scene"], opt.label)
             if opt.enabled:
-                open_labels.add(opt.label)
+                open_labels.add(spot)
             else:
-                locked_counts[opt.label] = locked_counts.get(opt.label, 0) + 1
+                locked_counts[spot] = locked_counts.get(spot, 0) + 1
         steps: List[Tuple[str, Callable[[], None]]] = [
             (o.label, o.action) for o in opts if o.enabled]
         reads: List[Tuple[str, Callable[[], None]]] = []
-        for did in sorted(CONTENT.dossiers):
-            if engine.state.dossier_read(did):
-                continue
-            if not engine.can_read_dossier(did):
-                continue
-            reads.append((f"阅档 #{did}", (lambda d=did: engine.read_dossier(d))))
+        # 结局屏与判决屏上不再枚举阅档：玩家已经走到头，能读的档在进这一屏之前就
+        # 读得到（``can_read_dossier`` 既不看 ``ending`` 也不看判决屏），在这儿枚举
+        # 只会把预算烧在「先读哪一份」的排列上 —— 实测 4005 步里有 4004 步耗在同一
+        # 个结局屏里，后面的判决屏反而排不上队。撤掉之后撒网既快又能走到最后一个案。
+        if not engine.state.ending and not engine.at_verdict():
+            for did in sorted(CONTENT.dossiers):
+                if engine.state.dossier_read(did):
+                    continue
+                if not engine.can_read_dossier(did):
+                    continue
+                reads.append((f"阅档 #{did}", (lambda d=did: engine.read_dossier(d))))
         if reverse:
             steps.reverse()
             reads.reverse()
@@ -225,7 +242,9 @@ def route_sweep() -> Tuple[dict, List[str]]:
     found: dict = {k: set() for k in
                    ("scenes", "clues", "topics", "endings", "dossiers")}
     broken: List[str] = []
+    opened: set = set()
     for eid, steps in ENDING_ROUTES.items():
+        opened.update(s for s in steps if s[:1] not in ("#", "@", "!"))
         engine = GameEngine(CONTENT, gates=TOPIC_GATES)
         engine.new_game()
         try:
@@ -243,7 +262,37 @@ def route_sweep() -> Tuple[dict, List[str]]:
             found["endings"].add(state.ending)
         found["dossiers"].update(
             did for did, st in state.dossier_states.items() if st.read or st.guessed)
+    found["open"] = opened
     return found, broken
+
+
+def seed_states() -> List[dict]:
+    """造几个「已经走到后半程」的起点，给撒网当第二、第三批根。
+
+    用的都是剧本自带的路线前缀 —— 走一遍就等于「有个玩家真做到了这一步」，
+    于是从那份状态出发的撒网不必再从头把案① 的分支摸一遍。没有这一步，
+    案③ 结案厅之外的分支（比如把卷尾那四份总录一份份读完）永远轮不到预算。
+    """
+    from gongwei.autoplay import (CASE2_ACT6, CASE2_HEAD, CASE2_ROUTE,
+                                  CASE3_ACT9, CASE3_ACT10, CASE3_ENTRY,
+                                  CASE3_HEAD, WalkError, play)
+
+    prefixes = [
+        ("案② 药局前厅", CASE2_HEAD + CASE2_ACT6),
+        ("案② 结案厅", CASE2_HEAD + CASE2_ROUTE),
+        ("案③ 阁前", CASE3_HEAD + [CASE3_ENTRY] + CASE3_ACT9),
+        ("案③ 结案厅", CASE3_HEAD + [CASE3_ENTRY] + CASE3_ACT9 + CASE3_ACT10),
+    ]
+    seeds: List[dict] = []
+    for _name, steps in prefixes:
+        engine = GameEngine(CONTENT, gates=TOPIC_GATES)
+        engine.new_game()
+        try:
+            engine, _ = play(engine, steps)
+        except WalkError:
+            continue
+        seeds.append(pack(engine.state))
+    return seeds
 
 
 def main() -> int:
@@ -263,31 +312,38 @@ def main() -> int:
     if lint_only:
         return 1 if problems else 0
 
+    seed_budget = max(budget // 2, 1)
     forward = search(budget, reverse=False)
     backward = search(budget, reverse=True)
+    seeds = seed_states()
+    seeded = [search(seed_budget, reverse=False, seed=s) for s in seeds]
     routes_found, broken = route_sweep()
-    seen = forward["seen"] | backward["seen"]
-    scenes = forward["scenes"] | backward["scenes"] | routes_found["scenes"]
-    clues = forward["clues"] | backward["clues"] | routes_found["clues"]
-    topics = forward["topics"] | backward["topics"] | routes_found["topics"]
-    endings = forward["endings"] | backward["endings"] | routes_found["endings"]
-    dossiers = forward["dossiers"] | backward["dossiers"] | routes_found["dossiers"]
+
+    runs = [forward, backward] + seeded
+    seen = set().union(*(r["seen"] for r in runs))
+    scenes = set().union(*(r["scenes"] for r in runs)) | routes_found["scenes"]
+    clues = set().union(*(r["clues"] for r in runs)) | routes_found["clues"]
+    topics = set().union(*(r["topics"] for r in runs)) | routes_found["topics"]
+    endings = set().union(*(r["endings"] for r in runs)) | routes_found["endings"]
+    dossiers = set().union(*(r["dossiers"] for r in runs)) | routes_found["dossiers"]
     locked_counts: dict = {}
     open_labels: set = set()
-    for tally in (forward, backward):
-        for label, count in tally["locked"].items():
-            locked_counts[label] = locked_counts.get(label, 0) + count
+    for tally in runs:
+        for spot, count in tally["locked"].items():
+            locked_counts[spot] = locked_counts.get(spot, 0) + count
         open_labels |= tally["open"]
-    moves = forward["moves"] + backward["moves"]
-    max_depth = max(forward["max_depth"], backward["max_depth"])
+    open_labels |= routes_found["open"]
+    moves = sum(r["moves"] for r in runs)
+    max_depth = max(r["max_depth"] for r in runs)
 
     all_items = set(CONTENT.items)
     core_ids = {i.id for i in CONTENT.items.values() if i.core}
     from gongwei.autoplay import ENDING_ROUTES
 
-    print(f"\n展开状态 {len(seen)} 个（两遍共走了 {moves} 步，每遍预算 {budget}，"
-          f"最深 {max_depth} 层；"
-          f"顺序 {forward['states']} / 逆序 {backward['states']} 个状态）")
+    print(f"\n展开状态 {len(seen)} 个（{len(runs)} 遍共走了 {moves} 步，"
+          f"最深 {max_depth} 层；开局两遍各 {budget} 步、"
+          f"{len(seeds)} 口深井各 {seed_budget} 步，"
+          f"另有 {len(ENDING_ROUTES)} 条路线）")
     print(f"[路线] {len(ENDING_ROUTES)} 条结局路线", end="")
     if broken:
         print(f"，{len(broken)} 条走不通：")
@@ -333,12 +389,16 @@ def main() -> int:
     # 只报「**任何状态下都没解开过**」的门禁。单纯被挡很多次不等于死锁：
     # 「已经验过了」「已经推演过了」这类不 repeatable 的动作，后半程每次都被挡，
     # 次数最高恰恰说明它成功过 —— 所以这里用 open_labels 把它们滤掉。
-    never = {label: n for label, n in locked_counts.items()
-             if label not in open_labels}
+    # 键是 ``(场景, 选项文本)``：同一个文本在三个场景里各写一遍时（药局前厅那条
+    # 门禁就是），只按文本算会把「一处亮过」当成「处处亮过」。路线里真点过的
+    # 选项也算亮过 —— 那是有玩家真的走通了。
+    route_labels = routes_found["open"]
+    never = {spot: n for spot, n in locked_counts.items()
+             if spot not in open_labels and spot[1] not in route_labels}
     if never:
         print("\n[从未解开过的门禁] 这些选项在任何状态下都没亮过")
-        for label, count in sorted(never.items(), key=lambda kv: -kv[1]):
-            print(f"   {count:>7} 次被挡  {label}")
+        for (scene_id, label), count in sorted(never.items(), key=lambda kv: -kv[1]):
+            print(f"   {count:>7} 次被挡  {scene_id} · {label}")
     else:
         print("\n[从未解开过的门禁] 无 —— 每个被挡过的选项都至少亮过一次")
 

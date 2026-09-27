@@ -6,6 +6,11 @@
 1. **幕推进有没有上锁**：某个选项把玩家带到更靠后的一幕（或下一案），
    但它既没有 `locked_if` 也没有 `visible_if` —— 那就是一条可以直穿的后门。
    （`tag="accuse"` 的结案选项不算：提前收手本身就是一条设计好的路。）
+
+   **「靠后」按图上的远近算，不按幕号算**：幕号不是游玩顺序 —— 第二幕
+   「尚药局与掖庭」其实是第三幕侧殿问询里才开的两间侧屋，`回侧殿` 是回程。
+   所以判据是「从起点出发，目标比这里更晚才到得了吗」（`_scene_depths()`），
+   比这儿更早到得了的一律算回程，不报。
 2. **开局剧透面**：刚开局（什么都没读）时，哪些档案只要敲对档号就能打开。
    **跨案的**是问题（剧情锁该挡住），**同案后面幕的**只是提示 —— 同案内
    「拼档号翻旧档」是这游戏的核心玩法，不该被锁。
@@ -37,6 +42,7 @@
 from __future__ import annotations
 
 import sys
+from collections import deque
 from typing import Dict, List, Tuple
 
 sys.path.insert(0, ".")
@@ -54,13 +60,36 @@ BUDGET = 120000
 # --------------------------------------------------------------------------
 
 
+def _scene_depths() -> Dict[str, int]:
+    """从起点出发的静态最短距离（只走 ``effect.scene`` / ``to``，不看锁）。
+
+    锁是运行时的事，这里要的是**图上的先后**：谁先到得了。
+    """
+    depths: Dict[str, int] = {CONTENT.start_scene: 0}
+    queue = deque([CONTENT.start_scene])
+    while queue:
+        sid = queue.popleft()
+        scene = CONTENT.scenes.get(sid)
+        if scene is None:
+            continue
+        for ch in scene.choices:
+            nxt = ch.effect.scene or ch.to
+            if nxt in CONTENT.scenes and nxt not in depths:
+                depths[nxt] = depths[sid] + 1
+                queue.append(nxt)
+    return depths
+
+
 def unlocked_progression() -> List[str]:
     """找出「往后推进却没上锁」的选项。
 
     只认**显式**的后门：选项带着锁就不算后门 —— 哪怕那把锁只是
     `missing_dossier()`，它也已经把推进权绑在剧情上了。结案选项
     （`tag="accuse"`）不算：提前收手是设计好的路。
+
+    「往后」= 图上比这里更晚才到得了（见模块 docstring 第 1 条）。
     """
+    depths = _scene_depths()
     bad: List[str] = []
     for sid, scene in sorted(CONTENT.scenes.items()):
         for ch in scene.choices:
@@ -76,6 +105,10 @@ def unlocked_progression() -> List[str]:
                 continue
             if (ch.locked_if is not None or ch.locked_by is not None
                     or ch.visible_if is not None):
+                continue
+            # 回程：目标比这里更早就能到（`回侧殿` 从第二幕的侧屋回第三幕的
+            # 问询厅，幕号是变大了，可那本来就是玩家来的路）。
+            if depths.get(target_id, 10 ** 6) < depths.get(sid, -1):
                 continue
             what = f"第{scene.act}幕→第{target.act}幕" if later_act else \
                    f"案{scene.case}→案{target.case}"

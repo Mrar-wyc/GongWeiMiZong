@@ -88,8 +88,41 @@ class ContentIntegrityTest(unittest.TestCase):
             seen[topic.label] = topic.id
 
     def test_every_verdict_scene_is_reachable_by_a_suspect(self):
+        # 「场景存在」不算数：每一张判决屏都要真的有人指认得进去，
+        # 否则它就是一段谁也看不到的死文案（这条测试曾只断言存在）。
+        targets = set()
+        suspects = set()
+        for scene in CONTENT.scenes.values():
+            for choice in scene.choices:
+                if not choice.suspect:
+                    continue
+                suspects.add(choice.suspect)
+                targets.add(choice.effect.scene or choice.to)
         for scene in CONTENT.verdict_scenes:
             self.assertIn(scene, CONTENT.scenes)
+            self.assertIn(scene, targets,
+                          f"判决屏 {scene} 没有任何一条指认选项通向它")
+        for suspect, row in CONTENT.verdicts.items():
+            self.assertIn(suspect, suspects,
+                          f"verdicts 里的 {suspect} 没有任何指认选项")
+            self.assertIn(row[0], CONTENT.verdict_scenes)
+
+    def test_the_two_ways_to_a_verdict_screen_agree(self):
+        # 「谁指认 → 进哪张判决屏」有两条实现：`Content.verdicts` 字典与
+        # `Choice.suspect + effect.scene`。字典指向的那张屏必须真的有人指认得进去
+        # （冯保、萧衍在两案各有一张屏，所以这里是「在其中」而不是「只有它」）。
+        by_suspect: dict = {}
+        for scene in CONTENT.scenes.values():
+            for choice in scene.choices:
+                if choice.suspect:
+                    by_suspect.setdefault(choice.suspect, set()).add(
+                        choice.effect.scene or choice.to)
+        for suspect, row in CONTENT.verdicts.items():
+            self.assertIn(suspect, by_suspect,
+                          f"verdicts 里的 {suspect} 没有任何指认选项")
+            self.assertIn(row[0], by_suspect[suspect],
+                          f"verdicts 把 {suspect} 指向 {row[0]}，"
+                          f"但指认 {suspect} 的选项只通向 {sorted(by_suspect[suspect])}")
 
     def test_core_total_matches_the_item_table(self):
         core = [i for i in CONTENT.items.values() if i.core]

@@ -14,6 +14,7 @@ import unittest
 
 from gongwei.data.story import TOPIC_GATES
 from gongwei.game.conditions import has_clue, trust_at_least
+from gongwei.game.models import Choice, Content, Effect, Scene
 
 from .helpers import load_tool
 
@@ -75,6 +76,71 @@ class StoryAuditTest(unittest.TestCase):
         self.assertEqual(found["endings"], set(ENDING_ROUTES))
         self.assertGreater(len(found["scenes"]), 10)
         self.assertGreater(len(found["dossiers"]), 30)
+
+    def test_pack_keeps_the_case_number(self):
+        """``pack()`` 丢掉 ``case`` 是个会撒谎的体检。
+
+        它一丢，``from_save()`` 恢复出来的状态就永远停在第一案：
+        ``can_read_dossier()`` 会把第六幕以后所有档都挡掉（``dossier_case > case``），
+        ``pick_ending()`` 也只在案① 的规则里挑。历史结论「场景 61/63、档案 87/91」
+        就是这么来的 —— 不是剧本死了，是尺子坏了。
+        """
+        content = self.mod.CONTENT
+        engine = self.mod.GameEngine(content, gates=TOPIC_GATES)
+        engine.new_game()
+        engine.state.case = 3
+        engine.state.chapter = 11
+        raw = self.mod.pack(engine.state)
+        self.assertEqual(raw["case"], 3)
+        self.assertEqual(raw["chapter"], 11)
+        back = type(engine.state).from_save(raw, content)
+        self.assertEqual(back.case, 3)
+        self.assertEqual(back.chapter, 11)
+
+    def test_the_sweep_can_reach_the_last_case(self):
+        """深井：只从开局撒网时，案③ 卷尾那四份总录与「指认陆文昭」轮不到预算。"""
+        seeds = self.mod.seed_states()
+        self.assertGreaterEqual(len(seeds), 3)
+        found = self.mod.search(4000, reverse=False, seed=seeds[-1])
+        self.assertIn("verdict3_LWS", found["scenes"])
+
+
+class LogicAuditTest(unittest.TestCase):
+    """`tools/audit_logic.py` 第 1 节：往后推进的后门扫描器。"""
+
+    def setUp(self) -> None:
+        self.mod = load_tool("audit_logic")
+        self.real = self.mod.CONTENT
+        self.addCleanup(lambda: setattr(self.mod, "CONTENT", self.real))
+
+    def _content(self, hub_act: int, side_act: int) -> object:
+        """起点 → 侧屋 → 回起点。侧屋那一幕的幕号比起点大，靠幕号判就是后门。"""
+        scenes = {
+            "hub": Scene(id="hub", title="侧殿", place="", time="", body="",
+                         act=hub_act, case=3,
+                         choices=[Choice(label="去侧屋", to="side")]),
+            "side": Scene(id="side", title="侧屋", place="", time="", body="",
+                          act=side_act, case=3,
+                          choices=[Choice(label="回侧殿", to="hub")]),
+        }
+        return Content(items={}, characters={}, scenes=scenes, topics={},
+                       endings=[], start_scene="hub", verdict_scene="hub",
+                       title="探针", subtitle="", prologue="", version="探针")
+
+    def test_the_real_story_has_no_ungated_shortcut(self):
+        self.assertEqual(self.mod.unlocked_progression(), [])
+
+    def test_a_one_way_shortcut_is_still_caught(self):
+        """带收益、无门禁、指向图上更晚才到得了的地方 —— 必须报出来。"""
+        c = self._content(hub_act=1, side_act=5)
+        c.scenes["hub"].choices[0].effect = Effect(scene="side", score=3)
+        self.mod.CONTENT = c
+        self.assertTrue(self.mod.unlocked_progression())
+
+    def test_a_trip_back_home_is_not_a_shortcut(self):
+        """回程不算后门：侧屋那一幕的幕号更大，可它本来就是玩家来的路。"""
+        self.mod.CONTENT = self._content(hub_act=3, side_act=2)
+        self.assertEqual(self.mod.unlocked_progression(), [])
 
 
 if __name__ == "__main__":

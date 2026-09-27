@@ -27,21 +27,22 @@
 | `gongwei/data/story.py` | ~2800 | 场景、选项、话题、结局规则、人物表、幕案映射 |
 | `gongwei/data/dossiers.py` | ~2100 | 91 份档案的正文、幕标题 `ACT_TITLES`、勘验总录 |
 | `gongwei/game/models.py` | 236 | 数据模型（字段不够用时才动） |
-| `gongwei/game/engine.py` | 755 | 规则引擎：选项门禁、效果、阅档、结局判定、存档 |
+| `gongwei/game/engine.py` | 783 | 规则引擎：选项门禁、效果、阅档、结局判定、存档 |
 | `gongwei/game/conditions.py` | 396 | 条件小语言（`clue:` / `flag:` / `trust:` …）+ AST |
-| `gongwei/game/command.py` | 566 | 指令解析（档号、档目、检索、记事、存读档），两端同一套语义 |
+| `gongwei/game/command.py` | 578 | 指令解析（档号、档目、检索、记事、存读档），两端同一套语义 |
 | `gongwei/tui/terminal.py` | 850 | 零依赖终端层：CJK 双宽、禁则、ANSI、键盘、行编辑 |
-| `gongwei/tui/app.py` | 1025 | 界面：分栏、阅读区、命令行、浮层、提示语 |
+| `gongwei/tui/app.py` | 1054 | 界面：分栏、阅读区、命令行、浮层、提示语 |
 | `gongwei/web/pack.py` | 155 | 剧本 → 内容包（条件编译成 AST） |
-| `gongwei/autoplay.py` | 413 | 脚本化通关原语 + `ENDING_ROUTES`（tools/ 与 tests/ 共用） |
-| `web/src/game.js` | 759 | JS 侧引擎（必须与 `engine.py` 行为一致） |
-| `web/src/ui.js` | 975 | 网页界面（分页、命令行、存读档、导出导入） |
+| `gongwei/autoplay.py` | 425 | 脚本化通关原语 + `ENDING_ROUTES`（tools/ 与 tests/ 共用） |
+| `web/src/game.js` | 786 | JS 侧引擎（必须与 `engine.py` 行为一致） |
+| `web/src/ui.js` | 996 | 网页界面（分页、命令行、存读档、导出导入） |
+| `web/src/style.css` | 458 | 网页版**断点都在这儿**（窄屏分页、宽屏三栏、480px）——`ui.js` 里没有宽度判断 |
 | `web/src/driver.js` | 128 | node 下走路线，供 `audit_web.py` 调 |
 | `tools/audit_*.py` | — | 四道体检闸门（§4） |
-| `tests/` | — | 223 项；`tests/helpers.py` 只是转手 `autoplay` 的路线，**不要另抄一份** |
+| `tests/` | — | 235 项；`tests/helpers.py` 只是转手 `autoplay` 的路线，**不要另抄一份** |
 
 判断要点：**玩家的体验问题 → `story.py` / `dossiers.py`；行为不对 → `engine.py` + `web/src/game.js`
-两边一起改；显示不对 → `tui/app.py` / `web/src/ui.js`。**
+两边一起改；显示不对 → `tui/app.py` / `web/src/ui.js`（网页版的断点在 `web/src/style.css`）。**
 
 ## 3. 内容约定（写剧本照这个写）
 
@@ -78,6 +79,8 @@
 **话题（问人）**
 
 - `TOPIC_SPECS`：`(tid, owner, label, response, Effect, is_present, hint)`；`TOPIC_GATES`：`tid → (条件, 提示语)`。
+- **跨案的话题不会摆上桌**：引擎按话题给出的档案算它属于哪一案（`engine.topic_case` /
+  `game.js topicCase`），案号大于当前案就不显示——写话题时给 `E(dossiers=…)` 定好案号即可。
 - 门禁只允许 `all_of / any_of / negate / has_clue / has_flag / trust_at_least / stamped / …` 这些
   **可序列化的条件对象**——写裸 `lambda` 会让内容包导不出去（`audit_web` / `pack` 会红）。
 - 门槛高度必须低于「这个人信任实际能到的高度」（`audit_gates.py` 会算出可达上限，
@@ -87,7 +90,7 @@
 
 - `_ending(eid, 标题, 正文)` 建结局屏；`_rule(eid, …, 判据, rank, case)` 登记规则；
   `_mk(...)` 从结局屏里取正文。**规则顺序就是优先级**，每案最后一条必须是
-  「什么都没查出来」那一档的兜底（中下），不能兜出一个好结局。
+  「什么都没查出来」那一档的兜底（中下），不能兜出一个好结局——`audit_logic.py` 第 4 节会查。
 - 每条规则的 `case=` 必须写对：案① 的判据（如 `accused_is("WDH")`）不加 `case`
   会把案② 的指认结果抢走。
 - 加一条结局 = 加一条规则 + 一条 `ENDING_ROUTES` 路线 + 让 `audit_story` 扫得到。
@@ -96,22 +99,22 @@
 
 ```powershell
 python tools/build_web.py --check        # 产物等于当前剧本打的包
-python -m unittest discover -s tests -t .  # 223 项（含下面几道闸）
+python -m unittest discover -s tests -t .  # 235 项（含下面几道闸）
 python tools/audit_gates.py              # 线索/物证登记一致性、门禁引用是否有据
-python tools/audit_web.py                # 跨端差分：26 条路线逐字比对存档与选项表
-python tools/audit_story.py              # 可达性：枚举状态图 + 19 条结局路线
+python tools/audit_web.py                # 跨端差分：27 条路线逐字比对存档与选项表
+python tools/audit_story.py 30000        # 可达性：枚举状态图 + 20 条结局路线（参数是预算步数）
 python tools/audit_logic.py              # 逻辑体检：后门/剧透面/刷分/死胡同/结局判定
 ```
 
 预期输出（当前基线）：
 
-- `Ran 223 tests … OK`
+- `Ran 235 tests … OK`
 - `审计通过：门禁全部可达，引用全部有据。`
 - `✓ 两端逐步一致：存档与选项表逐字相同，连报错都一致`
-- `场景 63/63`、`档案 91/91`、`线索/物证 103/103（核心 65/65）`、`话题 44/44`、`结局 19/19`、
+- `场景 64/64`、`档案 91/91`、`线索/物证 103/103（核心 65/65）`、`话题 44/44`、`结局 20/20`、
   `[从未解开过的门禁] 无`
-- `audit_logic.py`：**第 8 节还有 7 处「可重复 + 给分」未收**（见 README 的「已知取舍」），
-  其余八节应全绿。
+- `audit_logic.py`：**九节全绿**（第 8 节的刷分口子已收；第 5 节会打印一处「还有档可翻」的软卡，
+  那是案① 的节奏，不算死胡同）。
 
 **两端的报错必须逐字一致**：Python 侧在 `gongwei/autoplay.py`，JS 侧在 `web/src/driver.js`，
 `audit_web.py` 会把两侧的报错句子直接对比——改一边忘一边，门禁立刻红。
@@ -123,7 +126,7 @@ python tools/audit_logic.py              # 逻辑体检：后门/剧透面/刷�
 3. 新案：只在 `CASE_ACTS` 加一行（`4: (12, 13, 14)`）。
 4. 结局：`_ending` / `_rule`（顺序、`case`、兜底三件事）→ `autoplay.ENDING_ROUTES` 加路线。
 5. `python tools/build_web.py` 重新打包。
-6. 五道门禁 + `README.md` 里的数字（内容规模表、样例页脚、结局表）一起更新。
+6. 六道门禁 + `README.md` 里的数字（内容规模表、样例页脚、结局表）一起更新。
 7. 发布级改动再手工跑一遍真实浏览器（两种视口 + 存档读回）。
 
 ## 6. 踩过的坑（省你一次）
@@ -141,10 +144,15 @@ python tools/audit_logic.py              # 逻辑体检：后门/剧透面/刷�
 - 改完剧本忘了 `build_web.py` → 两条测试红，别去查引擎。
 - 路线常量分「完整路线」与「尾段」：`OPENING_ROUTE` / `EVERYTHING_ROUTE` / `CASE3_ROUTE` 是完整的，
   `CASE2_ROUTE` 那些是尾段，必须接在 `CASE2_HEAD` 后面走。
+- **撒网工具里那个「一步之后的世界」不能少字段**：`tools/audit_story.py` 的 `pack()` 直接
+  用 `state.to_save()` 再摘掉三样纯显示键。历史上它手写字段表、漏了 `case`，于是恢复出来的
+  状态永远停在第一案，报出「场景 61/63、档案 87/91」这种假缺口——**门禁红了先怀疑尺子**。
+- **写死的规模数字有测试盯着**：界面文案里的案数与幕数由 `tests/test_presentation.py`
+  与实际剧本比对（网页版的「关于」曾把总幕数写少过，这条教训自己也被它抓过一次）。
 
 ## 7. 交付前自检（DoD）
 
-- [ ] 五道门禁 + 单元测试全绿，输出与 §4 的基线一致（数字变了就同步 README）。
+- [ ] 六道门禁 + 单元测试全绿，输出与 §4 的基线一致（数字变了就同步 README）。
 - [ ] 新加的场景/档案/线索/话题/结局都出现在 `audit_story.py` 的 `N/N` 里。
 - [ ] 新加的门禁都写了 `locked_hint`（玩家要知道缺什么）。
 - [ ] 改动涉及界面 → 终端与网页两端都手工看过一眼（窄屏也要看）。

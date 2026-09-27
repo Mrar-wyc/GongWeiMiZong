@@ -682,9 +682,10 @@ ACCUSE_HALL = Scene(
         Choice(label="「臣还有一事 —— 尚药局的药库，今夜也死了人。」", to="case2_open",
                tag="accuse",
                detail="先把第一案按下，去看第二具尸首（第六幕 · 药局寒夜）",
-               locked_if=missing_dossier(FIRST_ACT_SUMMARY),
-               locked_hint="需先把凤仪殿这一案查到收手（读完「第一幕勘验总录」）",
-               visible_if=core_count_at_least(8),
+               locked_if=any_of(missing_dossier(FIRST_ACT_SUMMARY),
+                                negate(core_count_at_least(8))),
+               locked_hint="还需：先把凤仪殿这一案查到收手（读完「第一幕勘验总录」），"
+                           "手里的核心证据也要够厚（核心证据 ≥ 8）",
                repeatable=False,   # 收益只有档案收录与 flag，都是幂等的
                effect=E(flags=("case2_entered",),
                         dossiers=("06-DL-SMB", "06-YK-GYN"),
@@ -958,7 +959,7 @@ CASE2_HALL = Scene(
         Choice(label="前往 · 账房", to="drug_office", detail="附子与七次取用"),
         Choice(label="去书吏的灯下 · 第二具尸首", to="lamp_room",
                detail="蒋九还坐在案前，笔架上的笔没搁好"),
-        Choice(label="整理证物 · 提笔结案", to="case2_accuse", tag="acting",
+        Choice(label="整理证物 · 提笔结案", to="case2_accuse", tag="accuse",
                detail="把这一夜的收成写成第二份底稿",
                locked_if=missing_dossier(CASE2_ACT7_SUMMARY),
                locked_hint="问得还不够：蒋九的尸格、两句对不上的供词、"
@@ -1101,7 +1102,8 @@ CASE2_ACCUSE = Scene(
         Choice(label="「臣还有一事 —— 经卷阁的封泥，也是景和五年的。」", to="case3_open",
                tag="accuse",
                detail="先把第二案按下，去看第三具尸首（第九幕 · 经卷阁）",
-               visible_if=has_clue("jinghe_seal"),
+               locked_if=clue_absent("jinghe_seal"),
+               locked_hint="还需：在第二案里见过那枚封泥（印着景和五年、被人重新封过的那一枚）",
                repeatable=False,   # 同上：收录与 flag 都幂等
                effect=E(flags=("case3_entered",),
                         dossiers=("09-DL-SMB", "09-JG-XYP"),
@@ -1426,7 +1428,7 @@ CASE3_HALL = Scene(
         Choice(label="前往 · 丙字库", to="jinghe_room", detail="再看一遍现场"),
         Choice(label="前往 · 掌籍厅", to="scriptorium3", detail="景和五年那一格"),
         Choice(label="前往 · 内官监值房", to="key_room3", detail="领钥匙簿与炭筐"),
-        Choice(label="整理证物 · 提笔结案", to="case3_accuse", tag="acting",
+        Choice(label="整理证物 · 提笔结案", to="case3_accuse", tag="accuse",
                detail="把三桩案子写成第三份底稿",
                locked_if=missing_dossier(CASE3_ACT10_SUMMARY),
                locked_hint="问得还不够：看阁小监、候补书吏、掌印、少监，"
@@ -1748,9 +1750,10 @@ CRIME_SCENE.choices.append(
            "银针上的黑，不是这一夜的毒，是七日的积毒。这一夜那盏茶，"
            "只是把已经走到尽头的东西推了最后一把。",
            clues=("silver_week", "almond_habit"), score=3,
-           visible_if=all_of(has_clue("si_needle"), has_clue("tea_almond")),
-           locked_by=has_clue("silver_week"),
-           locked_hint="已经推演过了")
+           visible_if=all_of(has_clue("si_needle"), has_clue("tea_almond")))
+    # 原有一对 `locked_by=has_clue("silver_week")` / `locked_hint="已经推演过了"`：
+    # 这条动作产出线索 ⇒ `acting()` 自动 `repeatable=False`，做过就被 `seen_choices`
+    # 滤掉，而这两枚线索只有它一个来源 ⇒ 灰态与那句提示永远不会出现（死文案）。
 )
 
 # 侧殿查证：茶盏
@@ -1763,8 +1766,8 @@ HALL.choices.insert(7, acting(
     "说明它不属于凤仪殿的器皿，是另外带进来的。",
     items=("tea_set",), score=2,
     visible_if=has_clue("tea_almond"),
-    locked_by=all_of(has_clue("tea_set")),
-    locked_hint="已经验过了",
+    # 同上：`items=` 让它自动不可重复，茶盏也只有这一个来源 ⇒ 原来的
+    # `locked_by=all_of(has_clue("tea_set"))` / `"已经验过了"` 是死门禁、死文案。
 ))
 
 # --------------------------------------------------------------------------
@@ -2658,10 +2661,8 @@ _mk("ending_false", "结局 · 替罪的人", "你报错了名字",
 # 只要兜底规则（`accused_is("")`）排在它前面，辞官就永远被判成「查不出来」。
 _mk("ending_quiet", "结局 · 辞官", "你烧了簿子",
     has_flag("resign"), "退")
-_mk("ending_bystander", "结局 · 查不出来", "你没有写下任何名字",
-    any_of(has_flag("gave_up"), accused_is("")), "中下")
 # 「按下」是「王德海被指认了，但你手上没有能钉死他的东西」这一格的收口，
-# 必须排在 standard 之后兜住；否则会掉到下面的兜底规则上。
+# 必须排在 standard 之后兜住。
 #
 # 判据从「core_count() < 6」改成「没有 killer_knowledge」：第一幕的门槛
 # 本身就送来 10 条以上核心，条数门槛在这条路上永远不成立，「按下」曾是
@@ -2673,6 +2674,11 @@ _mk("ending_pressured", "结局 · 按下", "真凶未受审，案子被按了�
     all_of(accused_is("WDH"), has_flag("accused"),
            clue_absent("killer_knowledge")),
     "中")
+# 案① 的最后一条必须是兜底：`pick_ending()` 全不命中时虽然会退回
+# `ending_bystander`，但那是引擎里的常数，不是这里的顺序；兜底排在中途，
+# 后面那条「按下」就永远收不到自己的那一格。
+_mk("ending_bystander", "结局 · 查不出来", "你没有写下任何名字",
+    any_of(has_flag("gave_up"), accused_is("")), "中下")
 
 # ---------------- 案② 的六条收尾（判定顺序即优先级） ----------------
 # 案① 的规则都带 case=1，案② 带 case=2；pick_ending() 只在本案的规则里挑，
