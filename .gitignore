@@ -3,3 +3,6 @@ __pycache__/
 
 # 生成物：由 python tools/build_android.py 从 web/gongwei-mizong.html 逐字节拷来
 android/app/src/main/assets/index.html
+
+# 本机放现成安装包的地方（真正的包在 Actions 的 artifact 里，是构建产物，不进库）
+dist/
