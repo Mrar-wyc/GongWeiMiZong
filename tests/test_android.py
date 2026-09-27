@@ -47,6 +47,7 @@ GITIGNORE = ROOT / ".gitignore"
 
 APP_ID = "com.gongwei.mizong"
 MIN_SDK = 24
+TARGET_SDK = 34
 
 #: 启动界面要引的资源（少一个就是编译期红，越早说越好）。
 SKELETON = (
@@ -486,10 +487,18 @@ class WorkflowTest(unittest.TestCase):
         self.assertIn("gradle -p android assembleDebug --no-daemon", self.code)
 
     def test_拆开_APK_验包名与_sdk(self):
+        """aapt2 打的标签是 ``minSdkVersion`` / ``targetSdkVersion``。
+
+        2026-09-27 第一次真跑这条流水线时，断言写的是老 ``aapt`` 的 ``sdkVersion:'24'``，
+        于是 APK 明明是对的、流水线照样红在最后一步 —— 这条测试就是要钉住标签名，
+        别让人再照抄旧写法。
+        """
         self.assertIn("aapt2", self.code)
         self.assertIn("dump badging", self.code)
         self.assertIn(f'"package: name=\'{APP_ID}\'"', self.code)
-        self.assertIn(f'"sdkVersion:\'{MIN_SDK}\'"', self.code)
+        self.assertIn(f'"minSdkVersion:\'{MIN_SDK}\'"', self.code)
+        self.assertIn(f'"targetSdkVersion:\'{TARGET_SDK}\'"', self.code)
+        self.assertNotIn("sdkVersion:'24'", self.code.replace("minSdkVersion:'24'", ""))
 
     def test_真验证里钉着不许联网(self):
         """这条断言必须落在 ``run:`` 里（注释不算）。"""

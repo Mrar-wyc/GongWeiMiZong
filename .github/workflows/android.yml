@@ -112,8 +112,12 @@ jobs:
 
           grep -q "package: name='com.gongwei.mizong'" /tmp/badging.txt \
             || { echo "✗ 包名不是 com.gongwei.mizong"; exit 1; }
-          grep -q "sdkVersion:'24'" /tmp/badging.txt \
+          # aapt2 打的标签是 minSdkVersion（老 aapt 才是 sdkVersion），别照抄旧写法：
+          # 2026-09-27 第一次跑这条流水线就是死在这一行上（APK 明明是对的）。
+          grep -q "minSdkVersion:'24'" /tmp/badging.txt \
             || { echo "✗ minSdk 不是 24"; exit 1; }
+          grep -q "targetSdkVersion:'34'" /tmp/badging.txt \
+            || { echo "✗ targetSdk 不是 34"; exit 1; }
 
           # 这个壳子从头到尾都是本地的：网页在 assets 里，存档在 localStorage。
           # 一旦产物里冒出 INTERNET，说明有人给它加了联网的口子 —— 直接红。
