@@ -20,6 +20,7 @@ from gongwei.autoplay import CASE3_ROUTE, ENDING_ROUTES, play
 from gongwei.autoplay import TRUE_ENDING as _TRUE_ENDING
 from gongwei.data import CONTENT, TOPIC_GATES
 from gongwei.game import GameEngine
+from gongwei.game.conditions import ast_of
 from gongwei.game.save import SaveStore
 from gongwei.tui.app import GameApp, render_screen
 from gongwei.tui.terminal import visible_width
@@ -520,6 +521,114 @@ class VerdictScreenTest(unittest.TestCase):
                         f"表里指到了不存在的判决屏：{registered - screens}")
         self.assertEqual(screens - registered, {"verdict3_FB", "verdict3_HD"},
                          "没登记的判决屏变了——是不是又有人跨了两案")
+
+
+#: 「只设不读」的 flag 是**故意**的叙事路标：剧本写它们，只是把「这一步发生过」
+#: 留在存档里（以后做支线、二周目、成就时才有东西可查）。这份名单是白名单——
+#: 新写一个没人读的 flag，下面那条测试就会红，不会悄悄多出一个死字段。
+BREADCRUMB_FLAGS = frozenset({
+    "case2_entered", "case3_entered", "case3_hook", "fb_warned",
+    "gf_timeline", "hd_softened", "hh_hint", "hh_opened",
+    "hxw_trusts", "lq_helped", "wdh_shaken", "zzz_confessed",
+    "zzz_named_jinghe", "zzz_said_night",
+})
+
+
+def _collect_flag_nodes(node, out: set) -> None:
+    """把条件 AST 里的 ``["flag", 名字]`` 收进 out。"""
+    if isinstance(node, (list, tuple)):
+        if len(node) >= 2 and node[0] == "flag" and isinstance(node[1], str):
+            out.add(node[1])
+        for item in node:
+            _collect_flag_nodes(item, out)
+
+
+def read_flags() -> set:
+    """剧本里所有**被读**的 flag（选项门禁、话题门禁、档案 requires、结局规则）。"""
+    out: set = set()
+
+    def walk(cond) -> None:
+        node = None if cond is None else ast_of(cond)
+        if node is not None:
+            _collect_flag_nodes(node, out)
+
+    for scene in CONTENT.scenes.values():
+        for choice in scene.choices:
+            walk(choice.visible_if)
+            walk(choice.locked_if)
+            walk(choice.locked_by)
+    for gate, _hint in TOPIC_GATES.values():
+        walk(gate)
+    for dossier in CONTENT.dossiers.values():
+        walk(dossier.requires)
+    for ending in CONTENT.endings:
+        walk(ending.rule)
+    return out
+
+
+def written_flags() -> set:
+    """剧本里所有**被写**的 flag（选项、话题、档案的效果）。"""
+    out: set = set()
+    for scene in CONTENT.scenes.values():
+        for choice in scene.choices:
+            out.update(choice.effect.flags or ())
+        if scene.on_enter is not None:
+            out.update(scene.on_enter.flags or ())
+    for topic in CONTENT.topics.values():
+        out.update(topic.effect.flags or ())
+    for dossier in CONTENT.dossiers.values():
+        out.update(dossier.effect.flags or ())
+    return out
+
+
+def every_effect():
+    """剧本里每一处效果——算信任上限时要全部过一遍。"""
+    for scene in CONTENT.scenes.values():
+        for choice in scene.choices:
+            yield choice.effect
+        if scene.on_enter is not None:
+            yield scene.on_enter
+    for topic in CONTENT.topics.values():
+        yield topic.effect
+    for dossier in CONTENT.dossiers.values():
+        yield dossier.effect
+
+
+class BreadcrumbFlagTest(unittest.TestCase):
+    """flag 要么有人读，要么登记成路标——不许悄悄多出一个死 flag。"""
+
+    def test_the_only_unread_flags_are_the_whitelisted_ones(self):
+        unread = written_flags() - read_flags()
+        self.assertEqual(
+            sorted(unread), sorted(BREADCRUMB_FLAGS),
+            "只设不读的 flag 名单变了：新加的要么让门禁/结局去读它，"
+            "要么确认它只是路标后登记进 tests/test_story.py 的 BREADCRUMB_FLAGS",
+        )
+
+
+class TrustCeilingTest(unittest.TestCase):
+    """``confide_at`` 是「信任够了就能深谈」那道线，必须够得着。"""
+
+    def test_the_confide_threshold_is_reachable(self):
+        ceiling = {cid: ch.trust for cid, ch in CONTENT.characters.items()}
+        for effect in every_effect():
+            for cid, delta in effect.trust or ():
+                if delta > 0 and cid in ceiling:
+                    ceiling[cid] += delta
+        for cid, ch in sorted(CONTENT.characters.items()):
+            if ch.confide_at >= 999:
+                continue
+            self.assertGreater(
+                ch.confide_at, ch.trust,
+                f"{cid} {ch.name} 的 confide_at={ch.confide_at} 没有高过起始信任 "
+                f"{ch.trust}——那样一开局就「已可深谈」了",
+            )
+            self.assertLessEqual(
+                ch.confide_at, ceiling[cid],
+                f"{cid} {ch.name} 的 confide_at={ch.confide_at} 高于这道角色的信任上限 "
+                f"{ceiling[cid]}（起始 {ch.trust} + 全部正增量）——这个门槛谁也够不到；"
+                "若本意就是永不深谈，写 999",
+            )
 
 
 if __name__ == "__main__":

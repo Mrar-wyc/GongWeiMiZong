@@ -51,7 +51,7 @@ ACT_TITLES: Dict[int, str] = {
 
 def D(did: str, title: str, body: str, act: int = 1, time_code: str = "",
       place_code: str = "", people=(), clues=(), items=(), flags=(), trust=(),
-      score: int = 0, links=(), requires=None, reveals=(),
+      score: int = 0, links=(), requires=None,
       found_msg: str = "//得到新档案——收录至档目//") -> Dossier:
     """一条档案。
 
@@ -72,7 +72,6 @@ def D(did: str, title: str, body: str, act: int = 1, time_code: str = "",
         body=body.strip(),
         links=tuple(links),
         requires=requires,
-        reveals=tuple(reveals),
         effect=Effect(add_clues=tuple(clues), add_items=tuple(items),
                       flags=tuple(flags), trust=tuple(trust), score=score),
         found_msg=found_msg,

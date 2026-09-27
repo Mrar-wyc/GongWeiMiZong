@@ -39,7 +39,7 @@
 | `web/src/style.css` | 458 | 网页版**断点都在这儿**（窄屏分页、宽屏三栏、480px）——`ui.js` 里没有宽度判断 |
 | `web/src/driver.js` | 128 | node 下走路线，供 `audit_web.py` 调 |
 | `tools/audit_*.py` | — | 四道体检闸门（§4） |
-| `tests/` | — | 242 项；`tests/webui_harness.js` 在 node 里用最小 DOM 真跑 `web/src/ui.js` 与 `game.js` 的判决节拍；`tests/helpers.py` 只是转手 `autoplay` 的路线，**不要另抄一份** |
+| `tests/` | — | 244 项；`tests/webui_harness.js` 在 node 里用最小 DOM 真跑 `web/src/ui.js` 与 `game.js` 的判决节拍；`BreadcrumbFlagTest` / `TrustCeilingTest` 盯着「只设不读的 flag」与角色的深谈阈值；`tests/helpers.py` 只是转手 `autoplay` 的路线，**不要另抄一份** |
 
 判断要点：**玩家的体验问题 → `story.py` / `dossiers.py`；行为不对 → `engine.py` + `web/src/game.js`
 两边一起改；显示不对 → `tui/app.py` / `web/src/ui.js`（网页版的断点在 `web/src/style.css`）。**
@@ -56,6 +56,9 @@
 - **`repeatable` 默认规则**：`acting()` 在带 `clues / items / dossiers / score / trust` 时
   自动设成「不可重复」。线索与物证引擎会去重，**分数与信任不会**——可重复就等于刷分。
   枢纽动作（回大厅、进子场景）不带效果，天然可重复。
+- **flag 要么有人读，要么登记成路标**：只设不读的 flag 写在 `tests/test_story.py` 的
+  `BREADCRUMB_FLAGS` 里（`BreadcrumbFlagTest` 盯着）。写一个新 flag 却没人读它就会红——
+  要么让门禁/结局去读，要么确认它只是叙事路标后登记进白名单。
 - 场景上的 `act=` / `case=`：**0 表示「不改动当前幕号 / 案号」**，非 0 才会推进
   （`engine.go_to()` 里 `if scene.act:` / `if scene.case:`）。忘写就会顶栏不更新、
   结局串案。问询场景还要写 `hall=`（回哪个前厅，默认案① 的侧殿）。
@@ -86,6 +89,14 @@
 - 门槛高度必须低于「这个人信任实际能到的高度」（`audit_gates.py` 会算出可达上限，
   曾因门槛写在信任上限之上废掉两条支线）。
 
+**人物（`CHARACTERS`）**
+
+- `Character(id, 名字, 身份, 起始信任, 简介, confide_at, case=(…))`：`confide_at` 是
+  「信任够了就能深谈」那道线（第 6 个位置参数，没有关键字名）。**面板上那个
+  「已可深谈」标记还没做**，这个字段目前只是一条登记。
+- `confide_at` 要么写 `999`（永不深谈），要么必须落在「起始信任 < `confide_at` ≤ 信任上限」
+  之间（上限 = 起始值 + 全部正增量）。写在够不到的地方等于没写——`TrustCeilingTest` 会红。
+
 **结局**
 
 - `_ending(eid, 标题, 正文)` 建结局屏；`_rule(eid, …, 判据, rank, case)` 登记规则；
@@ -103,7 +114,7 @@
 
 ```powershell
 python tools/build_web.py --check        # 产物等于当前剧本打的包
-python -m unittest discover -s tests -t .  # 242 项（含下面几道闸）
+python -m unittest discover -s tests -t .  # 244 项（含下面几道闸）
 python tools/audit_gates.py              # 线索/物证登记一致性、门禁引用是否有据
 python tools/audit_web.py                # 跨端差分：27 条路线逐字比对存档与选项表
 python tools/audit_story.py 30000        # 可达性：枚举状态图 + 20 条结局路线（参数是预算步数）
@@ -117,7 +128,7 @@ python tools/audit_logic.py              # 逻辑体检：后门/剧透面/刷�
 
 预期输出（当前基线）：
 
-- `Ran 242 tests … OK`
+- `Ran 244 tests … OK`
 - `审计通过：门禁全部可达，引用全部有据。`
 - `✓ 两端逐步一致：存档与选项表逐字相同，连报错都一致`
 - `场景 64/64`、`档案 91/91`、`线索/物证 103/103（核心 65/65）`、`话题 44/44`、`结局 20/20`、

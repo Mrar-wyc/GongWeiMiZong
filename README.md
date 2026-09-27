@@ -282,7 +282,7 @@ tools/
 ## 开发
 
 ```powershell
-# 全部测试（242 项，跨端与结构那几道闸也在里面）
+# 全部测试（244 项，跨端与结构那几道闸也在里面）
 python -m unittest discover -s tests -t .
 
 # —— 六道门禁，改完剧本按顺序跑 ——
@@ -302,7 +302,7 @@ python tools/walk.py
 python tools/probe_story.py
 ```
 
-这六道门禁 + 242 项测试每次 push / PR 都会在 GitHub Actions 上自动跑一遍
+这六道门禁 + 244 项测试每次 push / PR 都会在 GitHub Actions 上自动跑一遍
 （`.github/workflows/gates.yml`，两条腿：Windows + Python 3.13、Linux + Python 3.9），
 标题下面那枚「门禁」徽章就是它的结果。
 
@@ -371,9 +371,10 @@ python tools/probe_story.py
   对应结局屏的开头。`verdicts` 只登记 11 个嫌疑人——冯保与萧衍各在两案里出现，
   一张表放不下两条，所以指认去哪儿由 `Engine.verdict_target()` 按**当前案号**
   从剧本的指认选项里推，推不到才退回那张表（`web/src/game.js` 同形）。
-- **还有几个预留字段没接线**：`Dossier.reveals`、`Effect.unlock`、`Effect.hurt`
-  全仓无读者；14 个 flag（`case2_entered`、`zzz_confessed` 之类）只设不读，
-  留着当伏笔，但目前不影响任何判定。
+- **还剩一个预留字段没接线**：`Effect.hurt`（「心绪」）链路完整——引擎累加、存档、
+  网页顶栏按非 0 显示——但剧本里 0 处产出，终端也没有那一格。
+  14 个 flag（`case2_entered`、`zzz_confessed` 之类）只设不读，留着当路标；
+  它们登记在 `tests/test_story.py` 的 `BREADCRUMB_FLAGS` 白名单里，新加一个没人读的会红。
 - **`ACT_TITLES[4]`「第四幕 · 采薇（旧案）」是孤儿**：第四幕只有可敲的档案，没有场景。
 - **`audit_logic.py` 第 5 节的软卡出口偏松**：只要场上还有档可翻就报「软卡」，
   而开局就有 27 份档可读，所以这一节基本恒有一行输出，看的时候别当成故障。

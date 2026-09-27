@@ -23,7 +23,7 @@ def _effect(eff: Optional[Effect]) -> Dict[str, Any]:
         return {
             "text": None, "add_clues": [], "add_items": [], "add_dossiers": [],
             "trust": [], "flags": [], "time": None, "scene": None,
-            "unlock": None, "score": 0, "hurt": 0,
+            "score": 0, "hurt": 0,
         }
     return {
         "text": eff.text,
@@ -34,7 +34,6 @@ def _effect(eff: Optional[Effect]) -> Dict[str, Any]:
         "flags": list(eff.flags),
         "time": eff.time,
         "scene": eff.scene,
-        "unlock": eff.unlock,
         "score": eff.score,
         "hurt": eff.hurt,
     }

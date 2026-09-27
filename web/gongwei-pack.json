@@ -43,7 +43,7 @@
    "case": [
     3
    ],
-   "confide_at": 50,
+   "confide_at": 45,
    "desc": "去年才拨进阁里，认得的字不多。他记得谁在什么时候上了阁顶。",
    "name": "常安",
    "role": "经卷阁看阁小监 · 十六岁",
@@ -53,7 +53,7 @@
    "case": [
     3
    ],
-   "confide_at": 55,
+   "confide_at": 40,
    "desc": "掌印二十一年。他说话从不超过两句，第一句是「奉旨」，第二句是「封存」。",
    "name": "曹淳",
    "role": "内官监掌印太监",
@@ -64,7 +64,7 @@
     2,
     3
    ],
-   "confide_at": 60,
+   "confide_at": 50,
    "desc": "说话像在念公文。他来的那一夜，尚药局的灯全灭了一刻。",
    "name": "冯保",
    "role": "内官监少监 · 奉旨问案",
@@ -74,7 +74,7 @@
    "case": [
     1
    ],
-   "confide_at": 45,
+   "confide_at": 30,
    "desc": "声高气盛，把「看不惯」写在脸上。",
    "name": "贵妃柳氏",
    "role": "四妃之首 · 掌协理六宫",
@@ -124,7 +124,7 @@
    "case": [
     2
    ],
-   "confide_at": 40,
+   "confide_at": 999,
    "desc": "抄了半辈子账。他的手认得出别人的字，比认人还准。",
    "name": "蒋九",
    "role": "药库书吏 · 三十一岁",
@@ -134,7 +134,7 @@
    "case": [
     2
    ],
-   "confide_at": 70,
+   "confide_at": 55,
    "desc": "识药，手稳，黑里也摸得清附子和乌头。她的话比她的手脚慢半拍。",
    "name": "柳青",
    "role": "尚药局司药宫女 · 十九岁",
@@ -144,7 +144,7 @@
    "case": [
     3
    ],
-   "confide_at": 60,
+   "confide_at": 50,
    "desc": "写得一手好字，抄书时手不抖。她师父昨夜让她抄的东西，她抄了三遍。",
    "name": "陆文昭",
    "role": "经卷阁候补书吏 · 二十二岁",
@@ -174,7 +174,7 @@
    "case": [
     1
    ],
-   "confide_at": 65,
+   "confide_at": 55,
    "desc": "圆滑、勤谨、话密。手里有整座后宫的钥匙。",
    "name": "王德海",
    "role": "太监总管 · 掌凤仪殿起居",
@@ -224,7 +224,7 @@
    "case": [
     2
    ],
-   "confide_at": 55,
+   "confide_at": 999,
    "desc": "谨慎到近乎迟钝。他从不自己写账，也从不自己开锁。",
    "name": "郑守拙",
    "role": "尚药局掌局太监",
@@ -246,8 +246,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "01-DL-GJ",
@@ -276,8 +275,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "01-DL-NJ",
@@ -306,8 +304,7 @@
     "score": 1,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//调取问案底册——收录至档目//",
    "id": "01-DL-SMB",
@@ -338,8 +335,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "01-FY-CEN",
@@ -372,8 +368,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "01-FY-DOR",
@@ -402,8 +397,7 @@
     "score": 3,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//勘验格目齐全——收录至档目//",
    "id": "01-FY-END",
@@ -467,8 +461,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//拾得枕下笺纸——收录至档目//",
    "id": "01-FY-LET",
@@ -498,8 +491,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "01-FY-SY",
@@ -531,8 +523,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "01-FY-WDH",
@@ -566,8 +557,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "01-FY-XFE",
@@ -598,8 +588,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "01-FY-XFE-2",
@@ -629,8 +618,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "01-YC-ML",
@@ -667,8 +655,7 @@
       "XSE",
       5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "01-YC-XSE",
@@ -699,8 +686,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "01-YS-XSE",
@@ -729,8 +715,7 @@
     "score": 3,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//账目核毕——收录至档目//",
    "id": "02-DL-END",
@@ -760,8 +745,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "02-NW-KEY",
@@ -790,8 +774,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "02-NW-TEA",
@@ -824,8 +807,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "02-SY-BOOK",
@@ -857,8 +839,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "02-SY-CE",
@@ -890,8 +871,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "02-SY-HAB",
@@ -923,8 +903,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "02-SY-PILL",
@@ -954,8 +933,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "02-SY-PT",
@@ -984,8 +962,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "02-SY-TYS",
@@ -1015,8 +992,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "02-YC-DL",
@@ -1045,8 +1021,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "02-YC-JC",
@@ -1075,8 +1050,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "02-YC-LU",
@@ -1110,8 +1084,7 @@
       "XSE",
       5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "02-YC-XSE",
@@ -1140,8 +1113,7 @@
     "score": 3,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//对质录齐——收录至档目//",
    "id": "03-CE-END",
@@ -1188,8 +1160,7 @@
     "score": 2,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "03-CE-GFL",
@@ -1224,8 +1195,7 @@
     "score": 2,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "03-CE-HD",
@@ -1273,8 +1243,7 @@
       "HH",
       2
      ]
-    ],
-    "unlock": null
+    ]
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "03-CE-HHX",
@@ -1309,8 +1278,7 @@
     "score": 2,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "03-CE-WDH",
@@ -1350,8 +1318,7 @@
       "XSE",
       5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "03-CE-XSE",
@@ -1387,8 +1354,7 @@
     "score": 4,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//调取仵作年记——收录至档目//",
    "id": "04-DL-SMB",
@@ -1423,8 +1389,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//得到新档案——收录至档目//",
    "id": "04-YC-CW",
@@ -1456,8 +1421,7 @@
     "score": 3,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//提笔写底稿——收录至档目//",
    "id": "05-CE-END",
@@ -1499,8 +1463,7 @@
     "score": 2,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//翻出判决抄本——收录至档目//",
    "id": "05-DL-VERDICT",
@@ -1534,8 +1497,7 @@
     "score": 6,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//摆出两案对照卷——收录至档目//",
    "id": "06-DL-PAIR",
@@ -1579,8 +1541,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//取出仵作年记 · 第二册——收录至档目//",
    "id": "06-DL-SMB",
@@ -1612,8 +1573,7 @@
     "score": 5,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//核完领用簿——收录至档目//",
    "id": "06-SY-LEDGER",
@@ -1656,8 +1616,7 @@
     "score": 3,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//比对封条笔迹——收录至档目//",
    "id": "06-SY-SEAL",
@@ -1695,8 +1654,7 @@
       "ZZZ",
       -5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "found_msg": "//录下掌局口供——收录至档目//",
    "id": "06-SY-ZZZ",
@@ -1729,8 +1687,7 @@
     "score": 5,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//验完门闩——收录至档目//",
    "id": "06-YK-DOR",
@@ -1762,8 +1719,7 @@
     "score": 4,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//勘验收手——第六幕总录收录至档目//",
    "id": "06-YK-END",
@@ -1820,8 +1776,7 @@
     "score": 3,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//填完典药尸格——收录至档目//",
    "id": "06-YK-GYN",
@@ -1855,8 +1810,7 @@
     "score": 4,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//验出匙上白霜——收录至档目//",
    "id": "06-YK-KEY",
@@ -1891,8 +1845,7 @@
     "score": 4,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//推定死亡时辰——收录至档目//",
    "id": "06-YK-TIME",
@@ -1930,8 +1883,7 @@
       "HXW",
       5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "found_msg": "//录下值夜证词——收录至档目//",
    "id": "06-ZF-HXW",
@@ -1965,8 +1917,7 @@
     "score": 4,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//收起烧剩的抄本——收录至档目//",
    "id": "06-ZF-JJ",
@@ -1997,8 +1948,7 @@
     "score": 5,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//问询收手——第七幕总录收录至档目//",
    "id": "07-DL-END",
@@ -2053,8 +2003,7 @@
     "score": 6,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//比对出那支笔——收录至档目//",
    "id": "07-DL-HAND",
@@ -2097,8 +2046,7 @@
     "score": 4,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//填完书吏尸格——收录至档目//",
    "id": "07-DL-JJ",
@@ -2133,8 +2081,7 @@
     "score": 3,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//收起灯下残纸——收录至档目//",
    "id": "07-DL-PAPER",
@@ -2167,8 +2114,7 @@
     "score": 5,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//记下两句对不上的供词——收录至档目//",
    "id": "07-DL-TWO",
@@ -2215,8 +2161,7 @@
     "score": 5,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//解开旧档捆绳——收录至档目//",
    "id": "07-JG-OLD",
@@ -2250,8 +2195,7 @@
     "score": 4,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//记下内官监的口风——收录至档目//",
    "id": "07-SY-FB",
@@ -2289,8 +2233,7 @@
       "LQ",
       5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "found_msg": "//录下柳青的手——收录至档目//",
    "id": "07-SY-LQ",
@@ -2324,8 +2267,7 @@
     "score": 5,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//搜出掌局私账——收录至档目//",
    "id": "07-SY-ZZZ2",
@@ -2364,8 +2306,7 @@
       "HXW",
       5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "found_msg": "//录下两串脚步——收录至档目//",
    "id": "07-ZF-HXW2",
@@ -2398,8 +2339,7 @@
     "score": 3,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//提笔写第二份底稿——收录至档目//",
    "id": "08-CE-END",
@@ -2433,8 +2373,7 @@
     "score": 6,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//找出残账一页——收录至档目//",
    "id": "08-DL-LEAF",
@@ -2470,8 +2409,7 @@
     "score": 8,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//把两案并成一条线——收录至档目//",
    "id": "08-DL-LINK",
@@ -2514,8 +2452,7 @@
     "score": 5,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//辨认浸水的名字——收录至档目//",
    "id": "08-DL-NAME",
@@ -2546,8 +2483,7 @@
     "score": 4,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//取出仵作年记 · 第三册——收录至档目//",
    "id": "08-DL-SMB",
@@ -2579,8 +2515,7 @@
     "score": 3,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//翻出第二份判决抄本——收录至档目//",
    "id": "08-DL-VERDICT",
@@ -2613,8 +2548,7 @@
     "score": 5,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//记下经卷阁的路——收录至档目//",
    "id": "08-JG-ROAD",
@@ -2649,8 +2583,7 @@
     "score": 8,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//录下掌局的供述——收录至档目//",
    "id": "08-SY-CONF",
@@ -2690,8 +2623,7 @@
     "score": 4,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//取出仵作年记 · 第四册——收录至档目//",
    "id": "09-DL-SMB",
@@ -2723,8 +2655,7 @@
     "score": 5,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//炭盆格目收录至档目//",
    "id": "09-JG-COAL",
@@ -2752,8 +2683,7 @@
     "score": 5,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//勘验收手——第九幕总录收录至档目//",
    "id": "09-JG-END",
@@ -2811,8 +2741,7 @@
     "score": 3,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//脚印格目收录至档目//",
    "id": "09-JG-FOOT",
@@ -2843,8 +2772,7 @@
     "score": 5,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//半页残纸收录至档目//",
    "id": "09-JG-HAND",
@@ -2874,8 +2802,7 @@
     "score": 5,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//领钥匙簿抄录完毕——收录至档目//",
    "id": "09-JG-KEY",
@@ -2906,8 +2833,7 @@
     "score": 5,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//日课簿抄录完毕——收录至档目//",
    "id": "09-JG-LAST",
@@ -2939,8 +2865,7 @@
     "score": 5,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//银针格目收录至档目//",
    "id": "09-JG-NDL",
@@ -2971,8 +2896,7 @@
     "score": 7,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//抄没名录收录至档目//",
    "id": "09-JG-PURGE",
@@ -3004,8 +2928,7 @@
     "score": 6,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//封泥格目收录至档目//",
    "id": "09-JG-SEAL",
@@ -3037,8 +2960,7 @@
     "score": 5,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//气窗格目收录至档目//",
    "id": "09-JG-VNT",
@@ -3069,8 +2991,7 @@
     "score": 6,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//掌籍女史尸格收录至档目//",
    "id": "09-JG-XYP",
@@ -3101,8 +3022,7 @@
     "score": 3,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//勘验程式记毕——收录至档目//",
    "id": "09-JG-YARD",
@@ -3133,8 +3053,7 @@
     "score": 4,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//常安的问询记录收录至档目//",
    "id": "10-DL-CA",
@@ -3164,8 +3083,7 @@
     "score": 4,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//曹淳的问询记录收录至档目//",
    "id": "10-DL-CC",
@@ -3193,8 +3111,7 @@
     "score": 8,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//问询收手——第十幕总录收录至档目//",
    "id": "10-DL-END",
@@ -3245,8 +3162,7 @@
     "score": 4,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//冯保的问询记录收录至档目//",
    "id": "10-DL-FB",
@@ -3276,8 +3192,7 @@
     "score": 4,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//陆文昭的问询记录收录至档目//",
    "id": "10-DL-LWS",
@@ -3305,8 +3220,7 @@
     "score": 4,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//第四册续页收录至档目//",
    "id": "10-DL-SMB",
@@ -3341,8 +3255,7 @@
     "score": 8,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//景和五年原页收录至档目//",
    "id": "10-JG-ORIG",
@@ -3376,8 +3289,7 @@
     "score": 5,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//卷宗收尾收录至档目//",
    "id": "11-CE-END",
@@ -3411,8 +3323,7 @@
     "score": 4,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//第三份底稿收录至档目//",
    "id": "11-DL-DRAFT",
@@ -3443,8 +3354,7 @@
     "score": 5,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//取出仵作年记 · 第四册卷终页——收录至档目//",
    "id": "11-DL-SMB",
@@ -3475,8 +3385,7 @@
     "score": 3,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "found_msg": "//翻出第三份判决抄本——收录至档目//",
    "id": "11-DL-VERDICT",
@@ -4623,8 +4532,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "verdict_WDH::「凶手是 —— 太监总管 王德海」",
      "label": "「凶手是 —— 太监总管 王德海」",
@@ -4649,8 +4557,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "verdict_HH::「凶手是 —— 中宫皇后 萧氏」",
      "label": "「凶手是 —— 中宫皇后 萧氏」",
@@ -4675,8 +4582,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "verdict_GF::「凶手是 —— 贵妃 柳氏」",
      "label": "「凶手是 —— 贵妃 柳氏」",
@@ -4701,8 +4607,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "verdict_HD::「凶手是 —— 陛下」",
      "label": "「凶手是 —— 陛下」",
@@ -4727,8 +4632,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "interrogate_hall::「臣请再查。」· 回侧殿",
      "label": "「臣请再查。」· 回侧殿",
@@ -4755,8 +4659,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "ending_bystander::「此案 —— 暂无确证，臣请再查」",
      "label": "「此案 —— 暂无确证，臣请再查」",
@@ -4783,8 +4686,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "ending_quiet::「臣 —— 验得出来，但臣不说。」",
      "label": "「臣 —— 验得出来，但臣不说。」",
@@ -4818,8 +4720,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "case2_open::「臣还有一事 —— 尚药局的药库，今夜也死了人。」",
      "label": "「臣还有一事 —— 尚药局的药库，今夜也死了人。」",
@@ -4863,8 +4764,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "凤仪殿 · 正殿",
    "time": "寅时",
@@ -4891,8 +4791,7 @@
       "score": 4,
       "text": "卷宗很薄。景和五年，宫人采薇「窃内帑金饰」，杖八十，毙于掖庭。\n你翻到验伤单，又翻到证人供词——两份的字迹是同一个人写的：横竖更硬，收笔带钩。正是你在尚药局领用簿第三笔上见过的那个手笔。\n更奇的是，两份纸上都写着「供认不讳」，可采薇是哑的——掖庭名册里，她的名字旁边标注着「哑」字。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "archive::调阅景和五年「采薇案」卷宗",
      "label": "调阅景和五年「采薇案」卷宗",
@@ -4919,8 +4818,7 @@
       "score": 3,
       "text": "景和五年的掖庭管事名录上，采薇的顶头管事写着三个字：王德海。\n那一年他刚升管事，第二年就调进了凤仪殿。\n卷宗最后夹着一页便签，是内务府的字迹：「采薇名下亏空已补，案结。」\n「已补」两个字下面，被人用指甲划了一道。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "archive::查采薇其人的旧档与经手人",
      "label": "查采薇其人的旧档与经手人",
@@ -4948,8 +4846,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "interrogate_hall::回侧殿",
      "label": "回侧殿",
@@ -4977,8 +4874,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "掖庭 · 旧档库",
    "time": "丑时二刻",
@@ -5001,8 +4897,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "verdict2_ZZZ::「凶手是 —— 尚药局掌局 郑守拙」",
      "label": "「凶手是 —— 尚药局掌局 郑守拙」",
@@ -5027,8 +4922,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "verdict2_LQ::「凶手是 —— 司药 柳青」",
      "label": "「凶手是 —— 司药 柳青」",
@@ -5053,8 +4947,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "verdict2_HXW::「凶手是 —— 值夜小监 贺小五」",
      "label": "「凶手是 —— 值夜小监 贺小五」",
@@ -5079,8 +4972,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "verdict2_FB::「凶手是 —— 内官监少监 冯保」",
      "label": "「凶手是 —— 内官监少监 冯保」",
@@ -5110,8 +5002,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "case3_open::「臣还有一事 —— 经卷阁的封泥，也是景和五年的。」",
      "label": "「臣还有一事 —— 经卷阁的封泥，也是景和五年的。」",
@@ -5142,8 +5033,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "case2_hall::「臣请再查。」· 回尚药局前厅",
      "label": "「臣请再查。」· 回尚药局前厅",
@@ -5170,8 +5060,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "ending2_quiet::「这两桩药局的死，臣只能写到这儿。」",
      "label": "「这两桩药局的死，臣只能写到这儿。」",
@@ -5196,8 +5085,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "accuse_hall::「臣要回凤仪殿 · 先把第一案的名字写上」",
      "label": "「臣要回凤仪殿 · 先把第一案的名字写上」",
@@ -5225,8 +5113,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "尚药局 · 前厅",
    "time": "卯时",
@@ -5249,8 +5136,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "talk_zzz::传唤 · 尚药局掌局郑守拙",
      "label": "传唤 · 尚药局掌局郑守拙",
@@ -5275,8 +5161,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "talk_lq::传唤 · 司药柳青",
      "label": "传唤 · 司药柳青",
@@ -5301,8 +5186,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "talk_hxw::传唤 · 值夜小监贺小五",
      "label": "传唤 · 值夜小监贺小五",
@@ -5327,8 +5211,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "talk_fb::求见 · 内官监少监冯保",
      "label": "求见 · 内官监少监冯保",
@@ -5353,8 +5236,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "drug_store::前往 · 药库",
      "label": "前往 · 药库",
@@ -5379,8 +5261,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "night_room::前往 · 值房",
      "label": "前往 · 值房",
@@ -5405,8 +5286,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "drug_office::前往 · 账房",
      "label": "前往 · 账房",
@@ -5431,8 +5311,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "lamp_room::去书吏的灯下 · 第二具尸首",
      "label": "去书吏的灯下 · 第二具尸首",
@@ -5457,8 +5336,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "case2_accuse::整理证物 · 提笔结案",
      "label": "整理证物 · 提笔结案",
@@ -5486,8 +5364,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "accuse_hall::回凤仪殿正殿 · 先把第一案的名字写上",
      "label": "回凤仪殿正殿 · 先把第一案的名字写上",
@@ -5515,8 +5392,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "尚药局 · 前厅",
    "time": "寅时三刻",
@@ -5539,8 +5415,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "drug_store::推门进去 · 尸首还在药柜底下",
      "label": "推门进去 · 尸首还在药柜底下",
@@ -5565,8 +5440,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "night_room::先去值房 · 今夜是谁值的夜",
      "label": "先去值房 · 今夜是谁值的夜",
@@ -5591,8 +5465,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "drug_office::先去账房 · 附子是谁的方子",
      "label": "先去账房 · 附子是谁的方子",
@@ -5617,8 +5490,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "accuse_hall::回凤仪殿正殿 · 先把第一案的名字写上",
      "label": "回凤仪殿正殿 · 先把第一案的名字写上",
@@ -5646,8 +5518,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "尚药局 · 药库前",
    "time": "丑时三刻",
@@ -5670,8 +5541,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "verdict3_CC::「凶手是 —— 内官监掌印 曹淳」",
      "label": "「凶手是 —— 内官监掌印 曹淳」",
@@ -5696,8 +5566,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "verdict3_FB::「凶手是 —— 内官监少监 冯保」",
      "label": "「凶手是 —— 内官监少监 冯保」",
@@ -5722,8 +5591,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "verdict3_LWS::「凶手是 —— 候补书吏 陆文昭」",
      "label": "「凶手是 —— 候补书吏 陆文昭」",
@@ -5748,8 +5616,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "verdict3_CA::「凶手是 —— 看阁小监 常安」",
      "label": "「凶手是 —— 看阁小监 常安」",
@@ -5774,8 +5641,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "verdict3_HD::「凶手是 —— 陛下」",
      "label": "「凶手是 —— 陛下」",
@@ -5803,8 +5669,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "case3_hall::「臣请再查。」· 回阁前问人",
      "label": "「臣请再查。」· 回阁前问人",
@@ -5831,8 +5696,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "ending3_quiet::「这三桩案子 —— 臣只能写到这儿。」",
      "label": "「这三桩案子 —— 臣只能写到这儿。」",
@@ -5857,8 +5721,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "case2_hall::「臣要回尚药局前厅 · 把第二案的名字写完」",
      "label": "「臣要回尚药局前厅 · 把第二案的名字写完」",
@@ -5886,8 +5749,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "经卷阁 · 阁前",
    "time": "巳时",
@@ -5910,8 +5772,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "talk_ca::传唤 · 看阁小监常安",
      "label": "传唤 · 看阁小监常安",
@@ -5936,8 +5797,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "talk_lws::传唤 · 候补书吏陆文昭",
      "label": "传唤 · 候补书吏陆文昭",
@@ -5962,8 +5822,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "talk_cc::求见 · 内官监掌印曹淳",
      "label": "求见 · 内官监掌印曹淳",
@@ -5988,8 +5847,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "talk_fb3::求见 · 内官监少监冯保",
      "label": "求见 · 内官监少监冯保",
@@ -6014,8 +5872,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "jinghe_room::前往 · 丙字库",
      "label": "前往 · 丙字库",
@@ -6040,8 +5897,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "scriptorium3::前往 · 掌籍厅",
      "label": "前往 · 掌籍厅",
@@ -6066,8 +5922,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "key_room3::前往 · 内官监值房",
      "label": "前往 · 内官监值房",
@@ -6092,8 +5947,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "case3_accuse::整理证物 · 提笔结案",
      "label": "整理证物 · 提笔结案",
@@ -6121,8 +5975,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "case2_hall::回尚药局前厅 · 先把第二案的名字写上",
      "label": "回尚药局前厅 · 先把第二案的名字写上",
@@ -6150,8 +6003,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "经卷阁 · 阁前",
    "time": "辰时",
@@ -6174,8 +6026,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "jinghe_room::推门进去 · 尸首在书案边",
      "label": "推门进去 · 尸首在书案边",
@@ -6200,8 +6051,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "scriptorium3::去掌籍厅 · 她的案头",
      "label": "去掌籍厅 · 她的案头",
@@ -6226,8 +6076,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "key_room3::去内官监值房 · 钥匙是从哪儿领的",
      "label": "去内官监值房 · 钥匙是从哪儿领的",
@@ -6252,8 +6101,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "case2_hall::回尚药局前厅 · 先把手上的名字写完",
      "label": "回尚药局前厅 · 先把手上的名字写完",
@@ -6281,8 +6129,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "经卷阁 · 阁前",
    "time": "卯时",
@@ -6308,8 +6155,7 @@
       "score": 2,
       "text": "你俯身检查贤妃遗体。面色青紫，嘴角残留黑色血迹，颈部无勒痕，胸口无外伤。你取出验尸银针，刺入遗体指尖——银针变黑。\n但你注意到：血色不凝、口鼻无沫、指甲未青。这不是鸩酒、砒霜那类即刻夺命之物，而是「慢慢地」、在两三个时辰里把人耗死的东西。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::俯身验尸 · 取银针探指尖",
      "label": "俯身验尸 · 取银针探指尖",
@@ -6359,8 +6205,7 @@
         "WDH",
         -5
        ]
-      ],
-      "unlock": null
+      ]
      },
      "key": "::询问王德海 · 要一个准确的时间线",
      "label": "询问王德海 · 要一个准确的时间线",
@@ -6400,8 +6245,7 @@
       "score": 2,
       "text": "殿门从内侧以铁栓锁死，窗户亦从内侧插销闭合。\n但你蹲下细看：铁栓下方有一道新鲜的摩擦印，栓头不是自然落槽，倒像是从外面用薄刃拨进去的，再退出来时带出了木屑。\n左窗窗棂上另有一处细微刮痕，刃口极薄。窗下青砖上印着半只湿脚印，脚尖朝外——那人不是进来的，是退出去的。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::细查门窗 · 铁栓与插销",
      "label": "细查门窗 · 铁栓与插销",
@@ -6454,8 +6298,7 @@
       "score": 2,
       "text": "你走到案前，端起残茶凑近鼻端——一股苦杏仁味若有若无，被武夷茶的厚重压着。\n你又查看香炉，炉中龙涎香灰尚温，其中似混有不明粉末，色泽微红，指捻发涩。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::查看茶与香炉 · 嗅一嗅，捻一捻",
      "label": "查看茶与香炉 · 嗅一嗅，捻一捻",
@@ -6500,8 +6343,7 @@
       "score": 3,
       "text": "枕下压着一张未写完的笺纸，是贤妃的笔迹，墨迹收尾处顿了一下：\n「采薇之死，疑非杖毙。王德海经手，账目有亏。」\n写到这里就断了。你把笺纸折起来，收进袖中。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::翻检塌上枕下",
      "label": "翻检塌上枕下",
@@ -6537,8 +6379,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "interrogate_hall::移步侧殿 · 布置问询与查证",
      "label": "移步侧殿 · 布置问询与查证",
@@ -6569,8 +6410,7 @@
       "score": 3,
       "text": "你把记事簿摊在膝上，一条一条对着现场看。\n看到「茶」那条时，你忽然想起一件事：一个惯饮武夷的人，茶味那样厚，怎么会在半盏之内就尝出苦杏仁味、却又照喝不误？——除非她已经喝了不止一天。\n银针上的黑，不是这一夜的毒，是七日的积毒。这一夜那盏茶，只是把已经走到尽头的东西推了最后一把。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::再验一次 · 用记事簿对着看",
      "label": "再验一次 · 用记事簿对着看",
@@ -6610,8 +6450,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "凤仪殿",
    "time": "子时三刻",
@@ -6636,8 +6475,7 @@
       "score": 3,
       "text": "附子入药须炮制。生用三钱，入口麻舌，一个时辰后心悸而亡；瞳仁不散、口唇麻色，银针验不出。\n你在这页边上看到一行铅笔小字：「与杏仁油同法，不易验。」——这是有人写给自己看的。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::翻《本草》 · 附子一味",
      "label": "翻《本草》 · 附子一味",
@@ -6675,8 +6513,7 @@
       "score": 4,
       "text": "附子入库的日子，是贤妃薨的前一日。\n那一页的领用人写的是「尚药局公用」，签押却是空白。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::核对附子入库的日子",
      "label": "核对附子入库的日子",
@@ -6714,8 +6551,7 @@
       "score": 4,
       "text": "苦杏仁油一共支取七次。前六次在景和五年到十二年之间，间隔得很有规律——像是每年都要用一回。\n第七次在贤妃薨的前一日，取用人写的是「王德海」，字却不是王德海的。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::查苦杏仁油的七次取用",
      "label": "查苦杏仁油的七次取用",
@@ -6756,8 +6592,7 @@
       "score": 5,
       "text": "你把两张纸并排摊开。\n凤仪殿：慢药入茶，再从外头拨上窗棂。\n药库：生附子入汤，再从外头拉上门闩。\n同一个人，同一种做法，连遮掩的门路都一样：让屋里看着像没人进过。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::把两案的手法摆在一处",
      "label": "把两案的手法摆在一处",
@@ -6801,8 +6636,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "drug_store::回到药库",
      "label": "回到药库",
@@ -6827,8 +6661,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "night_room::前往 · 药局值房",
      "label": "前往 · 药局值房",
@@ -6853,8 +6686,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "case2_hall::移步 · 药局前厅",
      "label": "移步 · 药局前厅",
@@ -6882,8 +6714,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "accuse_hall::回凤仪殿正殿 · 先把第一案的名字写上",
      "label": "回凤仪殿正殿 · 先把第一案的名字写上",
@@ -6911,8 +6742,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "尚药局 · 账房",
    "time": "寅时",
@@ -6938,8 +6768,7 @@
       "score": 3,
       "text": "口唇是麻色，瞳仁不收。这不是心疾——心疾的人不会是这个样子。\n他的右手中指有墨痕，指腹上还有纸灰。他死之前坐在案前写字，可案上现在一张纸也没有。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::俯身验尸 · 看瞳仁与口唇",
      "label": "俯身验尸 · 看瞳仁与口唇",
@@ -6985,8 +6814,7 @@
       "score": 3,
       "text": "铜药匙上一层薄白霜，粉末细得像霜。你凑近嗅了一下，微辛；用舌尖沾了一星——立刻麻到舌根。\n附子。而且是没炮制过的生附子。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::取铜药匙 · 就着灯嗅一嗅",
      "label": "取铜药匙 · 就着灯嗅一嗅",
@@ -7031,8 +6859,7 @@
       "score": 3,
       "text": "附子格里只剩小半格。你把药粉拨平，对着账页上昨日的余量看——少了三钱，缺口处的粉印还是新的。\n三钱。刚好是能让人死、又不至于立刻倒下的分量。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::拉开药柜第三层 · 附子格",
      "label": "拉开药柜第三层 · 附子格",
@@ -7075,8 +6902,7 @@
       "score": 4,
       "text": "尸僵已经过了肩，尸温摸上去和地砖差不多。他死在子时之前。\n你翻案上的值夜簿：末一行「丑时初，巡库」，签的是他自己的名。\n写下这一行的时候，他已经死了。有人替他签了字，还比他本人写得像。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::验尸僵与尸温 · 推定死亡时辰",
      "label": "验尸僵与尸温 · 推定死亡时辰",
@@ -7121,8 +6947,7 @@
       "score": 4,
       "text": "闩是好的，栓槽里卡着一小截青丝线，线头有拉断的毛边。\n线从外头穿进来，套住闩尾一拉——门就在屋里没人的情况下，从外面栓上了。\n和凤仪殿那扇窗棂上的撬痕，是同一种手法。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::查看门闩 · 栓槽里卡着什么",
      "label": "查看门闩 · 栓槽里卡着什么",
@@ -7158,8 +6983,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "night_room::前往 · 药局值房",
      "label": "前往 · 药局值房",
@@ -7184,8 +7008,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "drug_office::前往 · 尚药局账房",
      "label": "前往 · 尚药局账房",
@@ -7210,8 +7033,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "case2_hall::移步 · 药局前厅",
      "label": "移步 · 药局前厅",
@@ -7239,8 +7061,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "accuse_hall::回凤仪殿正殿 · 先把第一案的名字写上",
      "label": "回凤仪殿正殿 · 先把第一案的名字写上",
@@ -7268,8 +7089,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "尚药局 · 药库",
    "time": "寅时",
@@ -7294,8 +7114,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "结案",
    "time": "卯时",
@@ -7320,8 +7139,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "结案",
    "time": "卯时",
@@ -7346,8 +7164,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "结案",
    "time": "卯时",
@@ -7372,8 +7189,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "结案",
    "time": "卯时",
@@ -7398,8 +7214,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "结案",
    "time": "卯时",
@@ -7424,8 +7239,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "结案",
    "time": "卯时",
@@ -7450,8 +7264,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "结案",
    "time": "卯时",
@@ -7476,8 +7289,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "结案",
    "time": "卯时",
@@ -7502,8 +7314,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "结案",
    "time": "卯时",
@@ -7528,8 +7339,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "结案",
    "time": "卯时",
@@ -7554,8 +7364,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "结案",
    "time": "卯时",
@@ -7580,8 +7389,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "结案",
    "time": "卯时",
@@ -7606,8 +7414,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "结案",
    "time": "卯时",
@@ -7632,8 +7439,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "结案",
    "time": "卯时",
@@ -7658,8 +7464,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "结案",
    "time": "卯时",
@@ -7684,8 +7489,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "结案",
    "time": "卯时",
@@ -7710,8 +7514,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "结案",
    "time": "卯时",
@@ -7736,8 +7539,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "结案",
    "time": "卯时",
@@ -7762,8 +7564,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "结案",
    "time": "卯时",
@@ -7788,8 +7589,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "结案",
    "time": "卯时",
@@ -7812,8 +7612,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "talk_wdh::传唤 · 太监总管王德海",
      "label": "传唤 · 太监总管王德海",
@@ -7838,8 +7637,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "talk_xse::传唤 · 御膳房小监小顺子",
      "label": "传唤 · 御膳房小监小顺子",
@@ -7864,8 +7662,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "talk_hh::求见 · 中宫皇后萧氏",
      "label": "求见 · 中宫皇后萧氏",
@@ -7890,8 +7687,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "talk_gf::求见 · 贵妃柳氏",
      "label": "求见 · 贵妃柳氏",
@@ -7916,8 +7712,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "talk_hd::求见 · 皇帝萧衍",
      "label": "求见 · 皇帝萧衍",
@@ -7942,8 +7737,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "pharmacy::前往 · 尚药局账房",
      "label": "前往 · 尚药局账房",
@@ -7968,8 +7762,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "archive::前往 · 掖庭旧档库",
      "label": "前往 · 掖庭旧档库",
@@ -8014,8 +7807,7 @@
       "score": 2,
       "text": "你把那盏残茶端到灯下，倒出盏底。\n盏底沉着薄薄一层白粉，已经干了，边缘有一圈水痕——那不是茶叶沉渣，是有人「先放粉，再注水」。茶盏是青瓷，盏托底下没有款识，说明它不属于凤仪殿的器皿，是另外带进来的。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::检查 · 正殿案上的安神茶盏",
      "label": "检查 · 正殿案上的安神茶盏",
@@ -8043,8 +7835,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "crime_scene::回到正殿 · 再验一遍现场",
      "label": "回到正殿 · 再验一遍现场",
@@ -8069,8 +7860,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "accuse_hall::整理证物 · 提笔结案",
      "label": "整理证物 · 提笔结案",
@@ -8098,8 +7888,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "凤仪殿 · 侧殿",
    "time": "丑时",
@@ -8125,8 +7914,7 @@
       "score": 4,
       "text": "你先把她的手摊平，再看她的脸。那不是活人的红，也不是寻常尸首的青紫。\n尸斑是一片樱红，从颈后一直铺到腰背，按下去褪色，抬手又回红。口唇鲜红，十指不青，指甲底下干干净净。\n她脸上没有半点挣扎过的样子——炭气走的人不挣扎，只是睡过去。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::俯身验尸 · 看尸斑的颜色",
      "label": "俯身验尸 · 看尸斑的颜色",
@@ -8171,8 +7959,7 @@
       "score": 4,
       "text": "银针入喉，不变；入心口，不变；入指尖，不变。\n你把针就着门缝的天光照了照，还是银的。\n案① 的贤妃是血里有毒，案② 的高典药是药里有毒。这一回，凶器不在药里。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::取银针 · 三处入针",
      "label": "取银针 · 三处入针",
@@ -8211,8 +7998,7 @@
       "score": 4,
       "text": "东头那盆烧透了，只剩白灰，灰是凉的；西头这盆是新添的，炭块还留着棱，边上搁着一把铜火箸。\n丙字库是存旧档的屋子，冬天从不生火——炭气会返潮烂纸。这两盆炭是有人特意送进来的，而且送了两次。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::数炭盆 · 一盆白灰，一盆新炭",
      "label": "数炭盆 · 一盆白灰，一盆新炭",
@@ -8258,8 +8044,7 @@
       "score": 4,
       "text": "气窗开在北墙上，要踩书梯才够得着。\n窗框上一圈新糊的油纸，纸角压着一块黄蜡，蜡上什么也没印——不是封缄，是随手按上去的。窗缝里没有风，一丝也没有。\n书梯第三档上，还有一道同样的黄蜡痕，扁圆，不是鞋底踩出来的形状。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::搬书梯 · 查北墙的气窗",
      "label": "搬书梯 · 查北墙的气窗",
@@ -8305,8 +8090,7 @@
       "score": 4,
       "text": "你把封泥从门上揭下来，就着天光看印。\n印文是「景和五年 · 经卷阁」，年号清清楚楚。可泥胎是新的：边缘还软，里头没有十二年的土气。\n有人拿旧印翻了个模，重新盖了一枚——他要的不是封门，是让人一眼看见年号。\n门是从外头封的。屋里的人出不来。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::揭下封泥 · 对着天光看",
      "label": "揭下封泥 · 对着天光看",
@@ -8352,8 +8136,7 @@
       "score": 4,
       "text": "她攥得很紧。你一根一根掰开：半页纸。\n纸上有景和五年的年号，边上是被撕开的毛茬——另外半页被人抽走了。\n她左手撑在第七架的书边上。你抬头看那一架：中间空出一函的位置，灰印是新的。那一函，昨夜还在这儿。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::掰开她的右手",
      "label": "掰开她的右手",
@@ -8398,8 +8181,7 @@
       "score": 4,
       "text": "她脚边散着几张调档单，压在一只翻倒的砚台底下。\n最上面那张写着：昨日午前，取「景和五年 丙字第七函」，理由两个字——「对账」。\n她昨日在查十二年前的东西。今天天亮前，她死在放那一函的库里。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::拾起她脚边的调档单",
      "label": "拾起她脚边的调档单",
@@ -8437,8 +8219,7 @@
       "score": 2,
       "text": "你蹲下来，闭上眼闻。陈纸、霉、炭气。\n没有药味。一点也没有。\n案① 殿里那盏茶有苦杏仁的甜，案② 药库里有附子的辛。这一回，凶手连气味都省了。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::蹲下来 · 闻这屋子有什么味",
      "label": "蹲下来 · 闻这屋子有什么味",
@@ -8476,8 +8257,7 @@
       "score": 3,
       "text": "炭灰从盆沿漏出来，在地上铺了薄薄一层。灰上有一枚脚印，五瓣花底，是女史的绣鞋。\n可阁里当差的女史都穿软底鞋——软底踩不出这么深的花纹。\n脚印的方向是从门口到书梯，深浅均匀，像是有人特意踩了一脚给人看。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::看炭灰里的脚印",
      "label": "看炭灰里的脚印",
@@ -8513,8 +8293,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "case3_open::回阁前 · 看看掌印还在不在",
      "label": "回阁前 · 看看掌印还在不在",
@@ -8539,8 +8318,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "case3_hall::移步 · 阁前问人",
      "label": "移步 · 阁前问人",
@@ -8571,8 +8349,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "经卷阁 · 丙字库",
    "time": "卯时",
@@ -8597,8 +8374,7 @@
       "score": 4,
       "text": "领钥匙簿上，前日寅时那一行写着「内官监 · 领」，领用人的押是冯保。\n可冯保说，那一日他不在阁里——他在尚药局当值。\n要紧的不是谁领的，是这一行底下的销号是空的：钥匙没有还回来。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::翻领钥匙簿 · 前日寅时那一行",
      "label": "翻领钥匙簿 · 前日寅时那一行",
@@ -8636,8 +8412,7 @@
       "score": 4,
       "text": "值房一夜的炭有定额，今日的账上多出两筐，签收人空着。\n小太监说：前半夜有人来提过炭，穿内官监的靴子，没让他跟着，自己搬的。\n「往哪儿搬的？」\n「往阁后头。」他说，「那儿冬天不生火的。」",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::点数炭筐 · 今夜提过几筐炭",
      "label": "点数炭筐 · 今夜提过几筐炭",
@@ -8665,8 +8440,7 @@
       "score": 3,
       "text": "炉边的灰里埋着一角纸，烧剩半边，上面有「封存」两个字，是内官监的牍式。纸角还压着半个印——该封存的东西，他先烧了一半。\n你直起身，看见曹淳站在门口。他没进来，只说了一句：\n「炭气熏的。仵作这一句写在纸上，咱们都好过。」",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::看看掌印的火炉 · 炉边有什么",
      "label": "看看掌印的火炉 · 炉边有什么",
@@ -8709,8 +8483,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "jinghe_room::回到丙字库",
      "label": "回到丙字库",
@@ -8735,8 +8508,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "scriptorium3::去掌籍厅",
      "label": "去掌籍厅",
@@ -8761,8 +8533,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "case3_open::回阁前",
      "label": "回阁前",
@@ -8787,8 +8558,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "case3_hall::移步 · 阁前问人",
      "label": "移步 · 阁前问人",
@@ -8819,8 +8589,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "内官监 · 值房",
    "time": "卯时",
@@ -8846,8 +8615,7 @@
       "score": 4,
       "text": "口唇麻色，瞳仁不散，身上没有一处外伤。灯还亮着，人是凉的。\n你掰开他右手，掌心里攥着一角纸，被水浸过，只剩半个字：「亻」。\n和高延年一样，是附子。下在他案上那碗夜里送来的汤里。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::验蒋九的尸首",
      "label": "验蒋九的尸首",
@@ -8892,8 +8660,7 @@
       "score": 4,
       "text": "领用簿第七页的抄本。抄的是七次取用，抄到第七次的名字时断了笔。\n纸边有被人抽走的痕迹——有人想拿走完整的这一页，只抽走了上半张。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::收起他抄的那一页",
      "label": "收起他抄的那一页",
@@ -8929,8 +8696,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "case2_hall::回前厅",
      "label": "回前厅",
@@ -8955,8 +8721,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "drug_store::前往 · 药库",
      "label": "前往 · 药库",
@@ -8981,8 +8746,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "accuse_hall::回凤仪殿正殿 · 先把第一案的名字写上",
      "label": "回凤仪殿正殿 · 先把第一案的名字写上",
@@ -9010,8 +8774,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "尚药局 · 书吏值房",
    "time": "寅时三刻",
@@ -9036,8 +8799,7 @@
       "score": 2,
       "text": "盏底有细砂，汤早凉透了。尸身也早僵了。\n这盏汤不是他死前喝的那一盏——有人端了一盏新的来，放在这儿，做出「他喝过汤、然后睡下」的样子。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::查看那半盏姜汤",
      "label": "查看那半盏姜汤",
@@ -9075,8 +8837,7 @@
       "score": 3,
       "text": "值夜簿上今夜两个人签押：贺小五，丑时初；高延年，丑时初。\n高延年那一行的笔锋比他平时的字更「像」他——像是照着描的。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::查值夜簿上的签押",
      "label": "查值夜簿上的签押",
@@ -9114,8 +8875,7 @@
       "score": 3,
       "text": "炭盆里翻出一角没烧透的纸。上面是半行账：「第七次取用，附子三钱，签——」，后面的名字烧掉了。\n抄这页的人手很稳，抄到一半断了笔。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::翻炭盆 · 一片没烧尽的纸角",
      "label": "翻炭盆 · 一片没烧尽的纸角",
@@ -9146,8 +8906,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "drug_store::回到药库",
      "label": "回到药库",
@@ -9172,8 +8931,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "drug_office::前往 · 尚药局账房",
      "label": "前往 · 尚药局账房",
@@ -9198,8 +8956,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "case2_hall::移步 · 药局前厅",
      "label": "移步 · 药局前厅",
@@ -9227,8 +8984,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "accuse_hall::回凤仪殿正殿 · 先把第一案的名字写上",
      "label": "回凤仪殿正殿 · 先把第一案的名字写上",
@@ -9256,8 +9012,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "尚药局 · 值房",
    "time": "寅时",
@@ -9282,8 +9037,7 @@
       "score": 2,
       "text": "你翻到「安神」那一册。苦杏仁油在册上是个不起眼的小条目：「苦杏仁油，安神定惊，入汤剂，一钱至一钱半。多服令人气绝。」\n小字注得很清楚，只是这一行下面被朱笔勾过两次。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "pharmacy::翻查安神类药材领用簿",
      "label": "翻查安神类药材领用簿",
@@ -9310,8 +9064,7 @@
       "score": 3,
       "text": "取用记录三年七次，记的名都是「王德海」。\n你把这七处签押排在一起看：第一笔和第二笔是一样的，第三笔开始就换了个人——横竖都更硬，收笔带着钩。一个人不会在三年里把自己的名字写成两种写法。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "pharmacy::核对取用记录与签押",
      "label": "核对取用记录与签押",
@@ -9338,8 +9091,7 @@
       "score": 3,
       "text": "掌籍老太监听完就摇头：「朱砂入炉？那是方士的把戏。闻久了头昏、目眩、心里发慌，可它毒不死人，银针也验不出来。」\n他顿了一下，补了一句：「所以要拿它下毒的人，图的不是毒——图的是让验的人看错地方。」",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "pharmacy::问掌籍 · 朱砂入炉会怎样",
      "label": "问掌籍 · 朱砂入炉会怎样",
@@ -9364,8 +9116,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "interrogate_hall::回侧殿",
      "label": "回侧殿",
@@ -9393,8 +9144,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "尚药局",
    "time": "丑时二刻",
@@ -9419,8 +9169,7 @@
       "score": 4,
       "text": "日课簿一天一行，她写了二十九年，字越写越小。\n最后写的一行是昨日：「取景和五年丙字第七函对账。内官监来人文书二件，未登记。」\n写完这一行，她把笔搁回了笔架——搁得很正。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::翻她的日课簿 · 昨日写了什么",
      "label": "翻她的日课簿 · 昨日写了什么",
@@ -9447,8 +9196,7 @@
       "score": 4,
       "text": "景和五年那一格只剩三本：一本是空的封皮，一本是抄没名录，一本是年例开支。\n名录是十二年前抄的，字迹潦草，一共二十九行，死因栏上写的多半是「疾」与「杖」。\n第十七行是个女子的名字：采薇。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::查景和五年那一格 · 空的",
      "label": "查景和五年那一格 · 空的",
@@ -9475,8 +9223,7 @@
       "score": 4,
       "text": "交接簿上，丙字库的钥匙每月由掌籍向内官监领一次，还钥匙要销号。\n前日寅时那一行写着「内官监 · 领」，销号栏是空的——钥匙到现在还没还。笔是冯保的手，押也是冯保的押。",
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "::翻掌籍的交接簿 · 谁动过她的架",
      "label": "翻掌籍的交接簿 · 谁动过她的架",
@@ -9501,8 +9248,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "jinghe_room::回到丙字库",
      "label": "回到丙字库",
@@ -9527,8 +9273,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "key_room3::去内官监值房",
      "label": "去内官监值房",
@@ -9553,8 +9298,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "case3_open::回阁前",
      "label": "回阁前",
@@ -9579,8 +9323,7 @@
       "score": 0,
       "text": null,
       "time": null,
-      "trust": [],
-      "unlock": null
+      "trust": []
      },
      "key": "case3_hall::移步 · 阁前问人",
      "label": "移步 · 阁前问人",
@@ -9611,8 +9354,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "经卷阁 · 掌籍厅",
    "time": "卯时",
@@ -9637,8 +9379,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "经卷阁 · 阁前",
    "time": "辰时",
@@ -9663,8 +9404,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "经卷阁 · 阁前",
    "time": "辰时",
@@ -9689,8 +9429,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "尚药局 · 前厅",
    "time": "寅时三刻",
@@ -9715,8 +9454,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "经卷阁 · 阁前",
    "time": "辰时",
@@ -9741,8 +9479,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "凤仪殿 · 东暖阁",
    "time": "丑时",
@@ -9767,8 +9504,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "凤仪殿 · 廊下",
    "time": "丑时",
@@ -9793,8 +9529,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "凤仪殿 · 西暖阁",
    "time": "丑时",
@@ -9819,8 +9554,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "尚药局 · 前厅",
    "time": "寅时三刻",
@@ -9845,8 +9579,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "尚药局 · 前厅",
    "time": "寅时三刻",
@@ -9871,8 +9604,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "经卷阁 · 阁前",
    "time": "辰时",
@@ -9897,8 +9629,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "凤仪殿 · 侧殿",
    "time": "丑时",
@@ -9923,8 +9654,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "凤仪殿 · 侧殿",
    "time": "丑时",
@@ -9949,8 +9679,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "尚药局 · 前厅",
    "time": "寅时三刻",
@@ -9975,8 +9704,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "尚药局 · 前厅",
    "time": "卯时",
@@ -10001,8 +9729,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "尚药局 · 前厅",
    "time": "卯时",
@@ -10027,8 +9754,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "尚药局 · 前厅",
    "time": "卯时",
@@ -10053,8 +9779,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "尚药局 · 前厅",
    "time": "卯时",
@@ -10079,8 +9804,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "经卷阁 · 阁前",
    "time": "巳时",
@@ -10105,8 +9829,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "经卷阁 · 阁前",
    "time": "巳时",
@@ -10131,8 +9854,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "经卷阁 · 阁前",
    "time": "巳时",
@@ -10157,8 +9879,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "经卷阁 · 阁前",
    "time": "巳时",
@@ -10183,8 +9904,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "经卷阁 · 阁前",
    "time": "巳时",
@@ -10209,8 +9929,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "凤仪殿 · 正殿",
    "time": "寅时",
@@ -10235,8 +9954,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "凤仪殿 · 正殿",
    "time": "寅时",
@@ -10261,8 +9979,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "凤仪殿 · 正殿",
    "time": "寅时",
@@ -10287,8 +10004,7 @@
     "score": 0,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "place": "凤仪殿 · 正殿",
    "time": "寅时",
@@ -10329,8 +10045,7 @@
       "WDH",
       -5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "always"
@@ -10360,8 +10075,7 @@
       "WDH",
       -5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "always"
@@ -10393,8 +10107,7 @@
       "WDH",
       -10
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "all",
@@ -10436,8 +10149,7 @@
       "WDH",
       -8
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "clue",
@@ -10468,8 +10180,7 @@
       "WDH",
       10
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "all",
@@ -10508,8 +10219,7 @@
     "score": 3,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "gate": [
     "flag",
@@ -10540,8 +10250,7 @@
       "XSE",
       8
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "always"
@@ -10571,8 +10280,7 @@
       "XSE",
       5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "clue",
@@ -10603,8 +10311,7 @@
       "XSE",
       5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "always"
@@ -10636,8 +10343,7 @@
       "XSE",
       10
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "any",
@@ -10674,8 +10380,7 @@
     "score": 3,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "gate": [
     "any",
@@ -10715,8 +10420,7 @@
       "HH",
       5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "all",
@@ -10758,8 +10462,7 @@
       "HH",
       10
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "clue",
@@ -10790,8 +10493,7 @@
       "HH",
       8
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "all",
@@ -10833,8 +10535,7 @@
       "HH",
       10
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "clue",
@@ -10865,8 +10566,7 @@
       "GF",
       5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "always"
@@ -10896,8 +10596,7 @@
       "GF",
       -5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "clue",
@@ -10928,8 +10627,7 @@
       "GF",
       5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "all",
@@ -10970,8 +10668,7 @@
     "score": 2,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "gate": [
     "always"
@@ -11003,8 +10700,7 @@
       "HD",
       10
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "clue",
@@ -11035,8 +10731,7 @@
       "ZZZ",
       -5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "always"
@@ -11066,8 +10761,7 @@
       "ZZZ",
       -8
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "clue",
@@ -11095,8 +10789,7 @@
     "score": 5,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "gate": [
     "clue",
@@ -11124,8 +10817,7 @@
     "score": 8,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "gate": [
     "all",
@@ -11165,8 +10857,7 @@
       "LQ",
       5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "always"
@@ -11196,8 +10887,7 @@
       "LQ",
       5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "clue",
@@ -11223,8 +10913,7 @@
     "score": 4,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "gate": [
     "clue",
@@ -11255,8 +10944,7 @@
       "HXW",
       5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "always"
@@ -11286,8 +10974,7 @@
       "HXW",
       5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "clue",
@@ -11313,8 +11000,7 @@
     "score": 5,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "gate": [
     "trust",
@@ -11345,8 +11031,7 @@
       "FB",
       5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "always"
@@ -11373,8 +11058,7 @@
     "score": 5,
     "text": null,
     "time": null,
-    "trust": [],
-    "unlock": null
+    "trust": []
    },
    "gate": [
     "all",
@@ -11414,8 +11098,7 @@
       "FB",
       -5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "clue",
@@ -11444,8 +11127,7 @@
       "CA",
       5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "always"
@@ -11477,8 +11159,7 @@
       "CA",
       5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "always"
@@ -11508,8 +11189,7 @@
       "CA",
       5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "trust",
@@ -11544,8 +11224,7 @@
       "LWS",
       5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "always"
@@ -11575,8 +11254,7 @@
       "LWS",
       5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "clue",
@@ -11607,8 +11285,7 @@
       "LWS",
       5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "clue",
@@ -11641,8 +11318,7 @@
       "CC",
       5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "always"
@@ -11672,8 +11348,7 @@
       "CC",
       5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "clue",
@@ -11705,8 +11380,7 @@
       "CC",
       -5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "trust",
@@ -11741,8 +11415,7 @@
       "FB",
       5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "always"
@@ -11775,8 +11448,7 @@
       "FB",
       -5
      ]
-    ],
-    "unlock": null
+    ]
    },
    "gate": [
     "all",

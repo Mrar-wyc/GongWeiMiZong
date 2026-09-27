@@ -199,11 +199,6 @@ def negate(cond: Optional[Condition]) -> Condition:
     return stamped(["not", ast_of(inner)], lambda state: not inner(state))
 
 
-def true_from(state, *conds: Optional[Condition]) -> bool:
-    """辅助：全部满足且 state 未被显式判定为假。"""
-    return all_of(*conds)(state)
-
-
 # --------------------------------------------------------------------------
 # 小语言解析
 # --------------------------------------------------------------------------

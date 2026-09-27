@@ -46,7 +46,10 @@ class Character:
     role: str
     trust: int = 40
     desc: str = ""
-    # 好感度达到该值时，右侧面板显示「已可深谈」
+    # 好感度达到该值就算「已可深谈」。**999 表示永不深谈**（已故的人、以及
+    # 信任只减不增的人）；其余数值必须 ≤ 这个人信任能到的上限——写在够不到
+    # 的地方等于没写（`tests/test_story.py` 的 TrustCeilingTest 会查）。
+    # 面板上那个「已可深谈」标记**还没做**，别以为现在能看见。
     confide_at: int = 65
     #: 这个人属于哪几桩案子（案号）。面板只列本案的人情——否则案① 开局就能在
     #: 「人情」里看到尚药局那几位，凶手是谁还没死人就先露了底。
@@ -66,7 +69,6 @@ class Effect:
     flags: Tuple[str, ...] = ()
     time: Optional[str] = None          # 推进时辰
     scene: Optional[str] = None
-    unlock: Optional[str] = None        # 解锁审讯话题 id
     score: int = 0
     hurt: int = 0                       # 自损（如被皇帝忌惮）
 
@@ -137,7 +139,6 @@ class Dossier:
     body: str = ""
     links: Tuple[str, ...] = ()
     requires: Optional[Condition] = None
-    reveals: Tuple[str, ...] = ()       # 打开时自动收录的关联档号
     effect: Effect = field(default_factory=Effect)
     found_msg: str = "//得到新档案——收录至档目//"
 

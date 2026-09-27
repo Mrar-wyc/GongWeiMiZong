@@ -801,7 +801,7 @@
   function emptyEffect() {
     return {
       text: null, add_clues: [], add_items: [], add_dossiers: [],
-      trust: [], flags: [], time: null, scene: null, unlock: null,
+      trust: [], flags: [], time: null, scene: null,
       score: 0, hurt: 0
     };
   }
