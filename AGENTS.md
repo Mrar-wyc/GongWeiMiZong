@@ -24,6 +24,11 @@
    两条红线：**不许出现图片、字体或任何外链**（这一卷必须能离线双击打开），
    **不许给 `Content` / `GameState` 加字段**——`tools/audit_web.py` 要逐字比对两端的
    存档与选项表，多一个字段就红。新地点 / 新标签有没有漏登记，`tests/test_art.py` 会说话。
+10. **装饰不许进正文**。视觉层（图标、印章、名牌、芯片、卷首过场、落花）只许加 class 与节点，
+   不许改文字口径：网页版的 pane 文本（`#reading-body`）与终端版的逐字比屏快照都要一字不变
+   ——守门人是 `tests/webui_harness.js` 的 pane 断言与 `tests/test_tui.py` 的逐字快照。
+   CSS 也有合约：`tests/test_web_tokens.py` 盯七档字号阶梯、正文色的 AA 对比度、
+   正文不许内滚、动效必须在 `body[data-motion="off"]` 与 `prefers-reduced-motion` 两处都关。
 
 ## 2. 目录地图（该改哪里）
 
@@ -41,13 +46,13 @@
 | `gongwei/web/art.py` | 177 | 图景台账：地点→色调、时辰→明暗、标签→字形（纯名字，没有图片） |
 | `gongwei/autoplay.py` | 425 | 脚本化通关原语 + `ENDING_ROUTES`（tools/ 与 tests/ 共用） |
 | `web/src/game.js` | 818 | JS 侧引擎（必须与 `engine.py` 行为一致） |
-| `web/src/ui.js` | 1424 | 网页界面（分页、命令行、存读档、导出导入、图景与案外页） |
-| `web/src/style.css` | 699 | 网页版**断点都在这儿**（窄屏分页、宽屏三栏、480px）+ 设计令牌——`ui.js` 里没有宽度判断；排版合约由 `tests/test_web_tokens.py` 盯着 |
-| `web/src/static.css` | 302 | 图景的画法：宫墙/药柜/书架/藻井全是 CSS 渐变与形状（零图片、零外链） |
+| `web/src/ui.js` | 1719 | 网页界面（分页、命令行、存读档、导出导入、图景与案外页、右栏仪表卡与卷首过场） |
+| `web/src/style.css` | 1340 | 网页版**断点都在这儿**（窄屏分页、宽屏三栏、480px）+ 设计令牌与「原型形制」的一层皮（玻璃拟纸、印章、芯片、字号阶梯）——`ui.js` 里没有宽度判断；排版合约由 `tests/test_web_tokens.py` 盯着 |
+| `web/src/static.css` | 457 | 图景的画法：宫墙/药柜/书架/藻井/卷首画卷全是 CSS 渐变与形状（零图片、零外链） |
 | `web/src/driver.js` | 128 | node 下走路线，供 `audit_web.py` 调 |
 | `tools/audit_*.py` | — | 四道体检闸门（§4） |
 | `docs/prototype-v1.1-review.md` | 235 | 第三方 v1.1 插画版原型的拆解：偷了什么做法、明确不学什么、落在哪个文件 |
-| `tests/` | — | 293 项；`tests/webui_harness.js` 在 node 里用最小 DOM 真跑 `web/src/ui.js` 与 `game.js` 的判决节拍；`BreadcrumbFlagTest` / `TrustCeilingTest` 盯着「只设不读的 flag」与角色的深谈阈值；`ActTitleTest` 盯着幕名表与实际用到的幕号互相覆盖；`DeadEndAuditTest` 盯着第 5 节那三档软卡判定；`tests/helpers.py` 只是转手 `autoplay` 的路线，**不要另抄一份**；`tests/test_art.py` 盯着图景台账与真剧本、`static.css`、网页产物三方对账 |
+| `tests/` | — | 302 项（其中 `tests/webui_harness.js` 的 31 项检查由 `tests/test_webui.py` 拖着 node 跑）；`tests/webui_harness.js` 在 node 里用最小 DOM 真跑 `web/src/ui.js` 与 `game.js` 的判决节拍；`BreadcrumbFlagTest` / `TrustCeilingTest` 盯着「只设不读的 flag」与角色的深谈阈值；`ActTitleTest` 盯着幕名表与实际用到的幕号互相覆盖；`DeadEndAuditTest` 盯着第 5 节那三档软卡判定；`tests/helpers.py` 只是转手 `autoplay` 的路线，**不要另抄一份**；`tests/test_art.py` 盯着图景台账与真剧本、`static.css`、网页产物三方对账 |
 
 判断要点：**玩家的体验问题 → `story.py` / `dossiers.py`；行为不对 → `engine.py` + `web/src/game.js`
 两边一起改；显示不对 → `tui/app.py` / `web/src/ui.js`（网页版的断点在 `web/src/style.css`）；
@@ -103,7 +108,8 @@
 - `Character(id, 名字, 身份, 起始信任, 简介, confide_at, case=(…))`：`confide_at` 是
   「信任够了就能深谈」那道线（第 6 个位置参数，没有关键字名）。终端版在人情栏那一行
   行尾点一个金 `●`（`gongwei/tui/app.py` 的 `CONFIDE_MARK`），`confide_at == 999` 永不亮；
-  网页版没有人物面板，暂时不显示这个标记。
+  网页版在同一条线上说话：右栏「人物心意」的信任条按 `confide_at` 折算，到线加一枚
+  `.trust-candie` 金点（`confide_at == 999` 的人只给数字、不画条）。
 - `confide_at` 要么写 `999`（永不深谈），要么必须落在「起始信任 < `confide_at` ≤ 信任上限」
   之间（上限 = 起始值 + 全部正增量）。写在够不到的地方等于没写——`TrustCeilingTest` 会红。
 
@@ -124,7 +130,7 @@
 
 ```powershell
 python tools/build_web.py --check        # 产物等于当前剧本打的包
-python -m unittest discover -s tests -t .  # 293 项（含下面几道闸）
+python -m unittest discover -s tests -t .  # 302 项（含下面几道闸）
 python tools/audit_gates.py              # 线索/物证登记一致性、门禁引用是否有据
 python tools/audit_web.py                # 跨端差分：27 条路线逐字比对存档与选项表
 python tools/audit_story.py 30000        # 可达性：枚举状态图 + 20 条结局路线（参数是预算步数）
@@ -138,7 +144,8 @@ python tools/audit_logic.py              # 逻辑体检：后门/剧透面/刷�
 
 预期输出（当前基线）：
 
-- `Ran 293 tests … OK`
+- `Ran 302 tests … OK`
+  （其中 `tests/webui_harness.js` → `CHECKS 31 0`，`tests/test_web_tokens.py` 15 项静态查 CSS 合约）
 - `审计通过：门禁全部可达，引用全部有据。`
 - `✓ 两端逐步一致：存档与选项表逐字相同，连报错都一致`
 - `场景 64/64`、`档案 91/91`、`线索/物证 103/103（核心 65/65）`、`话题 44/44`、`结局 20/20`、
@@ -191,6 +198,8 @@ python tools/audit_logic.py              # 逻辑体检：后门/剧透面/刷�
 - [ ] 新加的场景/档案/线索/话题/结局都出现在 `audit_story.py` 的 `N/N` 里。
 - [ ] 新加的门禁都写了 `locked_hint`（玩家要知道缺什么）。
 - [ ] 改动涉及界面 → 终端与网页两端都手工看过一眼（窄屏也要看）。
+- [ ] 改了界面样式 → 重拍 `docs/ui/` 的复验图，并同步 `README.md` 的 UI 说明与示例屏。
+- [ ] 新增视觉装饰 → `tests/test_web_tokens.py` / `tests/webui_harness.js` 的条数写进 §4 基线。
 - [ ] 新增地点 / 时辰 / 标签 → 名字先登进 `gongwei/web/art.py`，画法补进 `web/src/static.css`
       （`tests/test_art.py` 会拿真剧本查有没有漏登记的）。
 - [ ] 老存档读得回来（`GameState.from_save` 对缺字段要容错，别让版本升级废档）。

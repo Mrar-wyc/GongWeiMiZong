@@ -17,11 +17,13 @@ from gongwei.autoplay import ENDING_ROUTES, play
 from gongwei.data import CONTENT, TOPIC_GATES
 from gongwei.game import GameEngine
 from gongwei.game.save import SaveStore
-from gongwei.tui.app import CONFIDE_MARK, C_GOLD, C_SCENE, GameApp, _cn_number, _log_entry
+from gongwei.tui.app import (CARD_MARK, CONFIDE_MARK, C_CRIMSON, C_GOLD, C_SCENE,
+                             TRUST_BAR_CELLS, TRUST_BAR_EMPTY, TRUST_BAR_FULL, GameApp,
+                             _cn_number, _log_entry)
 from gongwei.tui.terminal import fg, paint, strip_ansi, visible_width
 from tests import helpers
 
-#: 本屏断言有 84 处逐字比屏、还有几处直接比 ANSI（结局印章、名牌、知己符），
+#: 本屏断言有 84 处逐字比屏、还有几处直接比 ANSI（结局印章、名牌、知己符、卡头记号），
 #: 所以先把「无色出口」的外部开关摘掉：NO_COLOR 是给玩家用的，CI 或某些终端
 #: 工具默认设了它（值为 1），留着会让这些断言依据跑测试的机器不同而红。
 os.environ.pop("NO_COLOR", None)
@@ -573,10 +575,27 @@ class ReadingPaneTest(AppTestCase):
             self.app.handle(ch)
 
     def _pane_title(self, width: int = 120, height: int = 34) -> str:
-        """取出左栏标题行，例如「╭─ 档案 ────╮」。"""
+        """取出左栏标题行里的名字，例如「╭─ ◆ 档案 ────╮」→「档案」。
+
+        卡头那个朱砂 ◆（`CARD_MARK`）是记号、不是名字的一部分，这里照剥。
+        """
         first = strip_ansi(self.screen(width, height).split("\n")[1])
         head = first.split("╭", 1)[1] if "╭" in first else first
-        return head.strip("─ ").split("─")[0].strip()
+        return head.strip("─ ").split("─")[0].strip().removeprefix(CARD_MARK).strip()
+
+    def test_every_pane_header_carries_the_crimson_mark(self):
+        """卡头符号：卷宗／记事簿／人情／案卷四块面板，标题前都是一个朱砂 ◆。"""
+        self.start()
+        raw = "\n".join(self.app.render(120, 34).lines)
+        plain = strip_ansi(raw)
+        for title in ("卷宗", "记事簿", "人情", "案卷"):
+            self.assertIn(f"╭─ {CARD_MARK} {title} ", plain, f"{title} 的卡头记号没了")
+        self.assertIn(fg(C_CRIMSON) + f" {CARD_MARK} ", raw, "记号该是朱砂色的")
+
+        self._type("01-FY-XFE")
+        self.app.handle("ENTER")
+        self.assertIn(f"╭─ {CARD_MARK} 档案 ",
+                      strip_ansi("\n".join(self.app.render(120, 34).lines)))
 
     def test_typing_a_dossier_id_shows_its_body_on_screen(self):
         self.start()
@@ -832,11 +851,13 @@ class DisplayedDataTest(AppTestCase):
                 if self.engine.state.case in getattr(c, "case", (1,))]
         ready = next(c for c in cast if c.confide_at != 999)
         mark = self._mark_ansi()
+        full_bar = TRUST_BAR_FULL * TRUST_BAR_CELLS
 
         self.start()
         self.assertEqual(0, self.raw().count(mark), "开局谁也不该是可深谈")
         self.engine.state.trust[ready.id] = ready.confide_at - 1
         self.assertEqual(0, self.raw().count(mark), "差一分就不该亮")
+        self.assertNotIn(full_bar, self.plain(), "差一分，七格就不该走满")
         self.engine.state.trust[ready.id] = ready.confide_at
 
         self.assertEqual(1, self.raw().count(mark), "到线必须亮，而且只亮这一颗")
@@ -844,6 +865,8 @@ class DisplayedDataTest(AppTestCase):
         self.assertEqual(1, len(marked), "只该有一个人是可深谈")
         self.assertIn(ready.name, marked[0], "亮起来的该是他自己那一行")
         self.assertIn(CONFIDE_MARK, marked[0])
+        self.assertIn(full_bar, self.plain(), "到线那七格该走满")
+        self.assertIn(fg(C_GOLD) + "\x1b[1m" + full_bar, self.raw(), "走满的七格该是描金的")
 
     def test_a_never_confide_character_never_lights_up(self):
         never = next(c for c in CONTENT.characters.values() if c.confide_at == 999)
@@ -852,8 +875,9 @@ class DisplayedDataTest(AppTestCase):
 
         self.assertFalse(self.app._confide_ready(never, 100), "999 是「永不可深谈」")
         rows = [strip_ansi(line) for line in self.app.render(120, 34).lines]
-        self.assertTrue([r for r in rows if never.name in r and "█" in r],
-                        f"{never.name} 信任满了也该照常列在人情栏里")
+        self.assertTrue([r for r in rows if never.name in r
+                         and TRUST_BAR_EMPTY * TRUST_BAR_CELLS in r],
+                        f"{never.name} 信任满了也该照常列在人情栏里，条子则永远空着")
         self.assertEqual(0, self.raw().count(self._mark_ansi()))
         self.assertEqual([], self._marked_rows())
 

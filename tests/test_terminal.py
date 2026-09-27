@@ -170,6 +170,23 @@ class CanvasTest(unittest.TestCase):
         self.assertIn("卷宗", T.strip_ansi(lines[0]))
         self.assertTrue(T.strip_ansi(lines[-1]).startswith("╰"))
 
+    def test_box_mark_sits_in_front_of_the_title(self):
+        """卡头记号：`mark` 占标题前面一格，标题跟着右移，行宽仍然恰好 24。"""
+        cv = T.Canvas(24, 5)
+        cv.box(0, 0, 24, 5, title="卷宗", mark="◆", mark_color="red")
+        line = cv.render()[0]
+        self.assertEqual(T.visible_width(line), 24)
+        self.assertIn("╭─ ◆ 卷宗 ", T.strip_ansi(line))
+        self.assertIn(T.fg("red") + " ◆ ", line, "记号该单独上色")
+
+    def test_box_mark_alone_when_the_panel_is_too_narrow(self):
+        """窄得放不下标题时只留记号，不许挤出框外。"""
+        cv = T.Canvas(8, 3)
+        cv.box(0, 0, 8, 3, title="卷宗", mark="◆")
+        line = cv.render()[0]
+        self.assertEqual(T.visible_width(line), 8)
+        self.assertIn("◆", T.strip_ansi(line))
+
     def test_put_never_overflows_canvas(self):
         cv = T.Canvas(6, 1)
         cv.put(4, 0, "沈墨白验尸录")

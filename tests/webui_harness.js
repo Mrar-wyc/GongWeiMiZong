@@ -669,6 +669,321 @@ if (booted) {
 }
 
 // ---------------------------------------------------------------------------
+// 原型 v1.1 的插画形制：只许加 class 与节点，文字口径一字不改
+// ---------------------------------------------------------------------------
+
+if (booted) {
+  function titleOf(node) {
+    return node ? String(node.title || node.getAttribute("title") || "") : "";
+  }
+  function topAction(word) {
+    return query(app(), ".top-actions button").filter(function (b) { return titleOf(b) === word; });
+  }
+  function splashOn() {
+    var s = byId("splash");
+    return !!(s && (" " + s.className + " ").indexOf(" on ") >= 0);
+  }
+  function panelButton(word) {
+    return query(app(), ".panel-head button").filter(function (b) { return textOf(b) === word; });
+  }
+  function backToTitle() {
+    var home = topAction("回到标题");
+    need(home.length === 1, "顶栏上找不到唯一的「回到标题」图标键（找到 " + home.length + " 个）");
+    home[0].click();
+  }
+  function loadSeed(mutate) {
+    var data = JSON.parse(fs.readFileSync(SEED_SAVE, "utf8"));
+    mutate(data);
+    storage.setItem("gongwei_save", JSON.stringify(data));
+    cmd("读档");
+    var overlay = byId("overlay");
+    need(overlay, "敲「读档」后没有开存读面板");
+    var back = buttons(overlay, "读本机存档");
+    need(back.length === 1, "存读面板里找不到唯一的「读本机存档」按钮");
+    back[0].click();
+    return data;
+  }
+
+  if (SEED_SAVE) {
+    // 全篇真正带人名的话只有 07-DL-TWO 里的三行供词（郑守拙 / 柳青 / 贺小五）：
+    // 把档记成「在册、未读」再读一次，正文才会整段进卷宗。
+    check("对话行新皮：说话人点金，正文一字不改", function () {
+      loadSeed(function (data) { data.state.dossiers["07-DL-TWO"] = [false, false]; });
+      cmd("07-DL-TWO");
+      var pane = byId("reading-body");
+      need(pane, "阅档后阅读区不见了");
+      var body = String((pack.dossiers["07-DL-TWO"] || {}).body || "");
+      need(body.length > 40, "内容包里 07-DL-TWO 没有正文，这条检查会空转");
+      need(paneText("reading-body").indexOf("三句放在一起：") >= 0,
+        "阅档时旁白被拆坏了：" + brief(pane, 120));
+      var shut = panelButton("收档");
+      need(shut.length === 1, "档案读开后找不到唯一的「收档」按钮（找到 " + shut.length + " 个）");
+      shut[0].click();
+      var rows = query(app(), ".log-entry").filter(function (n) {
+        return (" " + n.className + " ").indexOf(" dlg ") >= 0;
+      });
+      need(rows.length === 1, "07-DL-TWO 该有且只有一条对话行，实得 " + rows.length + " 条");
+      var cls = " " + rows[0].className + " ";
+      need(cls.indexOf(" log-entry ") >= 0 && cls.indexOf(" dlg ") >= 0,
+        "对话行少了 log-entry / dlg 记号：" + rows[0].className);
+      var names = query(rows[0], ".said-name").map(function (n) { return textOf(n); });
+      need(names.length === 3, "对话行里该有三个名牌，实得 " + names.length + " 个：" + names.join(" / "));
+      ["郑守拙：", "柳青：", "贺小五："].forEach(function (who) {
+        need(names.indexOf(who) >= 0, "名牌里少了「" + who + "」，实得 " + names.join(" / "));
+      });
+      need(textOf(rows[0]) === body, "套上名牌之后正文被改动了：卷宗里 " + textOf(rows[0]).length +
+        " 字 / 档案原文 " + body.length + " 字 —— " + brief(rows[0], 120));
+      var text = paneText("reading-body");
+      ["三句放在一起：", "只有一种可能：", "郑守拙：蒋九整夜都在值房抄账，咱家没见他出去。",
+        "柳青：戌时前后，蒋九拿着抄本来问我，我说你去问掌局，他就走了。"].forEach(function (line) {
+        need(text.indexOf(line) >= 0, "卷宗里少了那句「" + line + "」");
+      });
+    });
+
+    check("【线索】/【物证】的记号只包前缀，整行一字不改", function () {
+      var pane = byId("reading-body");
+      need(pane, "现在不在卷宗页上，读不到线索行");
+      var rows = query(pane, ".kv-line");
+      need(rows.length >= 20, "卷宗页里的 【线索】/【物证】 行只剩 " + rows.length + " 条，这条检查会空转");
+      var kvs = query(pane, ".kv");
+      var marked = query(pane, ".kv-line .kv");
+      need(kvs.length === marked.length,
+        "有 " + (kvs.length - marked.length) + " 个 .kv 记号没长在 【线索】/【物证】 行里");
+      var wuyi = 0;
+      rows.forEach(function (row) {
+        var marks = query(row, ".kv");
+        need(marks.length === 1, "一行里套了 " + marks.length + " 个记号：" + brief(row, 60));
+        var mark = textOf(marks[0]);
+        need(mark === "【线索】" || mark === "【物证】", "记号里包的不只是前缀：「" + mark + "」");
+        if (mark === "【物证】") { wuyi += 1; }
+        var whole = textOf(row).replace(/^\s+/, "");
+        need(whole.indexOf(mark) === 0, "整行不是以记号开头的：" + brief(row, 60));
+        need(whole.length > mark.length + 3, "记号之后没有正文了：" + brief(row, 60));
+      });
+      need(wuyi >= 1, "卷宗里一条 【物证】 行都没有，这条检查会空转");
+      need(paneText("reading-body").indexOf("【线索】银针验毒结果 —— ") >= 0,
+        "线索行的字被改动了：" + paneText("reading-body").slice(0, 100));
+    });
+
+    check("行动记录折叠条：aria 跟着开合走，条数与卷宗对得上", function () {
+      var bars = query(app(), ".log-bar");
+      need(bars.length === 1, "卷宗页上该有一条行动记录折叠条，实得 " + bars.length + " 条");
+      var btn = query(bars[0], ".log-toggle")[0];
+      need(btn, "折叠条上没有那个按钮");
+      need(query(btn, ".caret").length === 1, "折叠条上没有右侧箭头");
+      var pane = byId("reading-body");
+      need(pane, "卷宗页不见了");
+      var total = query(pane, ".log-entry").length;
+      need(total > 20, "卷宗里只有 " + total + " 条记录，这条检查会空转");
+      need(btn.getAttribute("aria-expanded") === "true",
+        "展开时 aria-expanded 是「" + btn.getAttribute("aria-expanded") + "」");
+      var count = query(bars[0], ".count");
+      need(count.length === 1, "折叠条右边没有条数");
+      need(textOf(count[0]) === total + " 则",
+        "条数写的是「" + textOf(count[0]) + "」，卷宗里却有 " + total + " 条");
+      btn.click();
+      need(query(byId("reading-body"), ".log-entry").length === 0, "折起来之后记录还留在正文里");
+      need(query(byId("reading-body"), ".log-bar").length === 1, "折起来之后连折叠条也一起没了");
+      need(query(app(), ".log-toggle")[0].getAttribute("aria-expanded") === "false",
+        "折起来之后 aria-expanded 没跟着变成 false");
+      query(app(), ".log-toggle")[0].click();
+      need(query(byId("reading-body"), ".log-entry").length === total,
+        "再点回来记录变了：" + query(byId("reading-body"), ".log-entry").length + " 条");
+      need(query(app(), ".log-toggle")[0].getAttribute("aria-expanded") === "true",
+        "再点回来 aria-expanded 没回到 true");
+    });
+
+    check("右栏四张仪表卡：信任条按 confide_at 折算，到线才点金", function () {
+      // 先退回存档那一刻：上一条检查读过一份档案，会把存档里的线索数顶高一枚。
+      loadSeed(function () {});
+      var cards = query(app(), ".rail-card");
+      need(cards.length === 4, "右栏该有四张仪表卡，实得 " + cards.length + " 张");
+      var heads = cards.map(function (c) { return brief(query(c, ".panel-head")[0], 30); });
+      ["进度", "人物心意", "线索囊", "随身之物"].forEach(function (word, i) {
+        need(heads[i].indexOf(word) >= 0, "第 " + (i + 1) + " 张卡不是「" + word + "」：" + heads[i]);
+      });
+      var stats = query(cards[0], ".rail-stat");
+      need(stats.length === 3, "进度卡该有三行读数，实得 " + stats.length + " 行");
+      stats.forEach(function (s) {
+        need(query(s, ".rail-label").length === 1 && query(s, ".rail-num").length === 1,
+          "读数行没有拆成「标签 + 数字」：" + brief(s, 30));
+      });
+      var data = JSON.parse(fs.readFileSync(SEED_SAVE, "utf8"));
+      var chars = pack.characters || {};
+      var ids = Object.keys(chars);
+      var rows = query(app(), ".trust-row");
+      need(rows.length === ids.length, "人物心意该有 " + ids.length +
+        " 行（与人物表同数），实得 " + rows.length + " 行");
+      need(rows.length >= 10, "人物表只有 " + rows.length + " 人，这条检查会空转");
+      var bars = 0;
+      var candie = 0;
+      var forever = 0;
+      ids.forEach(function (cid, i) {
+        var ch = chars[cid] || {};
+        var name = ch.name || cid;
+        var now = Number((data.state.trust || {})[cid] || 0);
+        var at = Number(ch.confide_at);
+        if (!isFinite(at) || at <= 0) { at = 999; }
+        var row = rows[i];
+        var label = query(row, ".trust-name");
+        need(label.length === 1, "「" + name + "」那行没有名字");
+        need(textOf(label[0]) === name, "第 " + (i + 1) + " 行该是「" + name + "」，写的是「" +
+          textOf(label[0]) + "」");
+        var num = query(row, ".trust-num");
+        need(num.length === 1 && textOf(num[0]) === String(now),
+          "「" + name + "」那行的当前心意该是 " + now + "，写的是「" +
+          (num.length ? textOf(num[0]) : "没有") + "」");
+        var fills = query(row, ".trust-fill");
+        if (at === 999) {
+          need(fills.length === 0, "「" + name + "」的 confide_at 是 999，却还画了一条信任条");
+          forever += 1;
+        } else {
+          need(fills.length === 1, "「" + name + "」该有一条信任条，实得 " + fills.length + " 条");
+          bars += 1;
+          var style = String(fills[0].getAttribute("style") || "");
+          need(style.indexOf("width:") === 0 && /%$/.test(style),
+            "「" + name + "」的信任条宽度不是按 confide_at 折算的：" + style);
+        }
+        var dots = query(row, ".trust-candie").length;
+        var want = at !== 999 && now >= at ? 1 : 0;
+        need(dots === want, "「" + name + "」的心意 " + now + " / 深谈线 " + at + "，金点该是 " +
+          want + " 枚，实得 " + dots + " 枚");
+        candie += dots;
+      });
+      need(forever >= 1, "人物表里没有 confide_at=999 的人，这条检查会空转");
+      need(bars >= 1, "人物表里没有一个能画条的人，这条检查会空转");
+      need(candie >= 1, "没有一个到线的人，这条检查会空转");
+      need(heads[1].indexOf(candie + " 人可深谈") >= 0,
+        "「人物心意」的计数该是 " + candie + " 人可深谈，写的是「" + heads[1] + "」");
+      need(brief(cards[0], 60).indexOf(data.state.clues.length + "/" + pack.core_total) >= 0,
+        "进度卡的线索数没跟着存档走：" + brief(cards[0], 60));
+      var clues = data.state.clues.length;
+      need(clues >= 5, "存档里的线索只有 " + clues + " 条，这条检查会空转");
+      need(query(app(), ".clue-chip").length === Math.min(5, clues),
+        "线索囊该摆最近五条（" + Math.min(5, clues) + " 枚），实得 " + query(app(), ".clue-chip").length + " 枚");
+      need(query(app(), ".item-chip").length === data.state.items_owned.length,
+        "随身之物该有 " + data.state.items_owned.length + " 枚，实得 " + query(app(), ".item-chip").length + " 枚");
+    });
+  }
+
+  check("标题屏的落花与印章只做样子，一个字都不吐", function () {
+    backToTitle();
+    need(query(app(), ".title-screen").length === 1, "没回到标题屏：" + brief(app(), 60));
+    var petals = query(app(), ".petal");
+    need(petals.length === 10, "落花该有 10 片，实得 " + petals.length + " 片");
+    var wrap = query(app(), ".petals");
+    need(wrap.length === 1, "落花外面没有那一层容器（找到 " + wrap.length + " 个）");
+    need(wrap[0].getAttribute("aria-hidden") === "true", "落花那一层没标 aria-hidden");
+    petals.forEach(function (p, i) {
+      need(textOf(p) === "", "第 " + (i + 1) + " 片花瓣里塞了字：「" + textOf(p) + "」");
+      need(p.children.length === 0, "第 " + (i + 1) + " 片花瓣里还挂了 " + p.children.length + " 个节点");
+      need(p.parent === wrap[0], "有一片花瓣没长在落花那一层里");
+    });
+    var badge = query(app(), ".seal-badge");
+    need(badge.length === 1, "标题屏上没有印章（找到 " + badge.length + " 个）");
+    need(query(badge[0], "svg").length >= 1, "印章里没有 svg 图形");
+    var credit = query(app(), ".credit");
+    need(credit.length === 1 && brief(credit[0], 40).length > 0, "标题屏页脚那行小字不见了");
+    // 装饰不许伪造正文容器：标题屏上根本没有 #reading-body，落花也就无处落进正文。
+    need(byId("reading-body") === null, "标题屏上冒出了 #reading-body");
+    need(paneText("reading-body") === "", "标题屏的正文口径不是空的：" + paneText("reading-body"));
+  });
+
+  check("卷首过场：点「新案」起幕帘，Esc 与轻触都能落下", function () {
+    clickButton("新案");
+    need(splashOn(), "点「新案」后没有出现卷首过场");
+    var sp = byId("splash");
+    var seal = brief(query(app(), ".seal")[0], 16);
+    var m = /第\s*(\d+)\s*幕/.exec(seal);
+    need(m, "顶栏上读不出当前是第几幕：" + seal);
+    var want = String(pack.act_titles[m[1]]);
+    need(textOf(query(sp, ".splash-title")[0]) === want,
+      "过场上的幕名是「" + textOf(query(sp, ".splash-title")[0]) + "」，第 " + m[1] + " 幕叫「" + want + "」");
+    [".splash-veil", ".splash-card", ".splash-art", ".splash-num", ".splash-title",
+      ".splash-quote", ".seal-stamp", ".splash-hint"].forEach(function (sel) {
+      need(query(sp, sel).length === 1, "过场里少了 " + sel);
+    });
+    esc();
+    need(!splashOn(), "按 Esc 之后幕帘还挂着");
+    need(byId("reading-body"), "落下幕帘之后没回到游戏屏");
+    backToTitle();
+    clickButton("新案");
+    need(splashOn(), "第二次点「新案」没有过场");
+    // 假 DOM 不冒泡：轻触幕帘本身（真浏览器里点卡片也浮到这一层）
+    byId("splash").click();
+    need(!splashOn(), "轻触幕帘之后它没落下");
+    need(byId("reading-body"), "落下幕帘之后没进游戏屏");
+  });
+
+  check("游戏屏顶栏：图标键只带 aria/title，不跟文字按钮抢名字", function () {
+    var bar = query(app(), ".topbar");
+    need(bar.length === 1, "游戏屏上没有 .topbar（找到 " + bar.length + " 个）");
+    var head = textOf(bar[0]);
+    need(head.indexOf(pack.title) >= 0, "顶栏上没有剧名「" + pack.title + "」");
+    need(/第\s*\d+\s*幕/.test(head), "顶栏上没有「第 N 幕」：" + brief(bar[0], 60));
+    var chips = query(app(), ".hud-chip");
+    need(chips.length >= 4, "顶栏读数只挂了 " + chips.length + " 枚");
+    var actions = query(app(), ".top-actions");
+    need(actions.length === 1, "顶栏上没有那排图标键（找到 " + actions.length + " 排）");
+    var icons = query(actions[0], "button");
+    need(icons.length === 5, "图标键该有 5 枚，实得 " + icons.length + " 枚");
+    icons.forEach(function (b, i) {
+      need(textOf(b) === "", "第 " + (i + 1) + " 枚图标键带了文字「" + textOf(b) +
+        "」，会跟文字按钮抢名字");
+      need(String(b.getAttribute("aria-label") || "").length > 0, "第 " + (i + 1) + " 枚图标键没写 aria-label");
+      need(titleOf(b).length > 0, "第 " + (i + 1) + " 枚图标键没写 title");
+    });
+    need(buttons(app(), "案外").length === 1, "「案外」按钮变成了 " + buttons(app(), "案外").length +
+      " 个（图标键抢了名字？）");
+    need(buttons(app(), "新案").length === 0, "游戏屏上冒出了 " + buttons(app(), "新案").length + " 个「新案」按钮");
+  });
+
+  check("选项卡：序号与标签分家，锁着的仍写「条件不足：」", function () {
+    var cards = query(app(), ".choice-card");
+    need(cards.length >= 2, "选项区只有 " + cards.length + " 张卡，这条检查会空转");
+    var locked = 0;
+    cards.forEach(function (card, i) {
+      var nums = query(card, ".choice-num");
+      need(nums.length === 1, "第 " + (i + 1) + " 张卡上找不到序号");
+      need(textOf(nums[0]) === String(i + 1), "第 " + (i + 1) + " 张卡的序号写的是「" + textOf(nums[0]) + "」");
+      need(query(card, ".choice-label").length === 1, "第 " + (i + 1) + " 张卡上找不到标签");
+      var isLocked = (" " + card.className + " ").indexOf(" locked ") >= 0;
+      var chip = query(card, ".lock-chip");
+      if (isLocked) {
+        locked += 1;
+        need(chip.length === 1, "锁着的第 " + (i + 1) + " 张卡上没有 .lock-chip");
+        need(textOf(chip[0]).indexOf("条件不足：") === 0,
+          "锁定提示不是以「条件不足：」开头：" + brief(chip[0], 40));
+      } else {
+        need(chip.length === 0, "没锁的第 " + (i + 1) + " 张卡上却有锁定提示");
+      }
+    });
+    need(locked >= 1, "开局该有一张锁着的卡，实得 " + locked + " 张");
+    var pick = cards.filter(function (c) {
+      return (" " + c.className + " ").indexOf(" locked ") < 0;
+    })[0];
+    need(pick, "开局所有选项都锁着");
+    var labelNode = query(pick, ".choice-label")[0];
+    // 卡面上标签与细节（.detail/.lock-chip）同住 label 这一层，卷宗里只记标签那一截。
+    var label = textOf(labelNode);
+    query(labelNode, ".detail").concat(query(labelNode, ".lock-chip")).forEach(function (n) {
+      label = label.replace(textOf(n), "");
+    });
+    need(label.length > 0, "这张卡上没有标签：" + brief(pick, 40));
+    var before = paneText("reading-body");
+    pick.click();
+    var after = paneText("reading-body");
+    need(after.length > before.length, "点了一项之后卷宗没有接着记");
+    // 换了场景之后，旧条目的幕名会跟着改写（那是既有口径），所以按期望串做包含判断。
+    need(after.indexOf(String(START_SCENE.body).slice(0, 12)) >= 0,
+      "点了一项之后开局那段正文被改掉了：" + brief(byId("reading-body"), 80));
+    var choices = query(app(), ".log-choice");
+    need(choices.length >= 1, "答话那行没进卷宗（找不到 .log-choice）");
+    need(textOf(choices[choices.length - 1]) === label,
+      "卷宗里记的是「" + textOf(choices[choices.length - 1]) + "」，按钮上写的是「" + label + "」");
+  });
+}
+// ---------------------------------------------------------------------------
 
 var failed = 0;
 RESULTS.forEach(function (r) {

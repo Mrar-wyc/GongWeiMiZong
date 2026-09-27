@@ -19,6 +19,36 @@ __STYLE__
 <!-- 图景：垫在 #app 前面的同级节点（ui.js 每次重画只清 #app，所以它不会被重置） -->
 __ART_SLOT__
 
+<!-- 图标精灵：ui.js 从这块里 cloneNode 出每一枚图标，产物零外链。
+     整块**不写 xmlns** —— HTML 解析自带 SVG 命名空间，写了就会撞上离线扫描
+     （tests/test_web.py::test_offline_only 盯的那个外链前缀）而变红。 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<symbol id="i-scroll" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="16" rx="2"/><path d="M9 9h6M9 13h6M9 17h4"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5C10.2 5.8 7.6 5.2 4.5 5.2v13c3.1 0 5.7.6 7.5 2.3"/><path d="M12 7.5c1.8-1.7 4.4-2.3 7.5-2.3v13c-3.1 0-5.7.6-7.5 2.3"/><path d="M12 7.5v13"/></symbol>
+<symbol id="i-letter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h7L18.5 9v11.5H6z"/><path d="M13 3.5V9h5.5"/><path d="M9 13h6M9 16.5h3.5"/></symbol>
+<symbol id="i-magnify" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6"/><path d="M14.9 14.9 20 20"/></symbol>
+<symbol id="i-leaf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 4C10.5 4 4 9.5 4 16.5c0 1.5.4 2.7 1 3.7C15 20 20 14 20 4z"/><path d="M5.6 19.4C8.8 13.4 13.4 9 19 5.6"/></symbol>
+<symbol id="i-save" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v9"/><path d="M8.5 9.5 12 13l3.5-3.5"/><path d="M5 16.5V18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1.5"/></symbol>
+<symbol id="i-load" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 13V4"/><path d="M8.5 7.5 12 4l3.5 3.5"/><path d="M5 16.5V18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1.5"/></symbol>
+<symbol id="i-help" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M9.7 9.6a2.4 2.4 0 1 1 3.2 2.3c-.6.2-.9.7-.9 1.3v.5"/><path d="M12 16.8h.01"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.2v5.2"/><path d="M12 7.4h.01"/></symbol>
+<symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7"/><path d="M6.5 9.6V20h11V9.6"/><path d="M10 20v-5.2h4V20"/></symbol>
+<symbol id="i-clue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="18" r="1.9"/><circle cx="18" cy="6" r="1.9"/><path d="M7.4 16.6C9.8 13 14.2 11 16.6 7.4"/></symbol>
+<symbol id="i-evidence" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 9h15v10.5h-15z"/><path d="M9 9V6.6A1.6 1.6 0 0 1 10.6 5h2.8A1.6 1.6 0 0 1 15 6.6V9"/><path d="M4.5 13.2h15"/></symbol>
+<symbol id="i-progress" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7.5 20v-7"/><path d="M12 20V7.5"/><path d="M16.5 20v-4.5"/></symbol>
+<symbol id="i-person" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.2" r="3.7"/><path d="M4.8 20c0-4 3.2-6.6 7.2-6.6s7.2 2.6 7.2 6.6"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 6.8V12l3.6 2.2"/></symbol>
+<symbol id="i-door" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 20V4.5h13V20"/><path d="M3.5 20h17"/><path d="M14.8 12h.01"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.2l2.4 5 5.4.7-3.9 3.7.9 5.4-4.8-2.6-4.8 2.6.9-5.4L4.2 9.9l5.4-.7z"/></symbol>
+<symbol id="i-seal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="4.5" width="15" height="15" rx="3.5"/><path d="M9 9.5h6v5H9z"/></symbol>
+<!-- 印章徽的画（标题屏那枚「宫闱迷踪」四字印）：80×80，所以另给一只 viewBox -->
+<symbol id="i-seal-badge" viewBox="0 0 80 80"><rect x="5.5" y="5.5" width="69" height="69" rx="11" fill="none" stroke="rgba(245,230,211,.8)" stroke-width="2.5"/><rect x="10" y="10" width="60" height="60" rx="7.5" fill="none" stroke="rgba(245,230,211,.32)" stroke-width="1"/><circle cx="15" cy="15" r="1.4" fill="rgba(245,230,211,.55)"/><circle cx="65" cy="15" r="1.4" fill="rgba(245,230,211,.55)"/><circle cx="15" cy="65" r="1.4" fill="rgba(245,230,211,.55)"/><circle cx="65" cy="65" r="1.4" fill="rgba(245,230,211,.55)"/><text x="54" y="29" text-anchor="middle" dominant-baseline="central" font-size="21" fill="currentColor" transform="rotate(2 54 29)">宫</text><text x="54" y="55" text-anchor="middle" dominant-baseline="central" font-size="21" fill="currentColor" transform="rotate(-1.6 54 55)">闱</text><text x="26" y="29" text-anchor="middle" dominant-baseline="central" font-size="21" fill="currentColor" transform="rotate(-1.8 26 29)">迷</text><text x="26" y="55" text-anchor="middle" dominant-baseline="central" font-size="21" fill="currentColor" transform="rotate(1.6 26 55)">踪</text></symbol>
+</svg>
+
+<!-- 一枚可见的图标模板：ui.js 拿它 cloneNode(true)、再把 use 的 href 改指到别的精灵。
+     缩成 0×0 藏起来只是不让它自己占一行——clone 出来的是里面那只 svg，样式一点不少。 -->
+<div id="icon-tpl" style="position:absolute;width:0;height:0;overflow:hidden"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-scroll"/></svg></div>
+
 <div id="app"></div>
 
 <!-- 剧本数据：与终端版由 tools/audit_web.py 逐步比对，保证同一套判定 -->

@@ -37,6 +37,9 @@ C_NARR = "default"
 C_CHOICE = "magenta"
 C_CLUE = "green"
 C_WARN = "red"
+#: 朱砂：封面方印的框、面板卡头那个 ◆。和 C_WARN 同色号但语义不同 ——
+#: 它从来不是「出错了」，所以别拿它去画告警，也别拿 C_WARN 来画印章。
+C_CRIMSON = "red"
 C_GOLD = "yellow"
 C_DIM = "default"
 C_OK = "green"
@@ -76,6 +79,20 @@ def trust_color(value: int) -> str:
 #: 「可深谈」标记。人情栏只有 20/24 列，塞不下「深谈」两个字，用一列的点占位；
 #: 它的意思写在帮助层里（H 键）。门槛本身是 ``Character.confide_at``，这里不存数据。
 CONFIDE_MARK = "●"
+
+#: 人情栏那行名字与行尾点之间的信任条：七格，实心 ``▰`` 是走过的格数。
+#: 刻度是角色自己的 ``confide_at``（能深谈的那条线），因此它读作「离深谈还差多远」；
+#: 走满才描金，永远走不满的（``confide_at == 999``）一直保持暗色 —— 那条线不存在。
+TRUST_BAR_CELLS = 7
+TRUST_BAR_FULL = "▰"
+TRUST_BAR_EMPTY = "▱"
+
+#: 面板卡头：面板名前头缀一个朱砂 ``◆``（描金分隔线仍然沿用 ``─``）。
+CARD_MARK = "◆"
+
+#: 封面方印的尺寸：2×2 四字 + 一圈框线 = 7 列 × 5 行（字从 ``content.title`` 现取）。
+SEAL_W = 7
+SEAL_H = 5
 
 
 @dataclass
@@ -598,6 +615,12 @@ class GameApp:
         entries = self._title_entries()
         # 菜单占 len(entries) 行，往上留一行空档；底部两行归副标题与提示。
         menu_row = y + box_h - 5 - len(entries)
+        # 朱砂方印盖在菜单右边那片留白上（5 行高，正好跨过整块菜单）。
+        # 菜单行是补空格铺满的 —— 若还按 inner 铺到底，印章会被空格抹掉，
+        # 所以印在时先把菜单宽度收到印章左边一格。
+        seal_x = x + box_w - 2 - SEAL_W
+        seal_on = (menu_row - 1 >= y + 1) and (menu_row - 1 + SEAL_H <= y + box_h - 2)
+        menu_w = max(4, min(inner, seal_x - (x + 4) - 1)) if seal_on else inner
         # 序章最多排到菜单上一行：矮终端（62x18）上 box_h 只有 14，
         # 若不夹住，序章末端会撞进菜单里（实测踩过）。
         for line in _wrap_all(self.content.prologue, inner)[: max(0, menu_row - row - 1)]:
@@ -607,10 +630,35 @@ class GameApp:
             here = i == self.cursor
             text = ("▸ " if here else "  ") + f"{i + 1}. {label}"
             canvas.put(x + 4, menu_row + i,
-                       paint(_box_fit(text, inner),
+                       paint(_box_fit(text, menu_w),
                              C_GOLD if here else "default", bold=here))
+        if seal_on:
+            self._draw_seal(canvas, seal_x, menu_row - 1)
         canvas.put(x + 3, y + box_h - 2,
                    paint(_box_middle("↑↓ 选择 · Enter 确认 · Q 离开", inner), "default", dim=True))
+
+    def _draw_seal(self, canvas: Canvas, x: int, y: int) -> None:
+        """封面上的朱砂方印：2×2 四字，外框朱砂、田字格描金（``SEAL_W`` × ``SEAL_H``）。
+
+        四个字从 ``content.title`` 现取 —— 界面里一个字都不写死（剧名住在
+        ``gongwei/data``）。剧名不是四个字就一个字也不画：宁可没有印章，
+        也不排一副缺角的格子。
+        """
+        chars = list(self.content.title)
+        if len(chars) != 4:
+            return
+        a, b, c, d = chars
+
+        def ring(text: str) -> str:
+            return paint(text, C_GOLD, dim=True)
+
+        canvas.put(x, y, paint("┌──", C_CRIMSON) + ring("┬") + paint("──┐", C_CRIMSON))
+        canvas.put(x, y + 1, paint("│", C_CRIMSON) + paint(a, C_CRIMSON)
+                   + ring("│") + paint(b, C_CRIMSON) + paint("│", C_CRIMSON))
+        canvas.put(x, y + 2, paint("├──", C_CRIMSON) + ring("┼") + paint("──┤", C_CRIMSON))
+        canvas.put(x, y + 3, paint("│", C_CRIMSON) + paint(c, C_CRIMSON)
+                   + ring("│") + paint(d, C_CRIMSON) + paint("│", C_CRIMSON))
+        canvas.put(x, y + 4, paint("└──", C_CRIMSON) + ring("┴") + paint("──┘", C_CRIMSON))
 
     # -- 游戏主屏 --------------------------------------------------------
     def _draw_game(self, canvas: Canvas, w: int, h: int) -> None:
@@ -758,12 +806,21 @@ class GameApp:
                    paint(pad(_center(label, box_w - 4), box_w - 4), C_GOLD, bold=True))
         return 3
 
+    def _card(self, canvas: Canvas, x: int, y: int, w: int, h: int, title: str) -> None:
+        """面板卡头：朱砂 ``◆`` 起头，框线仍走 ``Canvas.box`` 那套描金 ``─``。
+
+        帮助浮层与确认框不走这里 —— 它们是压在屏上的浮层，不是游戏的面板，
+        各自另有底色语义（确认框用金，见 `_draw_confirm` 的注释）。
+        """
+        canvas.box(x, y, w, h, title=title, border_color=C_BORDER, title_color=C_TITLE,
+                   mark=CARD_MARK, mark_color=C_CRIMSON)
+
     def _draw_left(self, canvas: Canvas, x: int, y: int, w: int, h: int,
                    ending: bool, narrow: bool = False,
                    show_options: bool = True) -> None:
         title = "结案" if ending else (
             {"dossier": "档案", "index": "档目", "search": "检索"}.get(self.read_mode, "卷宗"))
-        canvas.box(x, y, w, h, title=title, border_color=C_BORDER, title_color=C_TITLE)
+        self._card(canvas, x, y, w, h, title)
         inner_w = max(4, w - 4)
         top_row = y + 1
         bottom_row = y + h - 2          # 最后一行留空，防止文字贴边
@@ -810,7 +867,9 @@ class GameApp:
             more = " ".join(p for p in (f"↑{above}" if above else "",
                                         f"↓{below}" if below else "") if p)
             tag = f"─ {more} "
-            pos = min(x + 4 + display_width(title), x + w - 2 - display_width(tag))
+            # 卡头现在是「╭─ ◆ 卷宗 ────」：记号占掉两列，标题从 x+5 起，
+            # 翻页标照旧空一格接在标题后面（x+5+宽(title)+1）。
+            pos = min(x + 6 + display_width(title), x + w - 2 - display_width(tag))
             canvas.put(pos, y, paint(tag, C_GOLD))
         if not opts or opt_top <= top_row:
             return
@@ -843,41 +902,46 @@ class GameApp:
                        paint(pad(truncate("   条件不足：" + sel.hint, inner_w), inner_w), C_WARN))
 
     def _draw_dossier(self, canvas: Canvas, x: int, y: int, w: int, h: int) -> None:
-        """第三栏：地点、时辰、进度等速览。"""
+        """第三栏：地点、时辰、进度等速览。数字一律描金，文字仍用正白。"""
         if h < 3 or w < 10:
             return
-        canvas.box(x, y, w, h, title="案卷", border_color=C_BORDER, title_color=C_TITLE)
+        self._card(canvas, x, y, w, h, "案卷")
         inner_w = max(4, w - 4)
-        rows: List[Tuple[str, str]] = [
-            ("时辰", self.state.time or "—"),
-            ("地点", self.state.place or "—"),
-            ("回合", str(self.state.turn)),
-            ("核心", f"{self.state.core_count()}/{self.content.core_total()}"),
-            ("线索", str(len(self.state.clues))),
-            ("问过", str(len(self.state.topics_asked))),
-            ("行囊", str(len(self.state.items_owned))),
-            ("评分", str(self.state.score)),
+        rows: List[Tuple[str, str, bool]] = [     # (标签, 值, 这个值是不是数字)
+            ("时辰", self.state.time or "—", False),
+            ("地点", self.state.place or "—", False),
+            ("回合", str(self.state.turn), True),
+            ("核心", f"{self.state.core_count()}/{self.content.core_total()}", True),
+            ("线索", str(len(self.state.clues)), True),
+            ("问过", str(len(self.state.topics_asked)), True),
+            ("行囊", str(len(self.state.items_owned)), True),
+            ("评分", str(self.state.score), True),
         ]
         if self.state.accused:
             v = self.content.verdicts.get(self.state.accused)
-            rows.append(("指认", v[1] if v else self.state.accused))
+            rows.append(("指认", v[1] if v else self.state.accused, False))
         row = y + 1
-        for label, value in rows:
+        for label, value, numeric in rows:
             if row >= y + h - 1:
                 break
             canvas.put(x + 2, row, paint(pad(label, 5), "default", dim=True))
-            canvas.put(x + 2 + 5, row, paint(truncate(value, max(2, inner_w - 5)), "white"))
+            canvas.put(x + 2 + 5, row,
+                       paint(truncate(value, max(2, inner_w - 5)), C_GOLD if numeric else "white"))
             row += 1
 
     def _draw_topbar(self, canvas: Canvas, w: int) -> None:
         title = self.engine.current_title
         where = " · ".join(x for x in (self.state.place, self.state.time) if x)
         right = f"回合 {self.state.turn} "
-        budget = max(0, w - display_width(right) - 6)
-        text = f" {truncate(title, max(0, budget - display_width(where) - 4))}"
-        if where:
-            text += f"  ·  {where}"
-        line = paint(pad(text, w - display_width(right)), C_TITLE, bold=True)
+        # 定位做成一枚芯片：「〔凤仪殿 · 子时三刻〕」——地点与时辰括在一起、描金暗色，
+        # 不再跟幕名挤在同一段青色里。总宽度一个格子都不动：标题、芯片、回合数
+        # 三段加起来仍然正好是 w。
+        chip = f"  〔{where}〕" if where else ""
+        head_w = max(0, w - display_width(right) - display_width(chip))
+        text = f" {truncate(title, max(0, head_w - 2))}"
+        line = paint(pad(text, head_w), C_TITLE, bold=True)
+        if chip:
+            line += paint(chip, C_GOLD, dim=True)
         line += paint(right, C_GOLD, dim=True)
         canvas.put(0, 0, line)
 
@@ -944,11 +1008,28 @@ class GameApp:
         at = int(getattr(ch, "confide_at", 999) or 999)
         return at != 999 and value >= at
 
+    def _trust_bar(self, ch: Character, value: int) -> str:
+        """七格信任条（``▰`` 实心 / ``▱`` 空格），刻度是这个人自己的 ``confide_at``。
+
+        走满七格 == 信任到了能深谈的那条线，此时整条描金；没到线就是暗色。
+        ``confide_at == 999`` 的人那条线根本不存在，所以条子永远走不满、永远不亮
+        —— 跟行尾那颗金点（`CONFIDE_MARK`）说的是同一句话。
+        """
+        at = int(getattr(ch, "confide_at", 999) or 999)
+        if self._confide_ready(ch, value):
+            filled = TRUST_BAR_CELLS
+        else:
+            filled = min(TRUST_BAR_CELLS - 1, max(0, int(value / at * TRUST_BAR_CELLS)))
+        cells = TRUST_BAR_FULL * filled + TRUST_BAR_EMPTY * (TRUST_BAR_CELLS - filled)
+        if filled >= TRUST_BAR_CELLS:
+            return paint(cells, C_GOLD, bold=True)
+        return paint(cells, "default", dim=True)
+
     def _draw_clues(self, canvas: Canvas, x: int, y: int, w: int, h: int,
                     title: str = "记事簿", show_trust: bool = False) -> None:
         if h < 3:
             return
-        canvas.box(x, y, w, h, title=title, border_color=C_BORDER, title_color=C_TITLE)
+        self._card(canvas, x, y, w, h, title)
         inner_w = max(4, w - 4)
         row = y + 1
         if show_trust:
@@ -960,12 +1041,12 @@ class GameApp:
                 if row >= y + h - 1:
                     break
                 value = self.state.trust_of(cid)
-                bar_w = 5
-                filled = int(round(value / 100 * bar_w))
-                bar = "█" * filled + "·" * (bar_w - filled)
-                name = truncate(ch.name, max(2, inner_w - bar_w - 2))
-                text = pad(name, max(2, inner_w - bar_w - 1)) + bar
-                line = paint(truncate(text, inner_w), trust_color(value))
+                # 名字后面接七格信任条；行尾再留一列给金点。名字的额度因此比
+                # 五格时代少两列，但剧本里最宽的名字（五字=十列）在两个尺寸下
+                # 都还放得下，一个省略号都没多出来。
+                room = max(2, inner_w - TRUST_BAR_CELLS - 1)
+                name = truncate(ch.name, room)
+                line = paint(pad(name, room), trust_color(value)) + self._trust_bar(ch, value)
                 if self._confide_ready(ch, value):
                     # 信任到线了：行尾点一个金点（见 CONFIDE_MARK）。栏里塞不下
                     # 「深谈」两个字，但它只占一列，名字与信任条都不必让位。
@@ -1016,11 +1097,6 @@ class GameApp:
             opts = self.engine.options()
             if opts and not opts[self.cursor].enabled and opts[self.cursor].hint:
                 hot = " 条件不足：" + opts[self.cursor].hint
-        status = f" 线索 {len(self.state.clues)}/{len(self.content.items)}"
-        status += f" · 核心 {self.state.core_count()}/{self.content.core_total()}"
-        status += f" · 评分 {self.state.score}"
-        if self.state.notes:
-            status += f" · 笔记 {len(self.state.notes)}"
         if ending:
             keys = self.FOOTER_KEYS_ENDING
         elif w >= 100:
@@ -1032,19 +1108,40 @@ class GameApp:
         if self.panel == "clues" and self.read_mode == "log" and not ending:
             # 窄屏切到了记事簿：得告诉玩家怎么回去，否则选项看起来「不见了」
             keys = "C 回卷宗 · " + keys
+        # 最上面那一行：有 toast / 条件提示就先说它，否则报状态（数字描金）。
+        if hot:
+            first = paint(pad(truncate(hot, w), w), hot_color, bold=True)
+        else:
+            first = self._status_row(w)
         if h <= 1:
             # 只剩一行：只放最急的那条
-            text, color = (hot, hot_color) if hot else (status, "white")
-            canvas.put(0, y + 1, paint(pad(truncate(text, w), w), color, bold=bool(hot)))
+            canvas.put(0, y + 1, first)
             return
         if h >= 3:
-            canvas.put(0, y + 1, paint(pad(truncate(hot or status, w), w),
-                                       hot_color if hot else "white", bold=bool(hot)))
+            canvas.put(0, y + 1, first)
             canvas.put(0, y + h - 1, paint(pad(" " + truncate(keys, w - 4), w), "default", dim=True))
             return
         # 两行：状态 + 提示
-        canvas.put(0, y + 1, paint(pad(truncate(hot or status, w), w),
-                                   hot_color if hot else "white", bold=bool(hot)))
+        canvas.put(0, y + 1, first)
+
+    def _status_parts(self) -> List[Tuple[str, str]]:
+        """底栏状态拆成 (标签, 数字) 成对的几段 —— 标签留白，数字描金。"""
+        parts = [(" 线索 ", f"{len(self.state.clues)}/{len(self.content.items)}"),
+                 (" · 核心 ", f"{self.state.core_count()}/{self.content.core_total()}"),
+                 (" · 评分 ", str(self.state.score))]
+        if self.state.notes:
+            parts.append((" · 笔记 ", str(len(self.state.notes))))
+        return parts
+
+    def _status_row(self, w: int) -> str:
+        """铺满一行的状态。放不下时退回纯文本截断：``truncate`` 只认纯文本，
+        不能拿它去切一段带样式的串（会把转义序列数成可见宽度）。"""
+        parts = self._status_parts()
+        plain = "".join(label + value for label, value in parts)
+        if display_width(plain) > w:
+            return paint(pad(truncate(plain, w), w), "white")
+        return pad("".join(paint(label, "white") + paint(value, C_GOLD)
+                           for label, value in parts), w)
 
     # -- 帮助 ------------------------------------------------------------
     #: 帮助浮层里的按键表（正文位置见 `_draw_help`）。

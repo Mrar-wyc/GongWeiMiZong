@@ -32,18 +32,53 @@
     tab: "log",
     history: [],
     histAt: -1,
-    draft: ""
+    draft: "",
+    logOpen: true,          // 「行动记录」摊开还是收起（折叠条上的 aria-expanded 跟着它）
+    lastAct: null           // 上一次铺过卷首过场的幕号：换了幕才铺
   };
 
   // ------------------------------------------------------------------
   // 小工具
   // ------------------------------------------------------------------
 
-  function el(tag, cls, text) {
+  /** 可选的 attrs：第三参写成对象、或另给第四参，都按 setAttribute 落上去。 */
+  function el(tag, cls, text, attrs) {
     var node = document.createElement(tag);
     if (cls) { node.className = cls; }
-    if (text !== undefined && text !== null) { node.textContent = text; }
+    if (text !== undefined && text !== null) {
+      if (typeof text === "object") { attrs = attrs || text; }
+      else { node.textContent = text; }
+    }
+    return applyAttrs(node, attrs);
+  }
+
+  function applyAttrs(node, attrs) {
+    if (!attrs) { return node; }
+    Object.keys(attrs).forEach(function (key) {
+      if (attrs[key] === null || attrs[key] === undefined) { return; }
+      node.setAttribute(key, String(attrs[key]));
+    });
     return node;
+  }
+
+  /** 描金分隔线：画法在 style.css 的 .rule 里。 */
+  function sep() { return el("div", "rule"); }
+
+  /**
+   * 一枚图标：把 shell.html 里那只模板 svg 复制一份，只把 use 的 href 指到 #i-名字。
+   * 一律走 getElementById + cloneNode —— 不用 createElementNS、不写 innerHTML，
+   * 产物里才不会出现外链前缀（tests/test_web.py 的离线扫描盯着这个）。
+   * 假 DOM（tests/webui_harness.js）里没有那块模板，退成一只空 svg，不报错。
+   */
+  function iconNode(name, box) {
+    var tpl = document.getElementById("icon-tpl");
+    var svg = tpl && tpl.firstChild && typeof tpl.firstChild.cloneNode === "function"
+      ? tpl.firstChild.cloneNode(true)
+      : applyAttrs(el("svg", "icon"), { viewBox: box || "0 0 24 24" });
+    if (box) { svg.setAttribute("viewBox", box); }
+    var uses = svg.querySelectorAll ? svg.querySelectorAll("use") : [];
+    if (uses.length) { uses[0].setAttribute("href", "#i-" + name); }
+    return svg;
   }
 
   function clear(node) { while (node.firstChild) { node.removeChild(node.firstChild); } }
@@ -353,18 +388,30 @@
     else { renderGame(); }
     renderOverlay();
     renderToasts();
+    maybeSplash();
   }
 
   function renderTitle() {
-    var box = el("div", "center-screen");
-    box.appendChild(el("div", "brand", PACK.title));
+    var box = el("div", "center-screen title-screen");
+
+    // 落花：只铺片数，位置 / 延时 / 飘法全交给 CSS 的 nth-child（纯装饰，读屏不念）
+    var petals = el("div", "petals", null, { "aria-hidden": "true" });
+    for (var i = 0; i < 10; i += 1) { petals.appendChild(el("span", "petal")); }
+    box.appendChild(petals);
+
+    // 朱砂印章徽：四字与内描金环都画在 shell.html 的精灵里（#i-seal-badge）
+    var badge = el("div", "seal-badge");
+    badge.appendChild(iconNode("seal-badge", "0 0 80 80"));
+    box.appendChild(badge);
+
+    box.appendChild(el("h1", "brand", PACK.title));
     box.appendChild(el("div", "brand-sub", PACK.subtitle + " · 网页版"));
-    box.appendChild(el("div", "rule"));
+    box.appendChild(sep());
     var quote = el("div", "quote", PACK.prologue);
     box.appendChild(quote);
 
     var menu = el("div", "menu");
-    var entries = [["新案", function () {
+    var entries = [["新案", "seal-btn", function () {
       game.newGame();
       ui.screen = "game";
       ui.read = "log";
@@ -372,21 +419,23 @@
       toast("//新案开卷——" + PACK.title + "//", "dossier");
       render();
       scrollReading(0);
-    }]];
+    }, "scroll"]];
     if (hasSave()) {
-      entries.push(["续前案（读档）", doLoad]);
+      entries.push(["续前案（读档）", "title-btn", doLoad, "load"]);
     }
-    entries.push(["玩法说明", function () { ui.overlay = { kind: "help" }; renderOverlay(); }]);
-    entries.push(["关于本作", function () { ui.overlay = { kind: "about" }; renderOverlay(); }]);
+    entries.push(["玩法说明", "title-btn", function () { ui.overlay = { kind: "help" }; renderOverlay(); }, "help"]);
+    entries.push(["关于本作", "title-btn", function () { ui.overlay = { kind: "about" }; renderOverlay(); }, "info"]);
 
-    entries.forEach(function (pair, i) {
-      var btn = el("button", "opt");
+    entries.forEach(function (row, i) {
+      var btn = el("button", "opt " + row[1]);
       btn.appendChild(el("span", "num", String(i + 1)));
-      btn.appendChild(el("span", "label", pair[0]));
-      btn.addEventListener("click", pair[1]);
+      btn.appendChild(el("span", "label", row[0]));
+      if (row[3]) { btn.appendChild(iconNode(row[3])); }
+      btn.addEventListener("click", row[2]);
       menu.appendChild(btn);
     });
     box.appendChild(menu);
+    box.appendChild(el("div", "credit", "古风宫廷推理 · 单文件离线 · 与终端版同一套剧本"));
     root.appendChild(box);
     renderFooter(root);
   }
@@ -394,45 +443,42 @@
   function renderGame() {
     var st = game.state;
 
-    // -- 顶栏
-    var top = el("div", "topbar");
+    // -- 顶栏：印章小徽 + 标题 + 幕/案副行 + 芯片行 + 图标钮
+    var top = el("div", "topbar glass-panel");
     var row = el("div", "topbar-row");
-    row.appendChild(el("span", "brand", PACK.title));
-    row.appendChild(el("span", "brand-sub", PACK.subtitle));
-    var seal = el("span", "seal", st.ending ? "已结案" : "第 " + st.chapter + " 幕");
-    row.appendChild(seal);
-    top.appendChild(row);
-
-    var meta = el("div", "topbar-meta");
+    row.appendChild(el("span", "seal-badge", st.ending ? "终" : "宫"));
+    var brand = el("div", "brand-box");
+    brand.appendChild(el("span", "brand", PACK.title));
     // 「幕」跟着**眼前这一屏**走：正在读某份档案时印那份档案的幕（读第二幕的账目
     // 时别让人以为还在第一幕），否则印当前进度。不能直接看 st.open_dossier ——
     // 那是引擎替存档记着的「上次读到哪儿」，读完退回卷宗、或读一份旧存档之后
     // 它仍然指着旧档，顶栏就会印错幕（案① 已结案、人站在第六幕，却写着第一幕）。
-    // 前三项是「此刻在哪儿、什么时候」，窄屏留着；后四项是读数，窄屏交给 CSS 收起。
     var headAct = game.headAct(ui.read === "dossier" ? ui.dossier : "");
-    [["幕", game.actTitleOf(headAct), ""],
-     ["时辰", st.time, ""], ["所在", st.place, ""],
-     ["回合", String(st.turn), "meta-extra"],
-     ["评分", String(st.score), "meta-extra"],
-     ["行囊", String(st.items_owned.length), "meta-extra"],
-     ["线索", st.clues.length + "/" + Object.keys(PACK.items).filter(function (k) { return PACK.items[k].core; }).length, "meta-extra"]
-    ].forEach(function (pair) {
-      var span = el("span", pair[2]);
-      span.appendChild(document.createTextNode(pair[0] + " "));
-      span.appendChild(el("b", null, esc(pair[1])));
-      meta.appendChild(span);
-    });
-    if (st.hurt) {
-      var hurt = el("span");
-      hurt.appendChild(document.createTextNode("心绪 "));
-      hurt.appendChild(el("b", null, String(st.hurt)));
-      meta.appendChild(hurt);
-    }
-    top.appendChild(meta);
+    brand.appendChild(el("div", "brand-sub",
+      game.actTitleOf(headAct) + " · 第 " + st.case + " 案"));
+    row.appendChild(brand);
+    row.appendChild(el("span", "seal", st.ending ? "已结案" : "第 " + st.chapter + " 幕"));
+    row.appendChild(topActions());
+    top.appendChild(row);
+
+    // 芯片行：前三项是「此刻在哪儿、什么时候」，窄屏留着；后四项是读数，窄屏交给 CSS 收
+    var chips = el("div", "hud-chips");
+    chips.appendChild(hudChip("door", "所在", st.place, ""));
+    chips.appendChild(hudChip("clock", "时辰", st.time, ""));
+    chips.appendChild(hudChip("star", "回合", String(st.turn), "meta-extra"));
+    chips.appendChild(hudChip("star", "评分", String(st.score), "meta-extra"));
+    chips.appendChild(hudChip("evidence", "行囊", String(st.items_owned.length), "meta-extra"));
+    chips.appendChild(hudChip("clue", "线索",
+      st.clues.length + "/" + PACK.core_total, "meta-extra"));
+    if (st.hurt) { chips.appendChild(hudChip("person", "心绪", String(st.hurt), "")); }
+    top.appendChild(chips);
 
     var tabs = el("div", "tabs");
-    [["log", "卷宗"], ["index", "档目"], ["notes", "记事"], ["search", "检索"], ["collection", "案外"]].forEach(function (pair) {
-      var b = el("button", "tab" + (ui.tab === pair[0] ? " on" : ""), pair[1]);
+    [["log", "卷宗", "scroll"], ["index", "档目", "book"], ["notes", "记事", "letter"],
+     ["search", "检索", "magnify"], ["collection", "案外", "leaf"]].forEach(function (pair) {
+      var b = el("button", "tab" + (ui.tab === pair[0] ? " on" : ""));
+      b.appendChild(iconNode(pair[2]));
+      b.appendChild(el("span", null, pair[1]));
       b.addEventListener("click", function () {
         ui.tab = pair[0];
         if (pair[0] === "index") { ui.read = "index"; }
@@ -453,7 +499,8 @@
     if (!game.state.ending) { left.appendChild(renderOptions()); }
     left.appendChild(renderCommand());
 
-    // 窄屏靠分页切：宽屏时左栏已经在显示档目/检索的话，右栏那份由 CSS 收起来
+    // 右栏：先四张仪表卡，再是各页签的那一份（窄屏靠分页切，rail 由 CSS 折叠）
+    right.appendChild(renderRail());
     right.appendChild(renderIndex());
     right.appendChild(renderNotes());
     right.appendChild(renderSearchHits());
@@ -469,6 +516,8 @@
     var panel = el("div", "panel reading page page-log");
     var head = el("div", "panel-head");
     var titles = { log: "卷宗", dossier: "档案", index: "档目", search: "检索" };
+    var headIcons = { log: "scroll", dossier: "letter", index: "book", search: "magnify" };
+    head.appendChild(iconNode(headIcons[ui.read] || "scroll"));
     head.appendChild(el("span", null, titles[ui.read] || "卷宗"));
     var acts = el("span", "count");
     if (ui.read === "dossier" && ui.dossier) {
@@ -496,7 +545,9 @@
     } else if (ui.read === "search") {
       body.appendChild(hitList());
     } else {
-      body.appendChild(logList());
+      // 「行动记录」是一条可折叠的栏：摊开时下面才是卷宗正文（默认摊开）
+      body.appendChild(logBar());
+      if (ui.logOpen) { body.appendChild(logList()); }
     }
     panel.appendChild(body);
     return panel;
@@ -551,7 +602,7 @@
     var limit = entries.length > 120 ? entries.slice(-120) : entries;
     limit.forEach(function (entry) {
       var kind = entry[0], text = entry[1];
-      var box = el("div", "log-entry log-" + kind);
+      var box = el("div", "log-entry log-" + kind + (saysIt(text) ? " dlg" : ""));
       if (kind === "scene") {
         var scene = PACK.scenes[game.state.scene];
         if (scene) { box.appendChild(el("span", "scene-title", scene.title + " · " + scene.place)); }
@@ -560,6 +611,33 @@
       wrap.appendChild(box);
     });
     return wrap;
+  }
+
+  /** 「行动记录」那一条折叠栏：aria-expanded 跟着 ui.logOpen 走。 */
+  function logBar() {
+    var bar = el("div", "log-bar");
+    var b = el("button", "btn small bare log-toggle");
+    b.setAttribute("aria-expanded", ui.logOpen ? "true" : "false");
+    b.appendChild(iconNode("scroll"));
+    b.appendChild(el("span", null, "行动记录"));
+    b.appendChild(el("span", "caret"));
+    b.addEventListener("click", function () {
+      ui.logOpen = !ui.logOpen;
+      render();
+      if (ui.logOpen) { scrollReading(1e9); }
+    });
+    bar.appendChild(b);
+    bar.appendChild(el("span", "count", game.state.log.length + " 则"));
+    return bar;
+  }
+
+  /** 这一则里有没有「名字：」的对话行 —— 有才给 .dlg 的边（一字不改，只换观感）。 */
+  function saysIt(text) {
+    return String(text).split("\n").some(function (line) {
+      var rest = line.replace(/^\s+/, "");
+      var cut = rest.indexOf("：");
+      return cut > 0 && !!SPEAKERS[rest.slice(0, cut)];
+    });
   }
 
   function indexTree() {
@@ -576,7 +654,7 @@
       rows.forEach(function (row) {
         var did = row[0], title = row[1], hint = row[2], read = row[3];
         var b = el("button", "doc-row" + (read ? "" : " unread"));
-        b.appendChild(el("span", "did", did));
+        b.appendChild(el("span", "did kv", did));
         b.appendChild(el("span", "title", title));
         if (hint) { b.appendChild(el("span", "hint", "还牵着 " + hint + " 份")); }
         b.addEventListener("click", function () { readDossier(did); });
@@ -596,7 +674,7 @@
     }
     ui.hits.forEach(function (hit) {
       var b = el("button", "hit");
-      b.appendChild(el("span", "did", hit[0] + " · " + hit[1]));
+      b.appendChild(el("span", "did kv", hit[0] + " · " + hit[1]));
       b.appendChild(el("span", "snippet", hit[2]));
       b.addEventListener("click", function () { readDossier(hit[0]); });
       wrap.appendChild(b);
@@ -607,6 +685,7 @@
   function renderOptions() {
     var panel = el("div", "panel options page page-log");
     var head = el("div", "panel-head");
+    head.appendChild(iconNode("scroll"));
     head.appendChild(el("span", null, "可以做的事"));
     head.appendChild(el("span", "count", "↑↓ 移动 · 回车确认 · 也可直接敲下面的字"));
     panel.appendChild(head);
@@ -624,12 +703,14 @@
       return;
     }
     opts.forEach(function (opt, i) {
-      var b = el("button", "opt" + (opt.enabled ? "" : " locked") +
+      var b = el("button", "choice-card opt" + (opt.enabled ? "" : " locked") +
         (i === ui.cursor ? " focus" : ""));
-      b.appendChild(el("span", "num", String(opt.index)));
-      var label = el("span", "label", opt.label);
+      b.appendChild(el("span", "choice-num num", String(opt.index)));
+      var label = el("span", "choice-label label", opt.label);
       if (opt.detail) { label.appendChild(el("span", "detail", opt.detail)); }
-      if (!opt.enabled && opt.hint) { label.appendChild(el("span", "hint", "条件不足：" + opt.hint)); }
+      if (!opt.enabled && opt.hint) {
+        label.appendChild(el("span", "hint lock-chip", "条件不足：" + opt.hint));
+      }
       if (opt.asked) { label.appendChild(el("span", "asked", "（已经问过）")); }
       b.appendChild(label);
       b.addEventListener("click", function () { runOption(opt); });
@@ -699,6 +780,143 @@
     panel.appendChild(head);
     panel.appendChild(body);
     return panel;
+  }
+
+  // ------------------------------------------------------------------
+  // 右栏：四张仪表卡
+  //
+  // 全是真数据：进度读 game.state 与 PACK 的计数，人物心意读 state.trust，
+  // 刻度用 PACK.characters[cid].confide_at（999 = 永不肯深谈，只显示数字）。
+  // 窄屏怎么折叠是 CSS 的事 —— 这里一个宽度判断都不写。
+  // ------------------------------------------------------------------
+
+  /** 顶栏右侧的图标钮：只有图标没有字（按文案找按钮的脚本不会多认出一个「案外」）。 */
+  function topActions() {
+    var box = el("div", "top-actions");
+    [["save", "存档", doSave],
+     ["load", "读档 / 搬档", function () { ui.overlay = { kind: "save" }; renderOverlay(); }],
+     ["leaf", "案外", function () { ui.tab = "collection"; render(); }],
+     ["help", "帮助", function () { ui.overlay = { kind: "help" }; renderOverlay(); }],
+     ["home", "回到标题", backToTitle]].forEach(function (spec) {
+      var b = el("button", "btn small icon-btn", null,
+        { title: spec[1], "aria-label": spec[1] });
+      b.appendChild(iconNode(spec[0]));
+      b.addEventListener("click", spec[2]);
+      box.appendChild(b);
+    });
+    return box;
+  }
+
+  /** 顶栏的一枚芯片：图标 + 「词 + b(读数)」。文本与从前一字不差。 */
+  function hudChip(icon, label, value, extra) {
+    var chip = el("span", "hud-chip" + (extra ? " " + extra : ""));
+    chip.appendChild(iconNode(icon));
+    chip.appendChild(document.createTextNode(label + " "));
+    chip.appendChild(el("b", null, esc(value)));
+    return chip;
+  }
+
+  function railHead(card, icon, title, count) {
+    var head = el("div", "panel-head");
+    head.appendChild(iconNode(icon));
+    head.appendChild(el("span", null, title));
+    head.appendChild(el("span", "count", count || ""));
+    card.appendChild(head);
+    return head;
+  }
+
+  function railProgress() {
+    var st = game.state;
+    var card = el("div", "panel rail-card");
+    railHead(card, "progress", "进度", game.actTitleOf(st.chapter));
+    var body = el("div", "panel-body");
+    [["线索", st.clues.length + "/" + PACK.core_total],
+     ["档目", game.knownDossiers().length + "/" + Object.keys(PACK.dossiers).length],
+     ["评分", String(st.score)]].forEach(function (pair) {
+      var row = el("div", "rail-stat");
+      row.appendChild(el("span", "rail-label", pair[0]));
+      row.appendChild(el("span", "rail-num", pair[1]));
+      body.appendChild(row);
+    });
+    card.appendChild(body);
+    return card;
+  }
+
+  function railTrust() {
+    var st = game.state;
+    var chars = PACK.characters || {};
+    var card = el("div", "panel rail-card");
+    var body = el("div", "panel-body trust-list");
+    var ready = 0;
+    Object.keys(chars).forEach(function (cid) {
+      var ch = chars[cid] || {};
+      var now = Number(st.trust[cid]);
+      if (!isFinite(now)) { now = 0; }
+      var at = Number(ch.confide_at);
+      if (!isFinite(at) || at <= 0) { at = 999; }
+      var row = el("div", "trust-row");
+      row.appendChild(el("span", "trust-name", ch.name || cid));
+      if (at !== 999) {
+        // 刻度就是「深谈那道线」：条填满，说明这个人可以深谈了
+        var bar = el("div", "trust-bar");
+        var fill = el("div", "trust-fill");
+        fill.setAttribute("style",
+          "width:" + Math.max(0, Math.min(100, Math.round(now / at * 100))) + "%");
+        bar.appendChild(fill);
+        row.appendChild(bar);
+        if (now >= at) { row.appendChild(el("span", "trust-candie")); ready += 1; }
+      }
+      row.appendChild(el("span", "trust-num", String(now)));
+      body.appendChild(row);
+    });
+    railHead(card, "person", "人物心意", ready ? ready + " 人可深谈" : "");
+    card.appendChild(body);
+    return card;
+  }
+
+  /** 一小撮芯片（线索囊 / 随身之物共用）：点一下就去检索这个词。 */
+  function chipRow(ids, kind) {
+    var wrap = el("div", "chip-row");
+    ids.forEach(function (id) {
+      var item = PACK.items[id] || {};
+      var name = item.name || id;
+      var b = el("button", "btn small bare " + kind, name);
+      b.addEventListener("click", function () { doSearch(name); });
+      wrap.appendChild(b);
+    });
+    return wrap;
+  }
+
+  function railClues() {
+    var st = game.state;
+    var card = el("div", "panel rail-card");
+    railHead(card, "clue", "线索囊", st.clues.length + "/" + PACK.core_total);
+    var body = el("div", "panel-body");
+    var recent = st.clues.slice(-5).reverse();
+    if (recent.length) { body.appendChild(chipRow(recent, "clue-chip")); }
+    else { body.appendChild(el("p", "empty", "还没有线索。")); }
+    card.appendChild(body);
+    return card;
+  }
+
+  function railBag() {
+    var owned = game.state.items_owned || [];
+    var card = el("div", "panel rail-card");
+    railHead(card, "evidence", "随身之物", String(owned.length));
+    var body = el("div", "panel-body");
+    if (owned.length) { body.appendChild(chipRow(owned, "item-chip")); }
+    else { body.appendChild(el("p", "empty", "行囊还空着。")); }
+    card.appendChild(body);
+    return card;
+  }
+
+  function renderRail() {
+    var wrap = el("div", "rail");
+    wrap.appendChild(railProgress());
+    wrap.appendChild(railTrust());
+    wrap.appendChild(railClues());
+    wrap.appendChild(railBag());
+    return wrap;
   }
 
   function renderIndex() {
@@ -806,7 +1024,7 @@
     document.body.setAttribute("data-overlay", "1");
     var wrap = el("div", "overlay");
     wrap.id = "overlay";
-    var sheet = el("div", "sheet");
+    var sheet = el("div", "sheet glass-panel");
     var kind = ui.overlay.kind;
 
     function closeRow(extra) {
@@ -1267,6 +1485,15 @@
       note.appendChild(document.createTextNode(rest.slice(2)));
       return note;
     }
+    // 【线索】/【物证】那一小撮记号点个底色：只多套一层 span，正文一字不动
+    var mark = /^【(?:线索|物证)】/.exec(rest);
+    if (mark) {
+      var tagged = el("span", "said-line kv-line");
+      if (lead) { tagged.appendChild(document.createTextNode(lead)); }
+      tagged.appendChild(el("span", "kv", mark[0]));
+      tagged.appendChild(document.createTextNode(rest.slice(mark[0].length)));
+      return tagged;
+    }
     var cut = rest.indexOf("：");
     if (cut <= 0 || !SPEAKERS[rest.slice(0, cut)]) { return el("span", null, line); }
     var span = el("span", "said-line");
@@ -1300,6 +1527,68 @@
       if (e.subtitle) { box.appendChild(el("div", "seal-sub", e.subtitle)); }
     }
     return box;
+  }
+
+  // ------------------------------------------------------------------
+  // 卷首过场：换幕时铺一层
+  //
+  // 只在幕号真的变了的那一次 render() 之后铺（ui.lastAct 记着上次报过哪一幕）。
+  // 点一下、或按 Esc 收起；动效开关交给 CSS（body[data-motion="off"] 把动画压平），
+  // 这里只管把 .on 加上、收起时去掉。
+  // ------------------------------------------------------------------
+
+  var splashTimer = null;
+
+  function closeSplash() {
+    var node = document.getElementById("splash");
+    if (!node) { return; }
+    node.className = "splash";            // 去掉 on：CSS 在这一档收尾
+    node.setAttribute("id", "");          // 腾出 id，下一幕的过场才认准自己那一个
+    if (splashTimer) { clearTimeout(splashTimer); }
+    splashTimer = setTimeout(function () {
+      splashTimer = null;
+      if (node.remove) { node.remove(); }
+    }, 260);
+  }
+
+  /** 汉字的幕号（1 → 一，11 → 十一）。 */
+  function hanNum(n) {
+    var digits = "〇一二三四五六七八九";
+    if (!n || n < 1) { return "〇"; }
+    if (n < 10) { return digits.charAt(n); }
+    if (n === 10) { return "十"; }
+    if (n < 20) { return "十" + digits.charAt(n - 10); }
+    return digits.charAt(Math.floor(n / 10)) + "十" + (n % 10 ? digits.charAt(n % 10) : "");
+  }
+
+  function showSplash(act) {
+    closeSplash();
+    var box = el("div", "splash on");
+    box.id = "splash";
+    box.appendChild(el("div", "splash-veil", null, { "aria-hidden": "true" }));
+    var card = el("div", "splash-card");
+    card.appendChild(el("div", "splash-art", null, { "aria-hidden": "true" }));
+    card.appendChild(el("div", "splash-num", hanNum(act)));
+    card.appendChild(el("div", "splash-title", game.actTitleOf(act)));
+    card.appendChild(sep());
+    card.appendChild(el("div", "splash-quote", PACK.prologue));
+    var stamp = el("div", "seal-stamp");
+    stamp.appendChild(iconNode("seal"));
+    stamp.appendChild(el("span", null, hanNum(act) + "幕"));
+    card.appendChild(stamp);
+    card.appendChild(el("div", "splash-hint", "轻触任意处 · 入局"));
+    box.appendChild(card);
+    box.addEventListener("click", closeSplash);
+    document.body.appendChild(box);
+  }
+
+  /** 每次 render() 收尾都过一下：幕号变了才铺过场，回标题屏就收起来。 */
+  function maybeSplash() {
+    var act = ui.screen === "game" ? (game.state.chapter || 0) : 0;
+    if (act === ui.lastAct) { return; }
+    ui.lastAct = act;
+    if (!act || game.state.ending) { closeSplash(); return; }
+    showSplash(act);
   }
 
   // ------------------------------------------------------------------
@@ -1416,6 +1705,12 @@
     panel.appendChild(body);
     return panel;
   }
+
+  // 过场是铺在 #app 外面的一层：Esc 先合浮层（上面那条监听器），再退过场
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key !== "Escape" || ui.overlay) { return; }
+    closeSplash();
+  });
 
   // 起手：先读设定与案外进度，再看标题屏
   loadSettings();

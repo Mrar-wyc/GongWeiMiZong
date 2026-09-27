@@ -23,6 +23,9 @@
  * 2. 版面只许有**一条**页面滚动条：阅读区与选项区不设 max-height（曾经的 62vh/34vh
  *    内滚把正文切成了「滚套滚」）。窄屏靠顶部的页签条与底部的命令行吸边来留住导航。
  * 3. 字号只走下面那七档令牌，别再写 .74/.76/.78 这种近似值（差一档看不出，差六档就乱）。
+ * 4. 新加的动效（落花 `fall`、盖印 `stampIn`、卷首淡入）必须在文件末尾的
+ *    `body[data-motion="off"]` 与 `@media (prefers-reduced-motion: reduce)` 两处一起关掉，
+ *    少关一处，设定里那个开关就是骗人的。图景层的落花另见 static.css 末尾。
  */
 
 :root {
@@ -61,6 +64,17 @@
   --shadow-lift: 0 12px 34px rgba(44, 24, 16, .24);
   /* 吸边条与浮层的底：比面板更实，免得底下文字透上来 */
   --bar: linear-gradient(180deg, rgba(255, 252, 246, .97), rgba(245, 230, 211, .95));
+  /* 视觉语言：楷体标题栈、玻璃纸面板、胶囊、朱砂方印（取自 v1.1 插画版原型的做法） */
+  --display: "STKaiti", "KaiTi", "Kaiti SC", "Kai", "Songti SC", var(--serif);
+  --panel: rgba(251, 243, 228, .88);
+  --panel-solid: #FBF3E4;
+  --radius-lg: 10px;
+  --shadow-card: 0 4px 24px rgba(44, 24, 16, .10);
+  --chip-bg: rgba(245, 230, 211, .62);
+  --highlight: rgba(201, 169, 97, .28);
+  /* 方印的两端：从朱砂落到暗朱 */
+  --seal-a: var(--crimson);
+  --seal-b: var(--crimson-dark);
 }
 
 * { box-sizing: border-box; }
@@ -98,6 +112,33 @@ html, body {
   padding: 0 14px 14px;
 }
 
+/* ---------- 视觉语言：玻璃纸面板 / 描金细线 / 内联图标 ---------- */
+/* 半透明纸底 + 一道描金边：右栏的仪表卡、卷首的画卷、命令行上方都走这一套 */
+.glass-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+/* 能磨砂就再磨一层：拿不到 backdrop-filter 的老浏览器也不会难看，
+   因为纸底本来就已经不透字了 */
+@supports (backdrop-filter: blur(8px)) {
+  .glass-panel {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+}
+/* 内联 svg 图标：只描边不填色，颜色跟着当前字色走 */
+.icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  vertical-align: -3px;
+}
+
 /* ---------- 顶栏 ---------- */
 .topbar {
   position: sticky;
@@ -132,6 +173,41 @@ html, body {
   font-size: var(--fs-2xs);
   letter-spacing: .12em;
   background: rgba(139,44,44,.05);
+}
+
+/* 朱砂方印：四字刻成 2×2（靠 grid，列宽取内容宽，所以只刻一个字时也居中）。 */
+.seal-badge {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  place-content: center;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--seal-a), var(--seal-b));
+  /* 内描金环 + 一点投影：印面是压下去的，不是贴上去的 */
+  box-shadow: inset 0 0 0 2px rgba(201,169,97,.55), 0 2px 6px rgba(107,31,31,.32);
+  color: var(--paper);
+  font-family: var(--display);
+  font-size: var(--fs-2xs);
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+/* 顶栏上的读数胶囊：地点、时辰这类「此刻在哪」的名字，只读不点 */
+.hud-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--chip-bg);
+  color: var(--ink-light);
+  font-size: var(--fs-2xs);
+  letter-spacing: .06em;
+  white-space: nowrap;
 }
 
 /* ---------- 主体 ---------- */
@@ -195,6 +271,9 @@ html, body {
 /* 档案里的旁注行（正文以 // 开头的那种，如「//份档号：…」）：整行降一档，只把记号点金 */
 .note-line { color: var(--ink-light); }
 .note-mark { color: var(--gold-ink); font-weight: 600; letter-spacing: .08em; }
+
+/* 正文里的关键词：只垫一层极淡的金，字色一个字都不改（一改就掉到 AA 以下） */
+.kv { background: var(--highlight); border-radius: 3px; padding: 0 2px; }
 
 /* 档案卡片 */
 .dossier-card {
@@ -312,6 +391,62 @@ html, body {
 .opt.locked .num { border-color: var(--ink-light); color: var(--ink-light); }
 .opt .hint { display: block; margin-top: 3px; color: var(--crimson-dark); font-size: var(--fs-2xs); }
 .opt .asked { color: var(--gold-ink); font-size: var(--fs-2xs); letter-spacing: .08em; }
+
+/* 选项卡的另一种排法（卷首与判决屏用）：编号圆章 + 标签 + 说明 + 锁定 chip。
+   与 .opt 的区别只在气质：多一枚圆章、悬停时往右让半步、身前拖一道金影。 */
+.choice-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background .12s ease, border-color .12s ease, box-shadow .12s ease, transform .12s ease;
+}
+.choice-card:hover {
+  transform: translateX(2px);
+  border-color: var(--gold-dark);
+  background: var(--panel-solid);
+  box-shadow: -2px 0 0 0 var(--gold);
+}
+/* 已经选中的那一条：垫一层金，再换朱砂边 */
+.choice-card.on { background: var(--highlight); border-color: var(--crimson); }
+.choice-num {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1.5em;
+  height: 1.5em;
+  border: 1px solid var(--gold-dark);
+  border-radius: 50%;
+  color: var(--crimson);
+  font-family: var(--display);
+  font-size: var(--fs-2xs);
+  line-height: 1;
+}
+.choice-hint {
+  display: block;
+  margin-top: 2px;
+  color: var(--ink-light);
+  font-size: var(--fs-2xs);
+  line-height: 1.6;
+}
+/* 敲不开的那一条：尾上挂一枚朱砂小 chip，别整条变灰（灰了就看不清字了） */
+.choice-lock {
+  flex: none;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: rgba(139,44,44,.12);
+  color: var(--crimson);
+  font-size: var(--fs-2xs);
+  white-space: nowrap;
+}
 
 /* 命令行：整块面板吸在窗口底部，滚到哪儿都能敲字。
    注意必须吸在**面板**上：`.panel` 自带 overflow:hidden，吸在内层就被它框住不动了。 */
@@ -505,7 +640,8 @@ html, body {
 /* 浮层打开时锁住底下的页面滚动（属性由 ui.js 写在 body 上） */
 body[data-overlay="1"] { overflow: hidden; }
 
-.rule { height: 1px; margin: 10px 0; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+/* 一条描金细线：两端化开、中间实。`.rule` 是旧名字，`.gold-divider` 是新名字，同一条线 */
+.rule, .gold-divider { height: 1px; margin: 10px 0; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
 
 /* ---------- 标题屏 / 结局屏 ---------- */
 .center-screen {
@@ -534,6 +670,112 @@ body[data-overlay="1"] { overflow: hidden; }
   border-bottom: 1px solid var(--line-soft);
 }
 .center-screen .menu { display: flex; flex-direction: column; gap: 8px; width: min(92vw, 380px); margin-top: 6px; }
+
+/* ---------- 卷首过场：纸幕 / 画卷带 / 幕号 / 幕名 / 引文 / 印章 ---------- */
+/* 进幕时压住整屏说一句。画卷带里画的什么由 static.css 按 #stage 的色调出，这里只管骨架。 */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+}
+.splash-veil {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 92% at 50% 42%, rgba(44,24,16,.44), rgba(44,24,16,.68));
+}
+.splash-card {
+  position: relative;
+  width: min(92vw, 30em);
+  padding: 0 0 18px;
+  overflow: hidden;
+  border: 1px solid var(--gold-dark);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, var(--panel-solid), var(--paper));
+  box-shadow: var(--shadow-lift);
+  text-align: center;
+  animation: gw-fade .42s ease-out both;
+}
+/* 画卷带：一条横卷。画法在 static.css（七色各一张，零图片） */
+.splash-art {
+  position: relative;
+  height: 116px;
+  background-color: var(--paper-light);
+  border-bottom: 1px solid var(--line);
+  animation: gw-fade .5s ease-out both;
+}
+.splash-num {
+  display: block;
+  margin: 12px 0 2px;
+  color: var(--gold-ink);
+  font-size: var(--fs-xs);
+  letter-spacing: .34em;
+  text-indent: .34em;
+}
+.splash-title {
+  display: block;
+  color: var(--crimson);
+  font-family: var(--display);
+  font-size: var(--fs-2xl);
+  letter-spacing: .2em;
+  text-indent: .2em;
+}
+.splash-quote {
+  display: block;
+  margin: 10px 20px 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--line-soft);
+  color: var(--ink-light);
+  font-size: var(--fs-s);
+  line-height: 1.9;
+  text-align: left;
+}
+/* 卷首底下盖的那枚印：落下来时从大缩到小，回一点弹，最后停在偏 -6° 上。
+   只管 `.splash` 里的这枚——`.ending-seal .seal-stamp` 是结局屏那枚小戳，样式另有一份。 */
+.splash .seal-stamp {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-top: 14px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, var(--seal-a), var(--seal-b));
+  box-shadow: inset 0 0 0 2px rgba(245,230,211,.42), 0 3px 10px rgba(107,31,31,.36);
+  color: var(--paper);
+  font-family: var(--display);
+  font-size: var(--fs-l);
+  line-height: 1;
+  transform: rotate(-6deg);
+  animation: stampIn .5s cubic-bezier(.34,1.56,.64,1) .3s both;
+}
+
+/* ---------- 落花：横摆 + 下落 + 旋转 + 淡出（图景层里那份同名兄弟在 static.css） ---------- */
+.petal {
+  position: absolute;
+  width: 9px;
+  height: 7px;
+  border-radius: 60% 40% 55% 45% / 55% 60% 40% 55%;
+  background: rgba(201,169,97,.30);
+  animation: fall 14s linear infinite;
+  pointer-events: none;
+}
+@keyframes fall {
+  0%   { transform: translate3d(0, -10vh, 0) rotate(0deg); opacity: 0; }
+  8%   { opacity: .95; }
+  26%  { transform: translate3d(3vw, 24vh, 0) rotate(84deg); }
+  52%  { transform: translate3d(-1vw, 56vh, 0) rotate(178deg); opacity: .9; }
+  76%  { transform: translate3d(4vw, 84vh, 0) rotate(268deg); }
+  100% { transform: translate3d(2vw, 112vh, 0) rotate(360deg); opacity: .12; }
+}
+/* 盖印：从 1.35 倍落到原大，路过 .94 时回一点弹，全程停在 -6° */
+@keyframes stampIn {
+  0%   { opacity: 0; transform: scale(1.35) rotate(-6deg); }
+  55%  { opacity: 1; transform: scale(.94) rotate(-6deg); }
+  100% { opacity: 1; transform: scale(1) rotate(-6deg); }
+}
 
 /* ---------- 分页：窄屏一次只看一页，宽屏全部铺开 ---------- */
 .page { display: none; }
@@ -615,6 +857,15 @@ body[data-tab="collection"] .page-collection { display: block; }
   letter-spacing: .08em;
 }
 
+/* 说话人段：整段往右缩半格，左肩立一道 2px 的金线；
+   段里的名字转成朱砂加粗（正文里的名字仍旧按上面那条走，不动） */
+.dlg {
+  margin: 0 0 14px;
+  padding-left: 10px;
+  border-left: 2px solid var(--gold);
+}
+.dlg .said-name { color: var(--crimson); font-weight: 700; }
+
 /* ---------- 结局印：评等 / 结局名 / 副题 ---------- */
 .ending-seal {
   display: flex;
@@ -637,6 +888,84 @@ body[data-tab="collection"] .page-collection { display: block; }
 }
 .ending-seal .seal-title { color: var(--crimson-dark); letter-spacing: .16em; font-size: 1.04rem; }
 .ending-seal .seal-sub { color: var(--ink-light); font-size: var(--fs-xs); }
+
+/* ---------- 右栏仪表卡：进度、心意、线索簿 ---------- */
+
+/* 仪表卡比正文面板更「玻璃」：圆角大一号、投影软一层 */
+.rail-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+.rail-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 11px;
+  border-bottom: 1px solid var(--line-soft);
+  background: linear-gradient(90deg, rgba(201,169,97,.16), rgba(201,169,97,.02));
+  color: var(--ink-light);
+  font-size: var(--fs-2xs);
+  letter-spacing: .12em;
+}
+/* 卡头那枚记号：写成 ★ 这类字或内联 svg 都行，颜色都跟这里的朱砂走 */
+.rail-glyph { flex: none; color: var(--crimson); line-height: 1; }
+.rail-count { margin-left: auto; color: var(--gold-ink); letter-spacing: .04em; }
+.rail-body { padding: 8px 11px 10px; }
+.rail-empty { color: var(--gold-ink); font-size: var(--fs-xs); }
+
+/* 三个大数字（线索 / 推演 / 卷）：数字用楷体，底下一行小字 */
+.metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; text-align: center; }
+.metric { display: flex; flex-direction: column; gap: 1px; }
+.metric-num {
+  color: var(--crimson);
+  font-family: var(--display);
+  font-size: var(--fs-2xl);
+  line-height: 1.25;
+  letter-spacing: .02em;
+}
+.metric-sub { color: var(--gold-ink); font-size: var(--fs-2xs); letter-spacing: .1em; }
+
+/* 信任条：圆头轨道 + 渐变填充 + 刻度竖线 + 右对齐读数 */
+.trust-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: var(--fs-xs); }
+/* 名字占固定一格（不是 min-width）：一栏的轨道才能对齐，读数也才在一条竖线上。
+   名字最长的「太傅谢临渊」五个字，5.4em 刚好，再长就收成省略号 */
+.trust-name {
+  flex: 0 0 5.4em;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.trust-track {
+  position: relative;
+  flex: 1 1 auto;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(92,64,51,.15);
+  overflow: hidden;
+}
+.trust-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--jade), var(--gold));
+  transition: width .5s ease;
+}
+/* 刻度竖线：位置由 ui.js 按「几成」写在 style 上（left: N%） */
+.trust-tick { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(44,24,16,.18); }
+.trust-val { flex: 0 0 auto; min-width: 2.4em; color: var(--gold-ink); text-align: right; font-size: var(--fs-2xs); }
+/* 深谈那道线：轨道上的一点金（跟终端版人情栏行尾那个金 ● 是同一件事） */
+.trust-candie {
+  position: absolute;
+  top: 0;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  border-radius: 50%;
+  background: var(--gold);
+}
 
 /* ---------- 案外：行囊 / 幕册 / 结局册 / 音画设定 ---------- */
 .panel-body h4 {
@@ -692,17 +1021,329 @@ body[data-tab="collection"] .page-collection { display: block; }
 .setting-row .setting-choices { display: flex; gap: 4px; flex-wrap: wrap; }
 
 /* ---------- 动效开关：设定里关掉动效、系统要求减少动效，都别再有过渡 ---------- */
+/* 新加的落花、盖印、卷首淡入、选项卡让位、信任条填充都在名单里，
+   漏一个就等于设定里那个开关没关干净（图景层的落花另见 static.css 末尾） */
 body[data-motion="off"] .opt,
 body[data-motion="off"] .btn,
 body[data-motion="off"] .tab,
 body[data-motion="off"] .overlay,
 body[data-motion="off"] .sheet,
-body[data-motion="off"] .toast {
+body[data-motion="off"] .toast,
+body[data-motion="off"] .choice-card,
+body[data-motion="off"] .trust-fill,
+body[data-motion="off"] .petal,
+body[data-motion="off"] .splash-card,
+body[data-motion="off"] .splash-art,
+body[data-motion="off"] .splash .seal-stamp {
   transition: none !important;
   animation: none !important;
 }
 @media (prefers-reduced-motion: reduce) {
-  .opt, .btn, .tab, .overlay, .sheet, .toast {
+  .opt, .btn, .tab, .overlay, .sheet, .toast,
+  .choice-card, .trust-fill, .petal, .splash-card, .splash-art, .splash .seal-stamp {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* =====================================================================
+ * 补完：`web/src/ui.js` 改版成「原型 v1.1 插画版」形制后已经在用、
+ * 这一版样式表里还缺的那一批类名（`.brand-box` … `.trust-num`）。
+ * 这一段**只增不改**：上面每一条既有规则一个字都没动，
+ * 需要压过既有规则的地方一律靠「同特异度 + 排在后面」或更高特异度，
+ * 没有一处 !important（动效开关那两处除外，那是既有写法）。
+ * ===================================================================== */
+
+/* ---------- 标题屏：落花层 / 两行品牌块 / 署一行名 ---------- */
+.title-screen {
+  position: relative;
+  overflow: hidden;          /* 落花只在这一屏里飘，不许漫到页脚上 */
+}
+.petals {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;      /* 纯装饰：不挡底下那排按钮的点击 */
+}
+/* 十片落花的位置与节奏：ui.js 只造 10 个空 span、一个随机数都不掷，
+   散落感全靠这里的 left / 时长 / 相位（负延时＝开局就在半空）。
+   `fall` 的关键帧在既有 `.petal` 规则那里，这里只补三样。 */
+.petals .petal:nth-child(1)  { left: 4%;  animation-duration: 12s; animation-delay: -1s; }
+.petals .petal:nth-child(2)  { left: 15%; animation-duration: 17s; animation-delay: -6s; }
+.petals .petal:nth-child(3)  { left: 26%; animation-duration: 14s; animation-delay: -11s; }
+.petals .petal:nth-child(4)  { left: 35%; animation-duration: 19s; animation-delay: -3s; }
+.petals .petal:nth-child(5)  { left: 47%; animation-duration: 13s; animation-delay: -9s; }
+.petals .petal:nth-child(6)  { left: 58%; animation-duration: 16s; animation-delay: -14s; }
+.petals .petal:nth-child(7)  { left: 68%; animation-duration: 11s; animation-delay: -13s; }
+.petals .petal:nth-child(8)  { left: 77%; animation-duration: 18s; animation-delay: -5s; }
+.petals .petal:nth-child(9)  { left: 87%; animation-duration: 15s; animation-delay: -8s; }
+.petals .petal:nth-child(10) { left: 94%; animation-duration: 20s; animation-delay: -16s; }
+/* 大标题 + 小副题的两行块（顶栏与标题屏共用；`.center-screen .brand` 的
+   那两档字号仍旧由上面的既有规则管，这里只管它俩怎么摞） */
+.brand-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 0 1 auto;
+  min-width: 0;
+  line-height: 1.3;
+}
+/* 标题屏底部署的那一行小字 */
+.credit {
+  margin-top: 18px;
+  color: var(--ink-light);
+  font-size: var(--fs-2xs);
+  letter-spacing: .1em;
+  line-height: 1.7;
+  text-align: center;
+}
+
+/* ---------- 顶栏右侧：方形图标钮 + 芯片行 ---------- */
+.top-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-left: auto;         /* 把这一撮图标钮推到顶栏行尾 */
+}
+.icon-btn,
+.btn.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;                /* 压掉 `.btn.small` 的横垫，才方得起来 */
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: rgba(255,252,246,.66);
+  color: var(--ink-light);
+  cursor: pointer;
+  transition: background .12s ease, border-color .12s ease, color .12s ease;
+}
+.btn.icon-btn:hover {
+  background: rgba(201,169,97,.30);   /* 悬停铺一层描金底 */
+  border-color: var(--gold-dark);
+  color: var(--ink);
+}
+.btn.icon-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+/* 芯片行：窄屏收掉 `.meta-extra` 那几枚之后，剩下的换行排 */
+.hud-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  margin-top: 6px;
+}
+
+/* ---------- 卷宗里的「行动记录」折叠条：整宽扁条，左文右箭头 ---------- */
+.log-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  background: linear-gradient(90deg, rgba(201,169,97,.16), rgba(201,169,97,.03));
+}
+.btn.log-toggle {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: var(--radius) 0 0 var(--radius);
+  background: none;
+  color: var(--ink);
+  font-size: var(--fs-xs);
+  letter-spacing: .12em;
+  text-align: left;
+  cursor: pointer;
+  transition: background .12s ease, color .12s ease;
+}
+.btn.log-toggle:hover { background: rgba(201,169,97,.20); color: var(--crimson-dark); }
+.btn.log-toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.log-bar .count {
+  flex: none;
+  padding-right: 10px;
+  color: var(--ink-light);
+  font-size: var(--fs-2xs);
+  letter-spacing: .06em;
+}
+/* 折叠箭头：纯 CSS 的小三角，摊开时转 90°（`aria-expanded` 由 ui.js 写在按钮上） */
+.caret {
+  flex: none;
+  width: 0;
+  height: 0;
+  margin-left: auto;         /* 箭头始终贴着条尾 */
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 5px solid var(--gold-dark);
+  transition: transform .16s ease;
+}
+.btn.log-toggle[aria-expanded="true"] .caret { transform: rotate(90deg); }
+
+/* ---------- 选项卡：正文块 + 「条件不足：…」小 chip ---------- */
+.choice-label {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.7;
+}
+.lock-chip {
+  margin-top: 3px;
+  padding: 0 8px;
+  border: 1px solid rgba(139,44,44,.30);
+  border-radius: 999px;
+  background: rgba(139,44,44,.08);
+  color: var(--crimson-dark);
+  font-size: var(--fs-2xs);
+  letter-spacing: .04em;
+  line-height: 1.75;
+}
+/* `.opt .hint` 把它摆成整行块，这里改回「自成一行、宽只占内容」的胶囊 */
+.opt .hint.lock-chip { display: block; width: fit-content; }
+
+/* ---------- 右栏：卡片列 / 仪表行 / 人物心意 ---------- */
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+/* 仪表卡里的迷你指标：左边小字标签，右边一个楷体数字 */
+.rail-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 2px 0;
+}
+.rail-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--ink-light);
+  font-size: var(--fs-2xs);
+  letter-spacing: .1em;
+}
+.rail-num {
+  flex: none;
+  color: var(--gold-ink);
+  font-family: var(--display);
+  font-size: var(--fs-l);
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+.trust-list { display: flex; flex-direction: column; gap: 1px; }
+/* 七格条：`--trust` 就是格数（默认 7），格线画在填充**上面**——条填满了也数得清几格。
+   填充宽度仍旧由 ui.js 写在 `.trust-fill` 的行内 style 上，这里不抢。 */
+.trust-bar {
+  --trust: 7;
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 3em;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(92,64,51,.15);
+  overflow: hidden;
+}
+.trust-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(90deg,
+    transparent 0 calc(100% / var(--trust) - 1px),
+    rgba(44,24,16,.22) calc(100% / var(--trust) - 1px) calc(100% / var(--trust)));
+}
+/* 人情读数：右对齐、等宽数字，几个人的数才在一竖线上 */
+.trust-num {
+  flex: 0 0 auto;
+  min-width: 2.4em;
+  color: var(--gold-ink);
+  font-size: var(--fs-2xs);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+/* 线索囊 / 随身之物那一小撮可点的芯片 */
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* ---------- 【线索】/【物证】整行：左肩一道金线 + 一层淡底 ---------- */
+.kv-line {
+  display: block;
+  margin: 3px 0;
+  padding: 3px 10px;
+  border-left: 3px solid var(--gold);
+  border-radius: 0 4px 4px 0;
+  background: rgba(201,169,97,.14);
+}
+
+/* ---------- 卷首过场：默认收起，`.on` 才显形 ---------- */
+/* ui.js 的 closeSplash() 摘掉 `.on` 之后 260ms 就把节点 remove 了，
+   所以这里进出一共 220ms —— 必须收在那个窗口里，慢了会被拦腰剪掉。 */
+.splash {
+  opacity: 0;
+  pointer-events: none;      /* 收起时让点击穿过去 */
+  transition: opacity .22s ease;
+}
+.splash.on { opacity: 1; pointer-events: auto; }
+/* 过场底部那行「轻触任意处 · 入局」 */
+.splash-hint {
+  display: block;
+  margin: 10px 0 2px;
+  color: var(--ink-light);
+  font-size: var(--fs-2xs);
+  letter-spacing: .18em;
+  text-indent: .18em;
+  line-height: 1.7;
+  text-align: center;
+}
+
+/* ---------- 窄屏折叠右栏 ---------- */
+/* ui.js 里**一个宽度判断都没有**（它只负责造 `.rail` 与 `.col-right`），
+   窄屏怎么折全在这里。断点跟既有的 899/900 那一对对齐，不新开一档。 */
+@media (max-width: 899px) {
+  /* 主栏在前、右栏在后：仪表卡折到正文与命令行下面，不再挤着正文 */
+  .col-left { order: 1; }
+  .col-right { order: 2; }
+  /* 四张仪表卡摊成两列以上的网格（手机宽度下自然退回一列） */
+  .rail {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: var(--gap);
+    align-items: start;
+  }
+  .rail .rail-head { padding: 5px 9px; }
+  .rail .rail-body { padding: 6px 9px 9px; }
+  /* 窄栏里人情表降一档字：`5.4em` 的名字格跟着缩，不会把名字挤成省略号 */
+  .trust-row { gap: 6px; font-size: var(--fs-2xs); }
+}
+@media (max-width: 480px) {
+  .rail { grid-template-columns: 1fr; }
+  .hud-chips { gap: 3px 5px; margin-top: 4px; }
+  .top-actions { gap: 3px; }
+  .btn.icon-btn { width: 26px; height: 26px; }
+  .rail-stat { padding: 1px 0; }
+  .rail-num { font-size: var(--fs-s); }
+  .credit { margin-top: 14px; }
+}
+
+/* ---------- 这一段新补的过渡也要跟着动效开关一起关 ---------- */
+body[data-motion="off"] .icon-btn,
+body[data-motion="off"] .log-toggle,
+body[data-motion="off"] .caret,
+body[data-motion="off"] .splash,
+body[data-motion="off"] .splash-hint {
+  transition: none !important;
+  animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .icon-btn, .log-toggle, .caret, .splash, .splash-hint {
     transition: none !important;
     animation: none !important;
   }
@@ -722,6 +1363,10 @@ body[data-motion="off"] .toast {
  *   .stage-lattice  窗格 / 药柜格 / 书格 / 屏风（地方的骨）
  *   .stage-glow     天光、灯与暗角（时辰）
  *   .stage-mote     浮尘与斜光里的粒子（会慢慢飘）
+ *   .stage-petal    落花（色调跟着 data-tone 走，见下面每个色调里的 --petal）
+ *
+ * 另外还画一处：卷首过场那张画里的画卷带（.splash-art）——骨架在 style.css，
+ * 这里按同一套色调给七种「窗外是什么」，画法仍旧只有渐变，没有图片。
  *
  * 纪律：#stage 垫在 #app 底下，只做气氛，不碰可读性——文字永远在纸上，
  * 图景只在纸的四周与纸背后透出来一点点。开关见 body[data-motion]。
@@ -739,6 +1384,7 @@ body[data-motion="off"] .toast {
   --lat: rgba(107, 31, 31, .10);
   --lat-w: 64px;
   --lat-h: 34px;
+  --petal: rgba(201, 169, 97, .30);
 }
 
 #app { position: relative; z-index: 1; }
@@ -764,6 +1410,7 @@ body[data-motion="off"] .toast {
   --lat: rgba(107, 31, 31, .13);
   --lat-w: 96px;
   --lat-h: 40px;
+  --petal: rgba(139, 44, 44, .28);
 }
 #stage[data-tone="hall"] .stage-lattice {
   background-image:
@@ -780,6 +1427,7 @@ body[data-motion="off"] .toast {
   --lat: rgba(63, 90, 80, .14);
   --lat-w: 58px;
   --lat-h: 30px;
+  --petal: rgba(63, 90, 80, .26);
 }
 #stage[data-tone="pharmacy"] .stage-lattice {
   background-image:
@@ -798,6 +1446,7 @@ body[data-motion="off"] .toast {
   --lat: rgba(166, 138, 61, .16);
   --lat-w: 46px;
   --lat-h: 44px;
+  --petal: rgba(166, 138, 61, .30);
 }
 #stage[data-tone="archive"] .stage-lattice {
   background-image:
@@ -821,6 +1470,7 @@ body[data-motion="off"] .toast {
   --lat: rgba(92, 64, 51, .11);
   --lat-w: 72px;
   --lat-h: 52px;
+  --petal: rgba(92, 64, 51, .24);
 }
 #stage[data-tone="office"] .stage-lattice {
   background-image:
@@ -837,6 +1487,7 @@ body[data-motion="off"] .toast {
   --lat: rgba(44, 24, 16, .14);
   --lat-w: 22px;
   --lat-h: 26px;
+  --petal: rgba(44, 24, 16, .28);
 }
 #stage[data-tone="interrogation"] .stage-lattice {
   background-image:
@@ -854,6 +1505,7 @@ body[data-motion="off"] .toast {
   --lat: rgba(107, 31, 31, .12);
   --lat-w: 120px;
   --lat-h: 120px;
+  --petal: rgba(201, 169, 97, .38);
 }
 #stage[data-tone="verdict"] .stage-lattice {
   background-image:
@@ -869,6 +1521,7 @@ body[data-motion="off"] .toast {
   --lat: rgba(166, 138, 61, .10);
   --lat-w: 80px;
   --lat-h: 80px;
+  --petal: rgba(166, 138, 61, .32);
 }
 #stage[data-tone="ending"] .stage-lattice {
   background-image:
@@ -920,6 +1573,19 @@ body[data-motion="off"] .toast {
   to { background-position: 190px -340px, -260px -460px; }
 }
 
+/* ---------- 落花：色调跟着所在地走（同一片花瓣，宫里是朱砂、堂上是金） ---------- */
+
+#stage .stage-petal {
+  position: absolute;
+  top: -10vh;
+  width: 9px;
+  height: 7px;
+  border-radius: 60% 40% 55% 45% / 55% 60% 40% 55%;
+  background: var(--petal);
+  animation: fall linear infinite;
+  pointer-events: none;
+}
+
 /* ---------- 过场卡：进幕、判决、结局时说一句 ---------- */
 
 .stage-card {
@@ -943,6 +1609,126 @@ body[data-motion="off"] .toast {
 .stage-card.on { opacity: 1; transform: translate(-50%, 0); }
 .stage-card b { display: block; font-size: 1.24rem; color: var(--crimson); letter-spacing: .22em; }
 .stage-card span { display: block; margin-top: 6px; font-size: .84rem; letter-spacing: .12em; color: var(--ink-light); }
+
+/* ---------- 卷首画卷带：七种色调各画一张，全是渐变 ---------- */
+/* 骨架（一条横卷、多高、描什么边）在 style.css 的 `.splash-art`；
+   这里只补「窗外是什么」。剪影画在 ::before 上，再拿一道竖着的遮罩把它压进下半张——
+   上半张留给天光，看上去就像一卷摊开的画。
+   注意：`#stage` 与 `#app` 是 body 下的同级（见 web/shell.html），卷首这张卡可能
+   落在 #app 里、也可能直接挂在 body 上，所以「嵌在 #stage 里 / 挨着 #stage / 在 #stage 之后的任何兄弟里」
+   三种挂法都收，免得改一次挂载位置就白画了。 */
+.splash-art::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0) 10%, #000 44%, #000 100%);
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0) 10%, #000 44%, #000 100%);
+}
+
+/* 罩一道纸气：七种色调共用同一条退火，近看才不是一排排细纹；
+   上下两道描金细线是卷轴的轴杆——有了它，这一条才像「一卷画」。 */
+.splash-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(250, 244, 231, .74) 0,
+    rgba(250, 244, 231, .62) 44%,
+    rgba(250, 244, 231, .88) 100%
+  );
+  box-shadow:
+    inset 0 7px 0 -6px rgba(201, 169, 97, .62),
+    inset 0 -7px 0 -6px rgba(201, 169, 97, .62);
+}
+
+/* 凤仪殿：檐口一排斗拱，底下一道朱墙 */
+#stage[data-tone="hall"] .splash-art::before,
+#stage[data-tone="hall"] ~ .splash-art::before,
+#stage[data-tone="hall"] ~ * .splash-art::before {
+  background-image:
+    repeating-linear-gradient(90deg, rgba(107, 31, 31, .18) 0 7px, rgba(0, 0, 0, 0) 7px 46px),
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 0 62%, rgba(139, 44, 44, .30) 62% 100%);
+  background-size: auto, auto;
+  background-position: 0 0, 0 0;
+  background-repeat: repeat, no-repeat;
+}
+
+/* 尚药局：一墙小抽屉，格心一颗铜钮 */
+#stage[data-tone="pharmacy"] .splash-art::before,
+#stage[data-tone="pharmacy"] ~ .splash-art::before,
+#stage[data-tone="pharmacy"] ~ * .splash-art::before {
+  background-image:
+    radial-gradient(circle, rgba(63, 90, 80, .38) 0 1.6px, rgba(0, 0, 0, 0) 2.4px),
+    repeating-linear-gradient(90deg, rgba(63, 90, 80, .30) 0 1px, rgba(0, 0, 0, 0) 1px 26px),
+    repeating-linear-gradient(0deg, rgba(63, 90, 80, .30) 0 1px, rgba(0, 0, 0, 0) 1px 20px),
+    repeating-linear-gradient(0deg, rgba(91, 122, 111, .14) 0 1px, rgba(0, 0, 0, 0) 1px 12px);
+  background-size: 26px 20px, auto, auto, auto;
+  background-position: 0 0, 0 0, 0 0, 0 0;
+}
+
+/* 经卷阁与旧档库：一层层书架，脊上三色卷帙 */
+#stage[data-tone="archive"] .splash-art::before,
+#stage[data-tone="archive"] ~ .splash-art::before,
+#stage[data-tone="archive"] ~ * .splash-art::before {
+  background-image:
+    repeating-linear-gradient(0deg, rgba(166, 138, 61, .38) 0 3px, rgba(0, 0, 0, 0) 3px 38px),
+    repeating-linear-gradient(90deg,
+      rgba(107, 31, 31, .22) 0 4px, rgba(0, 0, 0, 0) 4px 11px,
+      rgba(63, 90, 80, .22) 11px 14px, rgba(0, 0, 0, 0) 14px 23px,
+      rgba(166, 138, 61, .26) 23px 26px, rgba(0, 0, 0, 0) 26px 46px),
+    repeating-linear-gradient(0deg, rgba(201, 169, 97, .16) 0 1px, rgba(0, 0, 0, 0) 1px 12px);
+}
+
+/* 内官监值房：冷灰板壁，右首一扇透亮的窗 */
+#stage[data-tone="office"] .splash-art::before,
+#stage[data-tone="office"] ~ .splash-art::before,
+#stage[data-tone="office"] ~ * .splash-art::before {
+  background-image:
+    linear-gradient(90deg, rgba(0, 0, 0, 0) 0 58%, rgba(251, 243, 228, .62) 58% 86%, rgba(0, 0, 0, 0) 86%),
+    repeating-linear-gradient(90deg, rgba(92, 64, 51, .26) 0 1px, rgba(0, 0, 0, 0) 1px 46px),
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 0 60%, rgba(92, 64, 51, .30) 60% 100%),
+    repeating-linear-gradient(0deg, rgba(201, 169, 97, .14) 0 1px, rgba(0, 0, 0, 0) 1px 12px);
+  background-repeat: no-repeat, repeat, no-repeat, repeat;
+}
+
+/* 问询：对面立着一扇屏风，脚下一道沉影 */
+#stage[data-tone="interrogation"] .splash-art::before,
+#stage[data-tone="interrogation"] ~ .splash-art::before,
+#stage[data-tone="interrogation"] ~ * .splash-art::before {
+  background-image:
+    repeating-linear-gradient(90deg, rgba(44, 24, 16, .34) 0 2px, rgba(0, 0, 0, 0) 2px 15px),
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 0 34%, rgba(44, 24, 16, .20) 34% 100%),
+    linear-gradient(90deg, rgba(44, 24, 16, .22) 0%, rgba(0, 0, 0, 0) 38%),
+    repeating-linear-gradient(0deg, rgba(201, 169, 97, .12) 0 1px, rgba(0, 0, 0, 0) 1px 12px);
+  background-repeat: repeat, no-repeat, no-repeat, repeat;
+}
+
+/* 结案陈词：堂顶一圈藻井，宝顶上落着光 */
+#stage[data-tone="verdict"] .splash-art::before,
+#stage[data-tone="verdict"] ~ .splash-art::before,
+#stage[data-tone="verdict"] ~ * .splash-art::before {
+  background-image:
+    repeating-conic-gradient(from 0deg at 50% -6%,
+      rgba(107, 31, 31, .24) 0deg 3deg, rgba(0, 0, 0, 0) 3deg 9deg),
+    radial-gradient(58% 46% at 50% 0%, rgba(201, 169, 97, .36), rgba(0, 0, 0, 0) 70%),
+    linear-gradient(180deg, rgba(139, 44, 44, .22), rgba(0, 0, 0, 0) 60%),
+    repeating-linear-gradient(0deg, rgba(201, 169, 97, .14) 0 1px, rgba(0, 0, 0, 0) 1px 12px);
+  background-repeat: repeat, no-repeat, no-repeat, repeat;
+}
+
+/* 结局：天光收下去，远山与落日只剩一道边 */
+#stage[data-tone="ending"] .splash-art::before,
+#stage[data-tone="ending"] ~ .splash-art::before,
+#stage[data-tone="ending"] ~ * .splash-art::before {
+  background-image:
+    radial-gradient(70% 52% at 50% 100%, rgba(201, 169, 97, .38), rgba(0, 0, 0, 0) 72%),
+    radial-gradient(46% 34% at 18% 104%, rgba(44, 24, 16, .28), rgba(0, 0, 0, 0) 70%),
+    radial-gradient(52% 38% at 82% 106%, rgba(44, 24, 16, .24), rgba(0, 0, 0, 0) 72%),
+    repeating-linear-gradient(0deg, rgba(166, 138, 61, .16) 0 1px, rgba(0, 0, 0, 0) 1px 12px);
+  background-repeat: no-repeat, no-repeat, no-repeat, repeat;
+}
 
 /* ---------- 让纸透一点：图景只在纸的四周与纸背后露出来 ---------- */
 
@@ -993,10 +1779,12 @@ body[data-motion="off"] .toast {
 @media (max-width: 899px) {
   .stage-card { top: 9%; padding: 10px 18px; font-size: .96rem; }
   #stage .stage-lattice { opacity: .7; }
+  .splash-art { height: 92px; }
 }
 
 @media (max-width: 480px) {
   #stage .stage-mote { display: none; }
+  #stage .stage-petal { display: none; }
 }
 
 /* ---------- 关掉动效：只关图景自己的，不动界面其他地方 ---------- */
@@ -1004,11 +1792,19 @@ body[data-motion="off"] .toast {
 body[data-motion="off"] .stage-card { transition: none; }
 body[data-motion="off"] #stage .stage-mote { display: none; }
 body[data-motion="off"] #stage .stage-layer { animation: none; }
+body[data-motion="off"] #stage .stage-petal { display: none; }
+body[data-motion="off"] .splash-card,
+body[data-motion="off"] .splash-art,
+body[data-motion="off"] .splash .seal-stamp { animation: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .stage-card { transition: none; }
   #stage .stage-mote { display: none; }
   #stage .stage-layer { animation: none; }
+  #stage .stage-petal { display: none; }
+  .splash-card,
+  .splash-art,
+  .splash .seal-stamp { animation: none; }
 }
 
 </style>
@@ -1026,6 +1822,36 @@ body[data-motion="off"] #stage .stage-layer { animation: none; }
   <div class="stage-layer stage-mote"></div>
   <div class="stage-card" id="stage-card"></div>
 </div>
+
+<!-- 图标精灵：ui.js 从这块里 cloneNode 出每一枚图标，产物零外链。
+     整块**不写 xmlns** —— HTML 解析自带 SVG 命名空间，写了就会撞上离线扫描
+     （tests/test_web.py::test_offline_only 盯的那个外链前缀）而变红。 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<symbol id="i-scroll" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="16" rx="2"/><path d="M9 9h6M9 13h6M9 17h4"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5C10.2 5.8 7.6 5.2 4.5 5.2v13c3.1 0 5.7.6 7.5 2.3"/><path d="M12 7.5c1.8-1.7 4.4-2.3 7.5-2.3v13c-3.1 0-5.7.6-7.5 2.3"/><path d="M12 7.5v13"/></symbol>
+<symbol id="i-letter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h7L18.5 9v11.5H6z"/><path d="M13 3.5V9h5.5"/><path d="M9 13h6M9 16.5h3.5"/></symbol>
+<symbol id="i-magnify" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6"/><path d="M14.9 14.9 20 20"/></symbol>
+<symbol id="i-leaf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 4C10.5 4 4 9.5 4 16.5c0 1.5.4 2.7 1 3.7C15 20 20 14 20 4z"/><path d="M5.6 19.4C8.8 13.4 13.4 9 19 5.6"/></symbol>
+<symbol id="i-save" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v9"/><path d="M8.5 9.5 12 13l3.5-3.5"/><path d="M5 16.5V18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1.5"/></symbol>
+<symbol id="i-load" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 13V4"/><path d="M8.5 7.5 12 4l3.5 3.5"/><path d="M5 16.5V18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1.5"/></symbol>
+<symbol id="i-help" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M9.7 9.6a2.4 2.4 0 1 1 3.2 2.3c-.6.2-.9.7-.9 1.3v.5"/><path d="M12 16.8h.01"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.2v5.2"/><path d="M12 7.4h.01"/></symbol>
+<symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7"/><path d="M6.5 9.6V20h11V9.6"/><path d="M10 20v-5.2h4V20"/></symbol>
+<symbol id="i-clue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="18" r="1.9"/><circle cx="18" cy="6" r="1.9"/><path d="M7.4 16.6C9.8 13 14.2 11 16.6 7.4"/></symbol>
+<symbol id="i-evidence" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 9h15v10.5h-15z"/><path d="M9 9V6.6A1.6 1.6 0 0 1 10.6 5h2.8A1.6 1.6 0 0 1 15 6.6V9"/><path d="M4.5 13.2h15"/></symbol>
+<symbol id="i-progress" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M7.5 20v-7"/><path d="M12 20V7.5"/><path d="M16.5 20v-4.5"/></symbol>
+<symbol id="i-person" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.2" r="3.7"/><path d="M4.8 20c0-4 3.2-6.6 7.2-6.6s7.2 2.6 7.2 6.6"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 6.8V12l3.6 2.2"/></symbol>
+<symbol id="i-door" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 20V4.5h13V20"/><path d="M3.5 20h17"/><path d="M14.8 12h.01"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.2l2.4 5 5.4.7-3.9 3.7.9 5.4-4.8-2.6-4.8 2.6.9-5.4L4.2 9.9l5.4-.7z"/></symbol>
+<symbol id="i-seal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="4.5" width="15" height="15" rx="3.5"/><path d="M9 9.5h6v5H9z"/></symbol>
+<!-- 印章徽的画（标题屏那枚「宫闱迷踪」四字印）：80×80，所以另给一只 viewBox -->
+<symbol id="i-seal-badge" viewBox="0 0 80 80"><rect x="5.5" y="5.5" width="69" height="69" rx="11" fill="none" stroke="rgba(245,230,211,.8)" stroke-width="2.5"/><rect x="10" y="10" width="60" height="60" rx="7.5" fill="none" stroke="rgba(245,230,211,.32)" stroke-width="1"/><circle cx="15" cy="15" r="1.4" fill="rgba(245,230,211,.55)"/><circle cx="65" cy="15" r="1.4" fill="rgba(245,230,211,.55)"/><circle cx="15" cy="65" r="1.4" fill="rgba(245,230,211,.55)"/><circle cx="65" cy="65" r="1.4" fill="rgba(245,230,211,.55)"/><text x="54" y="29" text-anchor="middle" dominant-baseline="central" font-size="21" fill="currentColor" transform="rotate(2 54 29)">宫</text><text x="54" y="55" text-anchor="middle" dominant-baseline="central" font-size="21" fill="currentColor" transform="rotate(-1.6 54 55)">闱</text><text x="26" y="29" text-anchor="middle" dominant-baseline="central" font-size="21" fill="currentColor" transform="rotate(-1.8 26 29)">迷</text><text x="26" y="55" text-anchor="middle" dominant-baseline="central" font-size="21" fill="currentColor" transform="rotate(1.6 26 55)">踪</text></symbol>
+</svg>
+
+<!-- 一枚可见的图标模板：ui.js 拿它 cloneNode(true)、再把 use 的 href 改指到别的精灵。
+     缩成 0×0 藏起来只是不让它自己占一行——clone 出来的是里面那只 svg，样式一点不少。 -->
+<div id="icon-tpl" style="position:absolute;width:0;height:0;overflow:hidden"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-scroll"/></svg></div>
 
 <div id="app"></div>
 
@@ -1911,18 +2737,53 @@ body[data-motion="off"] #stage .stage-layer { animation: none; }
     tab: "log",
     history: [],
     histAt: -1,
-    draft: ""
+    draft: "",
+    logOpen: true,          // 「行动记录」摊开还是收起（折叠条上的 aria-expanded 跟着它）
+    lastAct: null           // 上一次铺过卷首过场的幕号：换了幕才铺
   };
 
   // ------------------------------------------------------------------
   // 小工具
   // ------------------------------------------------------------------
 
-  function el(tag, cls, text) {
+  /** 可选的 attrs：第三参写成对象、或另给第四参，都按 setAttribute 落上去。 */
+  function el(tag, cls, text, attrs) {
     var node = document.createElement(tag);
     if (cls) { node.className = cls; }
-    if (text !== undefined && text !== null) { node.textContent = text; }
+    if (text !== undefined && text !== null) {
+      if (typeof text === "object") { attrs = attrs || text; }
+      else { node.textContent = text; }
+    }
+    return applyAttrs(node, attrs);
+  }
+
+  function applyAttrs(node, attrs) {
+    if (!attrs) { return node; }
+    Object.keys(attrs).forEach(function (key) {
+      if (attrs[key] === null || attrs[key] === undefined) { return; }
+      node.setAttribute(key, String(attrs[key]));
+    });
     return node;
+  }
+
+  /** 描金分隔线：画法在 style.css 的 .rule 里。 */
+  function sep() { return el("div", "rule"); }
+
+  /**
+   * 一枚图标：把 shell.html 里那只模板 svg 复制一份，只把 use 的 href 指到 #i-名字。
+   * 一律走 getElementById + cloneNode —— 不用 createElementNS、不写 innerHTML，
+   * 产物里才不会出现外链前缀（tests/test_web.py 的离线扫描盯着这个）。
+   * 假 DOM（tests/webui_harness.js）里没有那块模板，退成一只空 svg，不报错。
+   */
+  function iconNode(name, box) {
+    var tpl = document.getElementById("icon-tpl");
+    var svg = tpl && tpl.firstChild && typeof tpl.firstChild.cloneNode === "function"
+      ? tpl.firstChild.cloneNode(true)
+      : applyAttrs(el("svg", "icon"), { viewBox: box || "0 0 24 24" });
+    if (box) { svg.setAttribute("viewBox", box); }
+    var uses = svg.querySelectorAll ? svg.querySelectorAll("use") : [];
+    if (uses.length) { uses[0].setAttribute("href", "#i-" + name); }
+    return svg;
   }
 
   function clear(node) { while (node.firstChild) { node.removeChild(node.firstChild); } }
@@ -2232,18 +3093,30 @@ body[data-motion="off"] #stage .stage-layer { animation: none; }
     else { renderGame(); }
     renderOverlay();
     renderToasts();
+    maybeSplash();
   }
 
   function renderTitle() {
-    var box = el("div", "center-screen");
-    box.appendChild(el("div", "brand", PACK.title));
+    var box = el("div", "center-screen title-screen");
+
+    // 落花：只铺片数，位置 / 延时 / 飘法全交给 CSS 的 nth-child（纯装饰，读屏不念）
+    var petals = el("div", "petals", null, { "aria-hidden": "true" });
+    for (var i = 0; i < 10; i += 1) { petals.appendChild(el("span", "petal")); }
+    box.appendChild(petals);
+
+    // 朱砂印章徽：四字与内描金环都画在 shell.html 的精灵里（#i-seal-badge）
+    var badge = el("div", "seal-badge");
+    badge.appendChild(iconNode("seal-badge", "0 0 80 80"));
+    box.appendChild(badge);
+
+    box.appendChild(el("h1", "brand", PACK.title));
     box.appendChild(el("div", "brand-sub", PACK.subtitle + " · 网页版"));
-    box.appendChild(el("div", "rule"));
+    box.appendChild(sep());
     var quote = el("div", "quote", PACK.prologue);
     box.appendChild(quote);
 
     var menu = el("div", "menu");
-    var entries = [["新案", function () {
+    var entries = [["新案", "seal-btn", function () {
       game.newGame();
       ui.screen = "game";
       ui.read = "log";
@@ -2251,21 +3124,23 @@ body[data-motion="off"] #stage .stage-layer { animation: none; }
       toast("//新案开卷——" + PACK.title + "//", "dossier");
       render();
       scrollReading(0);
-    }]];
+    }, "scroll"]];
     if (hasSave()) {
-      entries.push(["续前案（读档）", doLoad]);
+      entries.push(["续前案（读档）", "title-btn", doLoad, "load"]);
     }
-    entries.push(["玩法说明", function () { ui.overlay = { kind: "help" }; renderOverlay(); }]);
-    entries.push(["关于本作", function () { ui.overlay = { kind: "about" }; renderOverlay(); }]);
+    entries.push(["玩法说明", "title-btn", function () { ui.overlay = { kind: "help" }; renderOverlay(); }, "help"]);
+    entries.push(["关于本作", "title-btn", function () { ui.overlay = { kind: "about" }; renderOverlay(); }, "info"]);
 
-    entries.forEach(function (pair, i) {
-      var btn = el("button", "opt");
+    entries.forEach(function (row, i) {
+      var btn = el("button", "opt " + row[1]);
       btn.appendChild(el("span", "num", String(i + 1)));
-      btn.appendChild(el("span", "label", pair[0]));
-      btn.addEventListener("click", pair[1]);
+      btn.appendChild(el("span", "label", row[0]));
+      if (row[3]) { btn.appendChild(iconNode(row[3])); }
+      btn.addEventListener("click", row[2]);
       menu.appendChild(btn);
     });
     box.appendChild(menu);
+    box.appendChild(el("div", "credit", "古风宫廷推理 · 单文件离线 · 与终端版同一套剧本"));
     root.appendChild(box);
     renderFooter(root);
   }
@@ -2273,45 +3148,42 @@ body[data-motion="off"] #stage .stage-layer { animation: none; }
   function renderGame() {
     var st = game.state;
 
-    // -- 顶栏
-    var top = el("div", "topbar");
+    // -- 顶栏：印章小徽 + 标题 + 幕/案副行 + 芯片行 + 图标钮
+    var top = el("div", "topbar glass-panel");
     var row = el("div", "topbar-row");
-    row.appendChild(el("span", "brand", PACK.title));
-    row.appendChild(el("span", "brand-sub", PACK.subtitle));
-    var seal = el("span", "seal", st.ending ? "已结案" : "第 " + st.chapter + " 幕");
-    row.appendChild(seal);
-    top.appendChild(row);
-
-    var meta = el("div", "topbar-meta");
+    row.appendChild(el("span", "seal-badge", st.ending ? "终" : "宫"));
+    var brand = el("div", "brand-box");
+    brand.appendChild(el("span", "brand", PACK.title));
     // 「幕」跟着**眼前这一屏**走：正在读某份档案时印那份档案的幕（读第二幕的账目
     // 时别让人以为还在第一幕），否则印当前进度。不能直接看 st.open_dossier ——
     // 那是引擎替存档记着的「上次读到哪儿」，读完退回卷宗、或读一份旧存档之后
     // 它仍然指着旧档，顶栏就会印错幕（案① 已结案、人站在第六幕，却写着第一幕）。
-    // 前三项是「此刻在哪儿、什么时候」，窄屏留着；后四项是读数，窄屏交给 CSS 收起。
     var headAct = game.headAct(ui.read === "dossier" ? ui.dossier : "");
-    [["幕", game.actTitleOf(headAct), ""],
-     ["时辰", st.time, ""], ["所在", st.place, ""],
-     ["回合", String(st.turn), "meta-extra"],
-     ["评分", String(st.score), "meta-extra"],
-     ["行囊", String(st.items_owned.length), "meta-extra"],
-     ["线索", st.clues.length + "/" + Object.keys(PACK.items).filter(function (k) { return PACK.items[k].core; }).length, "meta-extra"]
-    ].forEach(function (pair) {
-      var span = el("span", pair[2]);
-      span.appendChild(document.createTextNode(pair[0] + " "));
-      span.appendChild(el("b", null, esc(pair[1])));
-      meta.appendChild(span);
-    });
-    if (st.hurt) {
-      var hurt = el("span");
-      hurt.appendChild(document.createTextNode("心绪 "));
-      hurt.appendChild(el("b", null, String(st.hurt)));
-      meta.appendChild(hurt);
-    }
-    top.appendChild(meta);
+    brand.appendChild(el("div", "brand-sub",
+      game.actTitleOf(headAct) + " · 第 " + st.case + " 案"));
+    row.appendChild(brand);
+    row.appendChild(el("span", "seal", st.ending ? "已结案" : "第 " + st.chapter + " 幕"));
+    row.appendChild(topActions());
+    top.appendChild(row);
+
+    // 芯片行：前三项是「此刻在哪儿、什么时候」，窄屏留着；后四项是读数，窄屏交给 CSS 收
+    var chips = el("div", "hud-chips");
+    chips.appendChild(hudChip("door", "所在", st.place, ""));
+    chips.appendChild(hudChip("clock", "时辰", st.time, ""));
+    chips.appendChild(hudChip("star", "回合", String(st.turn), "meta-extra"));
+    chips.appendChild(hudChip("star", "评分", String(st.score), "meta-extra"));
+    chips.appendChild(hudChip("evidence", "行囊", String(st.items_owned.length), "meta-extra"));
+    chips.appendChild(hudChip("clue", "线索",
+      st.clues.length + "/" + PACK.core_total, "meta-extra"));
+    if (st.hurt) { chips.appendChild(hudChip("person", "心绪", String(st.hurt), "")); }
+    top.appendChild(chips);
 
     var tabs = el("div", "tabs");
-    [["log", "卷宗"], ["index", "档目"], ["notes", "记事"], ["search", "检索"], ["collection", "案外"]].forEach(function (pair) {
-      var b = el("button", "tab" + (ui.tab === pair[0] ? " on" : ""), pair[1]);
+    [["log", "卷宗", "scroll"], ["index", "档目", "book"], ["notes", "记事", "letter"],
+     ["search", "检索", "magnify"], ["collection", "案外", "leaf"]].forEach(function (pair) {
+      var b = el("button", "tab" + (ui.tab === pair[0] ? " on" : ""));
+      b.appendChild(iconNode(pair[2]));
+      b.appendChild(el("span", null, pair[1]));
       b.addEventListener("click", function () {
         ui.tab = pair[0];
         if (pair[0] === "index") { ui.read = "index"; }
@@ -2332,7 +3204,8 @@ body[data-motion="off"] #stage .stage-layer { animation: none; }
     if (!game.state.ending) { left.appendChild(renderOptions()); }
     left.appendChild(renderCommand());
 
-    // 窄屏靠分页切：宽屏时左栏已经在显示档目/检索的话，右栏那份由 CSS 收起来
+    // 右栏：先四张仪表卡，再是各页签的那一份（窄屏靠分页切，rail 由 CSS 折叠）
+    right.appendChild(renderRail());
     right.appendChild(renderIndex());
     right.appendChild(renderNotes());
     right.appendChild(renderSearchHits());
@@ -2348,6 +3221,8 @@ body[data-motion="off"] #stage .stage-layer { animation: none; }
     var panel = el("div", "panel reading page page-log");
     var head = el("div", "panel-head");
     var titles = { log: "卷宗", dossier: "档案", index: "档目", search: "检索" };
+    var headIcons = { log: "scroll", dossier: "letter", index: "book", search: "magnify" };
+    head.appendChild(iconNode(headIcons[ui.read] || "scroll"));
     head.appendChild(el("span", null, titles[ui.read] || "卷宗"));
     var acts = el("span", "count");
     if (ui.read === "dossier" && ui.dossier) {
@@ -2375,7 +3250,9 @@ body[data-motion="off"] #stage .stage-layer { animation: none; }
     } else if (ui.read === "search") {
       body.appendChild(hitList());
     } else {
-      body.appendChild(logList());
+      // 「行动记录」是一条可折叠的栏：摊开时下面才是卷宗正文（默认摊开）
+      body.appendChild(logBar());
+      if (ui.logOpen) { body.appendChild(logList()); }
     }
     panel.appendChild(body);
     return panel;
@@ -2430,7 +3307,7 @@ body[data-motion="off"] #stage .stage-layer { animation: none; }
     var limit = entries.length > 120 ? entries.slice(-120) : entries;
     limit.forEach(function (entry) {
       var kind = entry[0], text = entry[1];
-      var box = el("div", "log-entry log-" + kind);
+      var box = el("div", "log-entry log-" + kind + (saysIt(text) ? " dlg" : ""));
       if (kind === "scene") {
         var scene = PACK.scenes[game.state.scene];
         if (scene) { box.appendChild(el("span", "scene-title", scene.title + " · " + scene.place)); }
@@ -2439,6 +3316,33 @@ body[data-motion="off"] #stage .stage-layer { animation: none; }
       wrap.appendChild(box);
     });
     return wrap;
+  }
+
+  /** 「行动记录」那一条折叠栏：aria-expanded 跟着 ui.logOpen 走。 */
+  function logBar() {
+    var bar = el("div", "log-bar");
+    var b = el("button", "btn small bare log-toggle");
+    b.setAttribute("aria-expanded", ui.logOpen ? "true" : "false");
+    b.appendChild(iconNode("scroll"));
+    b.appendChild(el("span", null, "行动记录"));
+    b.appendChild(el("span", "caret"));
+    b.addEventListener("click", function () {
+      ui.logOpen = !ui.logOpen;
+      render();
+      if (ui.logOpen) { scrollReading(1e9); }
+    });
+    bar.appendChild(b);
+    bar.appendChild(el("span", "count", game.state.log.length + " 则"));
+    return bar;
+  }
+
+  /** 这一则里有没有「名字：」的对话行 —— 有才给 .dlg 的边（一字不改，只换观感）。 */
+  function saysIt(text) {
+    return String(text).split("\n").some(function (line) {
+      var rest = line.replace(/^\s+/, "");
+      var cut = rest.indexOf("：");
+      return cut > 0 && !!SPEAKERS[rest.slice(0, cut)];
+    });
   }
 
   function indexTree() {
@@ -2455,7 +3359,7 @@ body[data-motion="off"] #stage .stage-layer { animation: none; }
       rows.forEach(function (row) {
         var did = row[0], title = row[1], hint = row[2], read = row[3];
         var b = el("button", "doc-row" + (read ? "" : " unread"));
-        b.appendChild(el("span", "did", did));
+        b.appendChild(el("span", "did kv", did));
         b.appendChild(el("span", "title", title));
         if (hint) { b.appendChild(el("span", "hint", "还牵着 " + hint + " 份")); }
         b.addEventListener("click", function () { readDossier(did); });
@@ -2475,7 +3379,7 @@ body[data-motion="off"] #stage .stage-layer { animation: none; }
     }
     ui.hits.forEach(function (hit) {
       var b = el("button", "hit");
-      b.appendChild(el("span", "did", hit[0] + " · " + hit[1]));
+      b.appendChild(el("span", "did kv", hit[0] + " · " + hit[1]));
       b.appendChild(el("span", "snippet", hit[2]));
       b.addEventListener("click", function () { readDossier(hit[0]); });
       wrap.appendChild(b);
@@ -2486,6 +3390,7 @@ body[data-motion="off"] #stage .stage-layer { animation: none; }
   function renderOptions() {
     var panel = el("div", "panel options page page-log");
     var head = el("div", "panel-head");
+    head.appendChild(iconNode("scroll"));
     head.appendChild(el("span", null, "可以做的事"));
     head.appendChild(el("span", "count", "↑↓ 移动 · 回车确认 · 也可直接敲下面的字"));
     panel.appendChild(head);
@@ -2503,12 +3408,14 @@ body[data-motion="off"] #stage .stage-layer { animation: none; }
       return;
     }
     opts.forEach(function (opt, i) {
-      var b = el("button", "opt" + (opt.enabled ? "" : " locked") +
+      var b = el("button", "choice-card opt" + (opt.enabled ? "" : " locked") +
         (i === ui.cursor ? " focus" : ""));
-      b.appendChild(el("span", "num", String(opt.index)));
-      var label = el("span", "label", opt.label);
+      b.appendChild(el("span", "choice-num num", String(opt.index)));
+      var label = el("span", "choice-label label", opt.label);
       if (opt.detail) { label.appendChild(el("span", "detail", opt.detail)); }
-      if (!opt.enabled && opt.hint) { label.appendChild(el("span", "hint", "条件不足：" + opt.hint)); }
+      if (!opt.enabled && opt.hint) {
+        label.appendChild(el("span", "hint lock-chip", "条件不足：" + opt.hint));
+      }
       if (opt.asked) { label.appendChild(el("span", "asked", "（已经问过）")); }
       b.appendChild(label);
       b.addEventListener("click", function () { runOption(opt); });
@@ -2578,6 +3485,143 @@ body[data-motion="off"] #stage .stage-layer { animation: none; }
     panel.appendChild(head);
     panel.appendChild(body);
     return panel;
+  }
+
+  // ------------------------------------------------------------------
+  // 右栏：四张仪表卡
+  //
+  // 全是真数据：进度读 game.state 与 PACK 的计数，人物心意读 state.trust，
+  // 刻度用 PACK.characters[cid].confide_at（999 = 永不肯深谈，只显示数字）。
+  // 窄屏怎么折叠是 CSS 的事 —— 这里一个宽度判断都不写。
+  // ------------------------------------------------------------------
+
+  /** 顶栏右侧的图标钮：只有图标没有字（按文案找按钮的脚本不会多认出一个「案外」）。 */
+  function topActions() {
+    var box = el("div", "top-actions");
+    [["save", "存档", doSave],
+     ["load", "读档 / 搬档", function () { ui.overlay = { kind: "save" }; renderOverlay(); }],
+     ["leaf", "案外", function () { ui.tab = "collection"; render(); }],
+     ["help", "帮助", function () { ui.overlay = { kind: "help" }; renderOverlay(); }],
+     ["home", "回到标题", backToTitle]].forEach(function (spec) {
+      var b = el("button", "btn small icon-btn", null,
+        { title: spec[1], "aria-label": spec[1] });
+      b.appendChild(iconNode(spec[0]));
+      b.addEventListener("click", spec[2]);
+      box.appendChild(b);
+    });
+    return box;
+  }
+
+  /** 顶栏的一枚芯片：图标 + 「词 + b(读数)」。文本与从前一字不差。 */
+  function hudChip(icon, label, value, extra) {
+    var chip = el("span", "hud-chip" + (extra ? " " + extra : ""));
+    chip.appendChild(iconNode(icon));
+    chip.appendChild(document.createTextNode(label + " "));
+    chip.appendChild(el("b", null, esc(value)));
+    return chip;
+  }
+
+  function railHead(card, icon, title, count) {
+    var head = el("div", "panel-head");
+    head.appendChild(iconNode(icon));
+    head.appendChild(el("span", null, title));
+    head.appendChild(el("span", "count", count || ""));
+    card.appendChild(head);
+    return head;
+  }
+
+  function railProgress() {
+    var st = game.state;
+    var card = el("div", "panel rail-card");
+    railHead(card, "progress", "进度", game.actTitleOf(st.chapter));
+    var body = el("div", "panel-body");
+    [["线索", st.clues.length + "/" + PACK.core_total],
+     ["档目", game.knownDossiers().length + "/" + Object.keys(PACK.dossiers).length],
+     ["评分", String(st.score)]].forEach(function (pair) {
+      var row = el("div", "rail-stat");
+      row.appendChild(el("span", "rail-label", pair[0]));
+      row.appendChild(el("span", "rail-num", pair[1]));
+      body.appendChild(row);
+    });
+    card.appendChild(body);
+    return card;
+  }
+
+  function railTrust() {
+    var st = game.state;
+    var chars = PACK.characters || {};
+    var card = el("div", "panel rail-card");
+    var body = el("div", "panel-body trust-list");
+    var ready = 0;
+    Object.keys(chars).forEach(function (cid) {
+      var ch = chars[cid] || {};
+      var now = Number(st.trust[cid]);
+      if (!isFinite(now)) { now = 0; }
+      var at = Number(ch.confide_at);
+      if (!isFinite(at) || at <= 0) { at = 999; }
+      var row = el("div", "trust-row");
+      row.appendChild(el("span", "trust-name", ch.name || cid));
+      if (at !== 999) {
+        // 刻度就是「深谈那道线」：条填满，说明这个人可以深谈了
+        var bar = el("div", "trust-bar");
+        var fill = el("div", "trust-fill");
+        fill.setAttribute("style",
+          "width:" + Math.max(0, Math.min(100, Math.round(now / at * 100))) + "%");
+        bar.appendChild(fill);
+        row.appendChild(bar);
+        if (now >= at) { row.appendChild(el("span", "trust-candie")); ready += 1; }
+      }
+      row.appendChild(el("span", "trust-num", String(now)));
+      body.appendChild(row);
+    });
+    railHead(card, "person", "人物心意", ready ? ready + " 人可深谈" : "");
+    card.appendChild(body);
+    return card;
+  }
+
+  /** 一小撮芯片（线索囊 / 随身之物共用）：点一下就去检索这个词。 */
+  function chipRow(ids, kind) {
+    var wrap = el("div", "chip-row");
+    ids.forEach(function (id) {
+      var item = PACK.items[id] || {};
+      var name = item.name || id;
+      var b = el("button", "btn small bare " + kind, name);
+      b.addEventListener("click", function () { doSearch(name); });
+      wrap.appendChild(b);
+    });
+    return wrap;
+  }
+
+  function railClues() {
+    var st = game.state;
+    var card = el("div", "panel rail-card");
+    railHead(card, "clue", "线索囊", st.clues.length + "/" + PACK.core_total);
+    var body = el("div", "panel-body");
+    var recent = st.clues.slice(-5).reverse();
+    if (recent.length) { body.appendChild(chipRow(recent, "clue-chip")); }
+    else { body.appendChild(el("p", "empty", "还没有线索。")); }
+    card.appendChild(body);
+    return card;
+  }
+
+  function railBag() {
+    var owned = game.state.items_owned || [];
+    var card = el("div", "panel rail-card");
+    railHead(card, "evidence", "随身之物", String(owned.length));
+    var body = el("div", "panel-body");
+    if (owned.length) { body.appendChild(chipRow(owned, "item-chip")); }
+    else { body.appendChild(el("p", "empty", "行囊还空着。")); }
+    card.appendChild(body);
+    return card;
+  }
+
+  function renderRail() {
+    var wrap = el("div", "rail");
+    wrap.appendChild(railProgress());
+    wrap.appendChild(railTrust());
+    wrap.appendChild(railClues());
+    wrap.appendChild(railBag());
+    return wrap;
   }
 
   function renderIndex() {
@@ -2685,7 +3729,7 @@ body[data-motion="off"] #stage .stage-layer { animation: none; }
     document.body.setAttribute("data-overlay", "1");
     var wrap = el("div", "overlay");
     wrap.id = "overlay";
-    var sheet = el("div", "sheet");
+    var sheet = el("div", "sheet glass-panel");
     var kind = ui.overlay.kind;
 
     function closeRow(extra) {
@@ -3146,6 +4190,15 @@ body[data-motion="off"] #stage .stage-layer { animation: none; }
       note.appendChild(document.createTextNode(rest.slice(2)));
       return note;
     }
+    // 【线索】/【物证】那一小撮记号点个底色：只多套一层 span，正文一字不动
+    var mark = /^【(?:线索|物证)】/.exec(rest);
+    if (mark) {
+      var tagged = el("span", "said-line kv-line");
+      if (lead) { tagged.appendChild(document.createTextNode(lead)); }
+      tagged.appendChild(el("span", "kv", mark[0]));
+      tagged.appendChild(document.createTextNode(rest.slice(mark[0].length)));
+      return tagged;
+    }
     var cut = rest.indexOf("：");
     if (cut <= 0 || !SPEAKERS[rest.slice(0, cut)]) { return el("span", null, line); }
     var span = el("span", "said-line");
@@ -3179,6 +4232,68 @@ body[data-motion="off"] #stage .stage-layer { animation: none; }
       if (e.subtitle) { box.appendChild(el("div", "seal-sub", e.subtitle)); }
     }
     return box;
+  }
+
+  // ------------------------------------------------------------------
+  // 卷首过场：换幕时铺一层
+  //
+  // 只在幕号真的变了的那一次 render() 之后铺（ui.lastAct 记着上次报过哪一幕）。
+  // 点一下、或按 Esc 收起；动效开关交给 CSS（body[data-motion="off"] 把动画压平），
+  // 这里只管把 .on 加上、收起时去掉。
+  // ------------------------------------------------------------------
+
+  var splashTimer = null;
+
+  function closeSplash() {
+    var node = document.getElementById("splash");
+    if (!node) { return; }
+    node.className = "splash";            // 去掉 on：CSS 在这一档收尾
+    node.setAttribute("id", "");          // 腾出 id，下一幕的过场才认准自己那一个
+    if (splashTimer) { clearTimeout(splashTimer); }
+    splashTimer = setTimeout(function () {
+      splashTimer = null;
+      if (node.remove) { node.remove(); }
+    }, 260);
+  }
+
+  /** 汉字的幕号（1 → 一，11 → 十一）。 */
+  function hanNum(n) {
+    var digits = "〇一二三四五六七八九";
+    if (!n || n < 1) { return "〇"; }
+    if (n < 10) { return digits.charAt(n); }
+    if (n === 10) { return "十"; }
+    if (n < 20) { return "十" + digits.charAt(n - 10); }
+    return digits.charAt(Math.floor(n / 10)) + "十" + (n % 10 ? digits.charAt(n % 10) : "");
+  }
+
+  function showSplash(act) {
+    closeSplash();
+    var box = el("div", "splash on");
+    box.id = "splash";
+    box.appendChild(el("div", "splash-veil", null, { "aria-hidden": "true" }));
+    var card = el("div", "splash-card");
+    card.appendChild(el("div", "splash-art", null, { "aria-hidden": "true" }));
+    card.appendChild(el("div", "splash-num", hanNum(act)));
+    card.appendChild(el("div", "splash-title", game.actTitleOf(act)));
+    card.appendChild(sep());
+    card.appendChild(el("div", "splash-quote", PACK.prologue));
+    var stamp = el("div", "seal-stamp");
+    stamp.appendChild(iconNode("seal"));
+    stamp.appendChild(el("span", null, hanNum(act) + "幕"));
+    card.appendChild(stamp);
+    card.appendChild(el("div", "splash-hint", "轻触任意处 · 入局"));
+    box.appendChild(card);
+    box.addEventListener("click", closeSplash);
+    document.body.appendChild(box);
+  }
+
+  /** 每次 render() 收尾都过一下：幕号变了才铺过场，回标题屏就收起来。 */
+  function maybeSplash() {
+    var act = ui.screen === "game" ? (game.state.chapter || 0) : 0;
+    if (act === ui.lastAct) { return; }
+    ui.lastAct = act;
+    if (!act || game.state.ending) { closeSplash(); return; }
+    showSplash(act);
   }
 
   // ------------------------------------------------------------------
@@ -3295,6 +4410,12 @@ body[data-motion="off"] #stage .stage-layer { animation: none; }
     panel.appendChild(body);
     return panel;
   }
+
+  // 过场是铺在 #app 外面的一层：Esc 先合浮层（上面那条监听器），再退过场
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key !== "Escape" || ui.overlay) { return; }
+    closeSplash();
+  });
 
   // 起手：先读设定与案外进度，再看标题屏
   loadSettings();

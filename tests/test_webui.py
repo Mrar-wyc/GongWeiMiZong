@@ -93,7 +93,7 @@ class WebUiSmokeTest(unittest.TestCase):
             proc.returncode, 0,
             "网页版界面冒烟测试没通过：\n" + "\n".join(failed) + "\n" + proc.stdout + proc.stderr,
         )
-        self.assertGreaterEqual(total, 23, f"只跑了 {total} 项检查，覆盖面缩水了")
+        self.assertGreaterEqual(total, 31, f"只跑了 {total} 项检查，覆盖面缩水了")
         self.assertEqual(failed, [])
         for name in ("开屏是标题屏", "点「新案」进第一幕", "敲档号能阅档",
                      "「读档」开存读面板，点「读本机存档」不出错", "读回一份结案存档",
@@ -104,7 +104,15 @@ class WebUiSmokeTest(unittest.TestCase):
                      "说话人名牌：名字真在人物表里才点金",
                      "顶栏分主次：四项读数带 meta-extra，窄屏交给 CSS 收",
                      "浮层的出口：顶上「收起」当场合上，body 上记着有没有遮罩",
-                     "档案里的 // 旁注行：淡墨点金，字一个不改"):
+                     "档案里的 // 旁注行：淡墨点金，字一个不改",
+                     "对话行新皮：说话人点金，正文一字不改",
+                     "【线索】/【物证】的记号只包前缀，整行一字不改",
+                     "行动记录折叠条：aria 跟着开合走，条数与卷宗对得上",
+                     "右栏四张仪表卡：信任条按 confide_at 折算，到线才点金",
+                     "标题屏的落花与印章只做样子，一个字都不吐",
+                     "卷首过场：点「新案」起幕帘，Esc 与轻触都能落下",
+                     "游戏屏顶栏：图标键只带 aria/title，不跟文字按钮抢名字",
+                     "选项卡：序号与标签分家，锁着的仍写「条件不足：」"):
             self.assertIn(name, passed, f"没跑到「{name}」这一项")
 
     def test_a_broken_ui_is_actually_caught(self):

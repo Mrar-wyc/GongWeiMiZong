@@ -12,6 +12,10 @@
  *   .stage-lattice  窗格 / 药柜格 / 书格 / 屏风（地方的骨）
  *   .stage-glow     天光、灯与暗角（时辰）
  *   .stage-mote     浮尘与斜光里的粒子（会慢慢飘）
+ *   .stage-petal    落花（色调跟着 data-tone 走，见下面每个色调里的 --petal）
+ *
+ * 另外还画一处：卷首过场那张画里的画卷带（.splash-art）——骨架在 style.css，
+ * 这里按同一套色调给七种「窗外是什么」，画法仍旧只有渐变，没有图片。
  *
  * 纪律：#stage 垫在 #app 底下，只做气氛，不碰可读性——文字永远在纸上，
  * 图景只在纸的四周与纸背后透出来一点点。开关见 body[data-motion]。
@@ -29,6 +33,7 @@
   --lat: rgba(107, 31, 31, .10);
   --lat-w: 64px;
   --lat-h: 34px;
+  --petal: rgba(201, 169, 97, .30);
 }
 
 #app { position: relative; z-index: 1; }
@@ -54,6 +59,7 @@
   --lat: rgba(107, 31, 31, .13);
   --lat-w: 96px;
   --lat-h: 40px;
+  --petal: rgba(139, 44, 44, .28);
 }
 #stage[data-tone="hall"] .stage-lattice {
   background-image:
@@ -70,6 +76,7 @@
   --lat: rgba(63, 90, 80, .14);
   --lat-w: 58px;
   --lat-h: 30px;
+  --petal: rgba(63, 90, 80, .26);
 }
 #stage[data-tone="pharmacy"] .stage-lattice {
   background-image:
@@ -88,6 +95,7 @@
   --lat: rgba(166, 138, 61, .16);
   --lat-w: 46px;
   --lat-h: 44px;
+  --petal: rgba(166, 138, 61, .30);
 }
 #stage[data-tone="archive"] .stage-lattice {
   background-image:
@@ -111,6 +119,7 @@
   --lat: rgba(92, 64, 51, .11);
   --lat-w: 72px;
   --lat-h: 52px;
+  --petal: rgba(92, 64, 51, .24);
 }
 #stage[data-tone="office"] .stage-lattice {
   background-image:
@@ -127,6 +136,7 @@
   --lat: rgba(44, 24, 16, .14);
   --lat-w: 22px;
   --lat-h: 26px;
+  --petal: rgba(44, 24, 16, .28);
 }
 #stage[data-tone="interrogation"] .stage-lattice {
   background-image:
@@ -144,6 +154,7 @@
   --lat: rgba(107, 31, 31, .12);
   --lat-w: 120px;
   --lat-h: 120px;
+  --petal: rgba(201, 169, 97, .38);
 }
 #stage[data-tone="verdict"] .stage-lattice {
   background-image:
@@ -159,6 +170,7 @@
   --lat: rgba(166, 138, 61, .10);
   --lat-w: 80px;
   --lat-h: 80px;
+  --petal: rgba(166, 138, 61, .32);
 }
 #stage[data-tone="ending"] .stage-lattice {
   background-image:
@@ -210,6 +222,19 @@
   to { background-position: 190px -340px, -260px -460px; }
 }
 
+/* ---------- 落花：色调跟着所在地走（同一片花瓣，宫里是朱砂、堂上是金） ---------- */
+
+#stage .stage-petal {
+  position: absolute;
+  top: -10vh;
+  width: 9px;
+  height: 7px;
+  border-radius: 60% 40% 55% 45% / 55% 60% 40% 55%;
+  background: var(--petal);
+  animation: fall linear infinite;
+  pointer-events: none;
+}
+
 /* ---------- 过场卡：进幕、判决、结局时说一句 ---------- */
 
 .stage-card {
@@ -233,6 +258,126 @@
 .stage-card.on { opacity: 1; transform: translate(-50%, 0); }
 .stage-card b { display: block; font-size: 1.24rem; color: var(--crimson); letter-spacing: .22em; }
 .stage-card span { display: block; margin-top: 6px; font-size: .84rem; letter-spacing: .12em; color: var(--ink-light); }
+
+/* ---------- 卷首画卷带：七种色调各画一张，全是渐变 ---------- */
+/* 骨架（一条横卷、多高、描什么边）在 style.css 的 `.splash-art`；
+   这里只补「窗外是什么」。剪影画在 ::before 上，再拿一道竖着的遮罩把它压进下半张——
+   上半张留给天光，看上去就像一卷摊开的画。
+   注意：`#stage` 与 `#app` 是 body 下的同级（见 web/shell.html），卷首这张卡可能
+   落在 #app 里、也可能直接挂在 body 上，所以「嵌在 #stage 里 / 挨着 #stage / 在 #stage 之后的任何兄弟里」
+   三种挂法都收，免得改一次挂载位置就白画了。 */
+.splash-art::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0) 10%, #000 44%, #000 100%);
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0) 10%, #000 44%, #000 100%);
+}
+
+/* 罩一道纸气：七种色调共用同一条退火，近看才不是一排排细纹；
+   上下两道描金细线是卷轴的轴杆——有了它，这一条才像「一卷画」。 */
+.splash-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(250, 244, 231, .74) 0,
+    rgba(250, 244, 231, .62) 44%,
+    rgba(250, 244, 231, .88) 100%
+  );
+  box-shadow:
+    inset 0 7px 0 -6px rgba(201, 169, 97, .62),
+    inset 0 -7px 0 -6px rgba(201, 169, 97, .62);
+}
+
+/* 凤仪殿：檐口一排斗拱，底下一道朱墙 */
+#stage[data-tone="hall"] .splash-art::before,
+#stage[data-tone="hall"] ~ .splash-art::before,
+#stage[data-tone="hall"] ~ * .splash-art::before {
+  background-image:
+    repeating-linear-gradient(90deg, rgba(107, 31, 31, .18) 0 7px, rgba(0, 0, 0, 0) 7px 46px),
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 0 62%, rgba(139, 44, 44, .30) 62% 100%);
+  background-size: auto, auto;
+  background-position: 0 0, 0 0;
+  background-repeat: repeat, no-repeat;
+}
+
+/* 尚药局：一墙小抽屉，格心一颗铜钮 */
+#stage[data-tone="pharmacy"] .splash-art::before,
+#stage[data-tone="pharmacy"] ~ .splash-art::before,
+#stage[data-tone="pharmacy"] ~ * .splash-art::before {
+  background-image:
+    radial-gradient(circle, rgba(63, 90, 80, .38) 0 1.6px, rgba(0, 0, 0, 0) 2.4px),
+    repeating-linear-gradient(90deg, rgba(63, 90, 80, .30) 0 1px, rgba(0, 0, 0, 0) 1px 26px),
+    repeating-linear-gradient(0deg, rgba(63, 90, 80, .30) 0 1px, rgba(0, 0, 0, 0) 1px 20px),
+    repeating-linear-gradient(0deg, rgba(91, 122, 111, .14) 0 1px, rgba(0, 0, 0, 0) 1px 12px);
+  background-size: 26px 20px, auto, auto, auto;
+  background-position: 0 0, 0 0, 0 0, 0 0;
+}
+
+/* 经卷阁与旧档库：一层层书架，脊上三色卷帙 */
+#stage[data-tone="archive"] .splash-art::before,
+#stage[data-tone="archive"] ~ .splash-art::before,
+#stage[data-tone="archive"] ~ * .splash-art::before {
+  background-image:
+    repeating-linear-gradient(0deg, rgba(166, 138, 61, .38) 0 3px, rgba(0, 0, 0, 0) 3px 38px),
+    repeating-linear-gradient(90deg,
+      rgba(107, 31, 31, .22) 0 4px, rgba(0, 0, 0, 0) 4px 11px,
+      rgba(63, 90, 80, .22) 11px 14px, rgba(0, 0, 0, 0) 14px 23px,
+      rgba(166, 138, 61, .26) 23px 26px, rgba(0, 0, 0, 0) 26px 46px),
+    repeating-linear-gradient(0deg, rgba(201, 169, 97, .16) 0 1px, rgba(0, 0, 0, 0) 1px 12px);
+}
+
+/* 内官监值房：冷灰板壁，右首一扇透亮的窗 */
+#stage[data-tone="office"] .splash-art::before,
+#stage[data-tone="office"] ~ .splash-art::before,
+#stage[data-tone="office"] ~ * .splash-art::before {
+  background-image:
+    linear-gradient(90deg, rgba(0, 0, 0, 0) 0 58%, rgba(251, 243, 228, .62) 58% 86%, rgba(0, 0, 0, 0) 86%),
+    repeating-linear-gradient(90deg, rgba(92, 64, 51, .26) 0 1px, rgba(0, 0, 0, 0) 1px 46px),
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 0 60%, rgba(92, 64, 51, .30) 60% 100%),
+    repeating-linear-gradient(0deg, rgba(201, 169, 97, .14) 0 1px, rgba(0, 0, 0, 0) 1px 12px);
+  background-repeat: no-repeat, repeat, no-repeat, repeat;
+}
+
+/* 问询：对面立着一扇屏风，脚下一道沉影 */
+#stage[data-tone="interrogation"] .splash-art::before,
+#stage[data-tone="interrogation"] ~ .splash-art::before,
+#stage[data-tone="interrogation"] ~ * .splash-art::before {
+  background-image:
+    repeating-linear-gradient(90deg, rgba(44, 24, 16, .34) 0 2px, rgba(0, 0, 0, 0) 2px 15px),
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 0 34%, rgba(44, 24, 16, .20) 34% 100%),
+    linear-gradient(90deg, rgba(44, 24, 16, .22) 0%, rgba(0, 0, 0, 0) 38%),
+    repeating-linear-gradient(0deg, rgba(201, 169, 97, .12) 0 1px, rgba(0, 0, 0, 0) 1px 12px);
+  background-repeat: repeat, no-repeat, no-repeat, repeat;
+}
+
+/* 结案陈词：堂顶一圈藻井，宝顶上落着光 */
+#stage[data-tone="verdict"] .splash-art::before,
+#stage[data-tone="verdict"] ~ .splash-art::before,
+#stage[data-tone="verdict"] ~ * .splash-art::before {
+  background-image:
+    repeating-conic-gradient(from 0deg at 50% -6%,
+      rgba(107, 31, 31, .24) 0deg 3deg, rgba(0, 0, 0, 0) 3deg 9deg),
+    radial-gradient(58% 46% at 50% 0%, rgba(201, 169, 97, .36), rgba(0, 0, 0, 0) 70%),
+    linear-gradient(180deg, rgba(139, 44, 44, .22), rgba(0, 0, 0, 0) 60%),
+    repeating-linear-gradient(0deg, rgba(201, 169, 97, .14) 0 1px, rgba(0, 0, 0, 0) 1px 12px);
+  background-repeat: repeat, no-repeat, no-repeat, repeat;
+}
+
+/* 结局：天光收下去，远山与落日只剩一道边 */
+#stage[data-tone="ending"] .splash-art::before,
+#stage[data-tone="ending"] ~ .splash-art::before,
+#stage[data-tone="ending"] ~ * .splash-art::before {
+  background-image:
+    radial-gradient(70% 52% at 50% 100%, rgba(201, 169, 97, .38), rgba(0, 0, 0, 0) 72%),
+    radial-gradient(46% 34% at 18% 104%, rgba(44, 24, 16, .28), rgba(0, 0, 0, 0) 70%),
+    radial-gradient(52% 38% at 82% 106%, rgba(44, 24, 16, .24), rgba(0, 0, 0, 0) 72%),
+    repeating-linear-gradient(0deg, rgba(166, 138, 61, .16) 0 1px, rgba(0, 0, 0, 0) 1px 12px);
+  background-repeat: no-repeat, no-repeat, no-repeat, repeat;
+}
 
 /* ---------- 让纸透一点：图景只在纸的四周与纸背后露出来 ---------- */
 
@@ -283,10 +428,12 @@
 @media (max-width: 899px) {
   .stage-card { top: 9%; padding: 10px 18px; font-size: .96rem; }
   #stage .stage-lattice { opacity: .7; }
+  .splash-art { height: 92px; }
 }
 
 @media (max-width: 480px) {
   #stage .stage-mote { display: none; }
+  #stage .stage-petal { display: none; }
 }
 
 /* ---------- 关掉动效：只关图景自己的，不动界面其他地方 ---------- */
@@ -294,9 +441,17 @@
 body[data-motion="off"] .stage-card { transition: none; }
 body[data-motion="off"] #stage .stage-mote { display: none; }
 body[data-motion="off"] #stage .stage-layer { animation: none; }
+body[data-motion="off"] #stage .stage-petal { display: none; }
+body[data-motion="off"] .splash-card,
+body[data-motion="off"] .splash-art,
+body[data-motion="off"] .splash .seal-stamp { animation: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .stage-card { transition: none; }
   #stage .stage-mote { display: none; }
   #stage .stage-layer { animation: none; }
+  #stage .stage-petal { display: none; }
+  .splash-card,
+  .splash-art,
+  .splash .seal-stamp { animation: none; }
 }

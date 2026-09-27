@@ -380,8 +380,13 @@ class Canvas:
                 line[col] = " "
 
     def box(self, x: int, y: int, w: int, h: int, title: str = "",
-            title_color: Optional[str] = None, border_color: Optional[str] = None) -> None:
-        """画一个圆角边框；``title`` 嵌在上边框里。"""
+            title_color: Optional[str] = None, border_color: Optional[str] = None,
+            mark: str = "", mark_color: Optional[str] = None) -> None:
+        """画一个圆角边框；``title`` 嵌在上边框里，``mark`` 是标题前的记号。
+
+        ``mark``（如朱砂 ``◆``）自带颜色，占「记号 + 一格间隔」；记号与标题
+        合起来仍然只吃 ``w - 4`` 列，右边框的 ``─`` 因此不会被挤掉。
+        """
         if w < 2 or h < 2:
             return
         bc = border_color or "yellow"
@@ -393,9 +398,15 @@ class Canvas:
             self.put(x, row, paint("│", bc))
             self.put(x + w - 1, row, paint("│", bc))
         if title:
-            label = f" {title} "
-            inner = truncate(label, max(0, w - 4))
-            self.put(x + 2, y, paint(inner, title_color or bc, bold=True))
+            tc = title_color or bc
+            if mark:
+                # 记号单独上一段色，标题再接着画：两者颜色不同，不能拼成一个 label。
+                head = f" {mark} "
+                self.put(x + 2, y, paint(head, mark_color or tc))
+                rest = truncate(f"{title} ", max(0, w - 4 - display_width(head)))
+                self.put(x + 2 + display_width(head), y, paint(rest, tc, bold=True))
+            else:
+                self.put(x + 2, y, paint(truncate(f" {title} ", max(0, w - 4)), tc, bold=True))
 
     def render(self) -> List[str]:
         """把网格拼成每行恰好 ``width`` 显示列的字符串。
