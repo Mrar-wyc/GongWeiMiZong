@@ -19,6 +19,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from gongwei.data import CONTENT, TOPIC_GATES
 from gongwei.game import GameEngine
 from gongwei.game.save import SaveStore
+from gongwei.tui import terminal
 from gongwei.tui.app import run
 
 
@@ -42,12 +43,19 @@ def build_parser() -> argparse.ArgumentParser:
                    help="直接读取存档继续（没有存档则从新案开始）")
     p.add_argument("--no-save", dest="no_save", action="store_true",
                    help="禁用存读档（存档功能不可用，用于纯净试玩）")
+    p.add_argument("--no-color", dest="no_color", action="store_true",
+                   help="关掉全部颜色与粗体（等同于设置环境变量 NO_COLOR）")
     p.add_argument("--version", action="version", version="宫闱迷踪 1.0.0")
     return p
 
 
 def main(argv=None) -> int:
     args = build_parser().parse_args(argv)
+
+    # 无色出口：--no-color 与 NO_COLOR 环境变量等效，都在这里定下来；
+    # 关掉之后 paint/fg 原样返回文本，整帧不含任何颜色转义序列。
+    if args.no_color:
+        terminal.set_color(False)
 
     engine = GameEngine(CONTENT, gates=TOPIC_GATES)
     engine.new_game()

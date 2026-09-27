@@ -23,7 +23,7 @@ from ..game.command import (HELP_SECTIONS, Command, ParseError, canon_dossier_id
                             help_lines, is_dossier_id, parse as parse_command,
                             suggest_dossier_ids)
 from ..game.engine import GameEngine, Option
-from ..game.models import Content
+from ..game.models import Character, Content
 from ..game.save import SaveStore
 from .terminal import (App as _App, Canvas, LineEditor, Terminal, QuitApp,
                        char_width, display_width, pad, paint, read_key,
@@ -73,6 +73,11 @@ def trust_color(value: int) -> str:
     return "red"
 
 
+#: 「可深谈」标记。人情栏只有 20/24 列，塞不下「深谈」两个字，用一列的点占位；
+#: 它的意思写在帮助层里（H 键）。门槛本身是 ``Character.confide_at``，这里不存数据。
+CONFIDE_MARK = "●"
+
+
 @dataclass
 class Toast:
     text: str
@@ -101,6 +106,21 @@ class GameApp:
 
     MIN_W = 62
     MIN_H = 18
+
+    #: 页脚按键串，从长到短三档。窄屏以前是硬裁长串，裁掉的正好是「Q 离开」
+    #: 这类出口提示（80 列丢「离开」、62 列只剩到「R」）。按宽度选一档，
+    #: 短档也会把「C 回卷宗」前缀一起算进去，保证整串画得下、不被截。
+    FOOTER_KEYS_WIDE = "输入档号阅档 · 数字/↑↓ 选择 · Enter 确认 · S 存 L 读 · R 重来 · H 帮助 · Q 离开"
+    FOOTER_KEYS_MID = "输入档号阅档 · ↑↓ 选择 · Enter 确认 · S 存 L 读 · H 帮助 · Q 离开"
+    FOOTER_KEYS_NARROW = "↑↓ 选 · Enter 确认 · H 帮助 · Q 离开"
+    FOOTER_KEYS_ENDING = "Enter 重开 · Q 离开"
+
+    #: 正文一行的换行上限（显示列）。超宽终端上左侧卷宗会宽到一行塞 55 个汉字，
+    #: 读完一句要横着找头，眼睛很累；这里只收窄「换行宽度」这一个观感参数，
+    #: 正文行仍旧 pad 到面板内宽、画布每行仍旧补满整屏宽度，所以
+    #: 「行数 == 高度、每行可见宽 == 宽度」的硬约束一点没动。
+    #: 88 列 ≈ 44 个汉字一行；终端窄于 ~134 列时面板本来就比它窄，等于没生效。
+    READ_COLS_MAX = 88
 
     def __init__(self, content: Content, engine: GameEngine,
                  store: Optional[SaveStore] = None) -> None:
@@ -323,9 +343,13 @@ class GameApp:
         try:
             cmd = parse_command(text)
         except ParseError as exc:
-            self.notify(exc.message, "error")
+            # toast 是单槽：以前先报原因、再报 hint，后者会把前者顶掉，屏幕上
+            # 只剩「例如：查 王德海」——真正说不通的那句反而永远看不见。
+            # 拼成一条，原因在前、hint 括在后面（hint 自带句号，去掉重复的）。
+            text = exc.message
             if exc.hint:
-                self.notify(exc.hint, "error")
+                text = f"{exc.message.rstrip('。')}（{exc.hint}）"
+            self.notify(text, "error")
             return
         try:
             self._dispatch(cmd)
@@ -661,9 +685,13 @@ class GameApp:
             if did and self.engine.dossier_exists(did) and self.state.dossier_read(did):
                 head = "▤ "
                 indent = " " * display_width(head)
+                names = self._speaker_names()       # 名牌认得的人，运行时从人物表现搭
                 # dossier_view 已经按宽度折好行了，这里**不能再折一次** ——
                 # 否则每行都成了「新段落」，记号会顶在每一行上。
                 # 规矩：空行分段，段首放 ▤，段内其余行缩进对齐。
+                # 行首若是「名字：」（名字必须在人物表里），那一段名字压金色加粗、
+                # 其余照旧；判定交给 _speaker_of，不是「按第一个冒号切」。
+                # 缩进写的供词（07-DL-TWO 三句里有两句带缩进）也认，段首空白原样留着。
                 out: List[str] = []
                 fresh = True
                 for para in self.engine.dossier_view(did, max(4, width - 2)):
@@ -671,7 +699,16 @@ class GameApp:
                         out.append("")
                         fresh = True
                         continue
-                    out.append(paint((head if fresh else indent) + para, C_GOLD))
+                    mark = head if fresh else indent
+                    said = self._speaker_of(para, names)
+                    if said is None:
+                        out.append(paint(mark + para, C_GOLD))
+                    else:
+                        # 名牌原样截自这一行（含段首空白），可见宽度一个字符都不变。
+                        plate = para[: len(para) - len(said[2])]
+                        out.append(paint(mark, C_GOLD)
+                                   + paint(plate, C_GOLD, bold=True)
+                                   + (paint(said[2], C_GOLD) if said[2] else ""))
                     fresh = False
                 return out
             self.read_mode = "index"            # 正文没了就退回档目
@@ -691,6 +728,36 @@ class GameApp:
             return out
         return self._log_lines(width)
 
+    def _rank_seal(self) -> Optional[Tuple[str, int]]:
+        """结案评语：``(评语, 案号)``。没结案、或这条结局根本没写评语，返回 None。
+
+        评语和案号都从 ``content.endings`` 里按 ``state.ending`` 取——界面自己
+        一个字都不编；查不到就静悄悄不画。
+        """
+        eid = str(getattr(self.state, "ending", "") or "")
+        if not eid:
+            return None
+        rule = next((e for e in self.content.endings if e.id == eid), None)
+        rank = str(getattr(rule, "rank", "") or "").strip()
+        if rule is None or not rank:
+            return None
+        return rank, int(getattr(rule, "case", 0) or 0)
+
+    def _draw_rank_seal(self, canvas: Canvas, x: int, y: int, w: int,
+                        rank: str, case: int) -> int:
+        """画评语印章，返回它吃掉的行数（0 = 框太窄，没画）。"""
+        label = f"【{rank}】"
+        if case > 0:
+            label += f"案{_cn_number(case)}"
+        box_w = min(max(display_width(label) + 4, 10), w - 4)
+        if box_w < display_width(label) + 2:
+            return 0
+        canvas.clear_rect(x + 1, y, w - 2, 3)      # 印章压住的行先抹干净再画
+        canvas.box(x + 2, y, box_w, 3, border_color=C_BORDER)
+        canvas.put(x + 4, y + 1,
+                   paint(pad(_center(label, box_w - 4), box_w - 4), C_GOLD, bold=True))
+        return 3
+
     def _draw_left(self, canvas: Canvas, x: int, y: int, w: int, h: int,
                    ending: bool, narrow: bool = False,
                    show_options: bool = True) -> None:
@@ -700,6 +767,12 @@ class GameApp:
         inner_w = max(4, w - 4)
         top_row = y + 1
         bottom_row = y + h - 2          # 最后一行留空，防止文字贴边
+        if ending:
+            # 结案评语印章：贴在卷宗上方、正文之前。它占掉的行从阅读区里扣，
+            # 底端锚定的日志因此少显示几行 —— 印章必须一直在，不能被卷上去。
+            seal = self._rank_seal()
+            if seal is not None and h >= 8:
+                top_row += self._draw_rank_seal(canvas, x, top_row, w, seal[0], seal[1])
 
         opts = [] if (ending or not show_options) else self.engine.options()
         sel = opts[self.cursor] if opts and self.cursor < len(opts) else None
@@ -712,7 +785,7 @@ class GameApp:
         opt_top = max(top_row, bottom_row - opt_rows + 1) if opts else bottom_row + 1
         log_rows = max(1, (opt_top - 1) - top_row) if opts else max(1, bottom_row - top_row + 1)
 
-        rows = self._reading_rows(inner_w)
+        rows = self._reading_rows(min(inner_w, self.READ_COLS_MAX))
         total = len(rows)
         max_scroll = max(0, total - log_rows)
         self.scroll = min(self.scroll, max_scroll)
@@ -729,8 +802,16 @@ class GameApp:
             row += 1
         above, below = start, total - end
         if above or below:
-            more = (f"↑{above} " if above else "") + (f"↓{below} " if below else "")
-            canvas.put(max(x + 2, x + w - 3 - display_width(more)), y, paint(more, C_GOLD))
+            # 并进标题那一行：以前这句单独糊在上边框里（`╭─ 卷宗 ────↑6 ──╮`），
+            # 前面贴死、后面还顶掉一格虚线，看着像渲染坏了。现在紧接标题补一段
+            # 「─」再写 ↑N ↓M，读起来就是边框上的一个标签——帮助里本来就写的
+            # 是「标题处 ↑N ↓M 报还剩几行」。标题文字仍排在最前，ReadingPaneTest
+            # 取标题的方式（第一段「─」之前）因此没变。
+            more = " ".join(p for p in (f"↑{above}" if above else "",
+                                        f"↓{below}" if below else "") if p)
+            tag = f"─ {more} "
+            pos = min(x + 4 + display_width(title), x + w - 2 - display_width(tag))
+            canvas.put(pos, y, paint(tag, C_GOLD))
         if not opts or opt_top <= top_row:
             return
 
@@ -744,8 +825,11 @@ class GameApp:
             mark = "❯" if here else " "
             label = opt.label + ("（已问）" if opt.asked else "")
             label = truncate(label, max(4, inner_w - 6))
-            color = "red" if not opt.enabled else (C_GOLD if here else "default")
+            color = C_GOLD if here else "default"
             body = f"{mark} {opt.index}. {label}"
+            # 禁用项以前是「红 + 暗」：浅色终端上红字读不清，而且红色同时兼着
+            # 「错误 / 条件不足 / 确认框边框」三重意思。禁用只是「现在不能用」，
+            # 灰掉（default + dim）就够；红色留给真正的错误。
             canvas.put(x + 2, line, paint(pad(body, inner_w), color, bold=here,
                                          dim=not opt.enabled))
             line += 1
@@ -797,19 +881,68 @@ class GameApp:
         line += paint(right, C_GOLD, dim=True)
         canvas.put(0, 0, line)
 
+    def _speaker_names(self) -> List[str]:
+        """名牌认得的所有名字：运行时从 ``content.characters`` 现搭，一个字都不写死。
+
+        长名字排在前面，免得短名字抢走长名字的开头。剧本里加人，名牌自动跟着加。
+        """
+        index = {ch.name: cid for cid, ch in self.content.characters.items()}
+        return sorted(index, key=len, reverse=True)
+
+    @staticmethod
+    def _speaker_of(para: str, names: Sequence[str]) -> Optional[Tuple[str, str, str]]:
+        """把 ``「名字」：话`` / ``名字：话`` 拆成 (段首空白, 名字, 话)；不是说话就返回 None。
+
+        两个条件同时成立才算对话：名字在 ``content.characters`` 里，且后面紧跟全角冒号。
+        **段首空白不参与判定**：档案正文里那几句供词是缩进写的（07-DL-TWO 三句里有
+        两句带六格缩进），只认顶格会把三分之二的说话人漏掉；空白原样交回给调用方，
+        屏幕上该缩进还是缩进。
+        正文里那些用「」括起来的别的东西（「要静心抄经」之类）因此不会变成名牌。
+        """
+        lead = para[: len(para) - len(para.lstrip())]
+        rest = para[len(lead):]
+        for name in names:
+            for head in (f"「{name}」：", f"{name}："):
+                if rest.startswith(head):
+                    return lead, name, rest[len(head):]
+        return None
+
+    def _dialogue_rows(self, name: str, spoken: str, width: int,
+                       lead: str = "") -> List[str]:
+        """对话行：名牌压金色，话用正白（不再跟着旁白的灰）；续行缩进对齐名牌。"""
+        plate = lead + f"{name}："
+        plate_w = display_width(plate)
+        atoms = _wrap_all(spoken, max(4, width - plate_w)) if spoken else [""]
+        rows = [paint(plate, C_GOLD, bold=True)
+                + (paint(atoms[0], C_SCENE) if atoms[0] else "")]
+        indent = " " * plate_w
+        for atom in atoms[1:]:
+            rows.append(paint(indent + atom, C_SCENE))
+        return rows
+
     def _log_lines(self, width: int) -> List[str]:
         rows: List[str] = []
+        names = self._speaker_names()
         for entry in self.state.log:
             prefix, color = _KIND_STYLE.get(entry.kind, ("", C_NARR))
             for para in str(entry.text).split("\n"):
                 if not para:
                     rows.append("")
                     continue
+                said = self._speaker_of(para, names)
+                if said is not None:
+                    rows.extend(self._dialogue_rows(said[1], said[2], width, said[0]))
+                    continue
                 atoms = _wrap_all(para, max(4, width - display_width(prefix)))
                 for i, atom in enumerate(atoms):
                     head = prefix if i == 0 else " " * display_width(prefix)
                     rows.append(paint(head + atom, color))
         return rows
+
+    def _confide_ready(self, ch: Character, value: int) -> bool:
+        """信任到线就该亮「可深谈」。``confide_at == 999`` 是「永不肯深谈」，永远不亮。"""
+        at = int(getattr(ch, "confide_at", 999) or 999)
+        return at != 999 and value >= at
 
     def _draw_clues(self, canvas: Canvas, x: int, y: int, w: int, h: int,
                     title: str = "记事簿", show_trust: bool = False) -> None:
@@ -832,7 +965,12 @@ class GameApp:
                 bar = "█" * filled + "·" * (bar_w - filled)
                 name = truncate(ch.name, max(2, inner_w - bar_w - 2))
                 text = pad(name, max(2, inner_w - bar_w - 1)) + bar
-                canvas.put(x + 2, row, paint(truncate(text, inner_w), trust_color(value)))
+                line = paint(truncate(text, inner_w), trust_color(value))
+                if self._confide_ready(ch, value):
+                    # 信任到线了：行尾点一个金点（见 CONFIDE_MARK）。栏里塞不下
+                    # 「深谈」两个字，但它只占一列，名字与信任条都不必让位。
+                    line += paint(CONFIDE_MARK, C_GOLD, bold=True)
+                canvas.put(x + 2, row, line)
                 row += 1
                 if row < y + h - 1:
                     canvas.put(x + 2, row,
@@ -883,8 +1021,14 @@ class GameApp:
         status += f" · 评分 {self.state.score}"
         if self.state.notes:
             status += f" · 笔记 {len(self.state.notes)}"
-        keys = ("Enter 重开 · Q 离开" if ending
-                else "输入档号阅档 · 数字/↑↓ 选择 · Enter 确认 · S 存 L 读 · R 重来 · H 帮助 · Q 离开")
+        if ending:
+            keys = self.FOOTER_KEYS_ENDING
+        elif w >= 100:
+            keys = self.FOOTER_KEYS_WIDE
+        elif w >= 80:
+            keys = self.FOOTER_KEYS_MID
+        else:
+            keys = self.FOOTER_KEYS_NARROW
         if self.panel == "clues" and self.read_mode == "log" and not ending:
             # 窄屏切到了记事簿：得告诉玩家怎么回去，否则选项看起来「不见了」
             keys = "C 回卷宗 · " + keys
@@ -903,6 +1047,23 @@ class GameApp:
                                    hot_color if hot else "white", bold=bool(hot)))
 
     # -- 帮助 ------------------------------------------------------------
+    #: 帮助浮层里的按键表（正文位置见 `_draw_help`）。
+    HELP_KEYS_BLOCK = [
+        "按键",
+        "  ↑↓ / J K / 数字   选择动作、条目（数字在空行时直接选中）",
+        "  Enter              执行指令 / 确认当前项",
+        "  ↑ ↓（有输入时）    翻指令历史",
+        "  Esc                清空输入 / 关闭档案 / 回到标题",
+        "  S / L              存档 / 读档",
+        "  R                  从头再查一案",
+        "  PgUp / PgDn        翻阅正文。卷宗从最新往回翻；档案、档目",
+        "                     从标题往下读（标题处 ↑N ↓M 报还剩几行）",
+        "  Home / End         卷宗：跳到最新 / 最早；文档：回到开头 / 末尾",
+        "  C                  窄屏下切换「卷宗 / 记事簿」",
+        "  H / ?              本帮助",
+        "  Q                  退出",
+    ]
+
     def _draw_help(self, canvas: Canvas, w: int, h: int) -> None:
         lines = [
             "《宫闱迷踪》玩法",
@@ -911,29 +1072,17 @@ class GameApp:
             "两条路并行：敲指令查档案，或按数字点选下方列出的动作。",
             "档案不会自己排队等你——得顺着正文里的号子往下翻。",
             "核心线索（◆）越齐，结案时的指认越站得住；信任会随问话升降。",
+            f"信任够了就能深谈：人情栏里那一行末尾会亮起 {CONFIDE_MARK}。",
             "",
-            "指令（在 › 后输入，回车执行）",
         ]
+        # 按键表前置：浮层只画得下 box_h-2 行，34 行终端以前永远看不到垫在末尾
+        # 的这张表——而它才是玩家手上真正需要的东西。指令表可以往后挪。
+        lines += self.HELP_KEYS_BLOCK
+        lines += ["", "指令（在 › 后输入，回车执行）"]
         for head, items in HELP_SECTIONS:
             lines.append(f"  【{head}】")
             for usage, desc in items:
                 lines.append(f"    {usage:<16}{desc}")
-        lines += [
-            "",
-            "按键",
-            "  ↑↓ / J K / 数字   选择动作、条目（数字在空行时直接选中）",
-            "  Enter              执行指令 / 确认当前项",
-            "  ↑ ↓（有输入时）    翻指令历史",
-            "  Esc                清空输入 / 关闭档案 / 回到标题",
-            "  S / L              存档 / 读档",
-            "  R                  从头再查一案",
-            "  PgUp / PgDn        翻阅正文。卷宗从最新往回翻；档案、档目",
-            "                     从标题往下读（标题处 ↑N ↓M 报还剩几行）",
-            "  Home / End         卷宗：跳到最新 / 最早；文档：回到开头 / 末尾",
-            "  C                  窄屏下切换「卷宗 / 记事簿」",
-            "  H / ?              本帮助",
-            "  Q                  退出",
-        ]
         box_w = min(w - 4, 76)
         box_h = min(h - 2, len(lines) + 4)
         x = (w - box_w) // 2
@@ -961,7 +1110,9 @@ class GameApp:
         x = (w - box_w) // 2
         y = max(0, (h - box_h) // 2)
         canvas.clear_rect(x, y, box_w, box_h)   # 同帮助浮层：先抹干净再画
-        canvas.box(x, y, box_w, box_h, title="确认", border_color=C_WARN, title_color=C_WARN)
+        # 确认框用金（C_GOLD）：红色以前既是错误、又是「条件不足」、又是这个
+        # 边框，一个颜色三种话。红留给错误，确认是「请你做个决定」，用金。
+        canvas.box(x, y, box_w, box_h, title="确认", border_color=C_GOLD, title_color=C_GOLD)
         for i, line in enumerate(lines):
             canvas.put(x + 3, y + 1 + i, paint(_box_fit(line, box_w - 6), "white"))
         canvas.put(x + 3, y + box_h - 2, paint(_box_fit("Y / Enter 确定    N / Esc 取消", box_w - 6), C_GOLD))
@@ -1013,6 +1164,22 @@ def _center(text: str, width: int) -> str:
         return truncate(text, width)
     left = (width - tw) // 2
     return " " * left + text
+
+
+#: 印章上的汉字数字。这是**数字**转换表，不是「第几案叫什么」的名字表——
+#: 案子的事实只住在 gongwei/data 里。
+_CN_DIGITS = "〇一二三四五六七八九"
+
+
+def _cn_number(value: int) -> str:
+    """1..99 写成汉字数字（``案一`` / ``案十二``）；越界就原样返回阿拉伯数字。"""
+    if value < 1 or value > 99:
+        return str(value)
+    if value < 10:
+        return _CN_DIGITS[value]
+    tens, ones = divmod(value, 10)
+    head = "十" if tens == 1 else _CN_DIGITS[tens] + "十"
+    return head + _CN_DIGITS[ones] if ones else head
 
 
 def _log_entry(kind: str, text: str):

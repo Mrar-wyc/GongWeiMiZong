@@ -141,9 +141,22 @@ function textOf(node) {
 
 function makeDocument() {
   var body = makeNode("body");
+  var stage = makeNode("div");
+  stage.id = "stage";
+  var card = makeNode("div");
+  card.id = "stage-card";
+  card.className = "stage-card";
+  stage.appendChild(card);
+  // 与 web/shell.html 里那段标记一样：图景槽自带默认色调/明暗/幕次
+  stage.setAttribute("data-tone", "hall");
+  stage.setAttribute("data-light", "day");
+  stage.setAttribute("data-act", "0");
   var app = makeNode("div");
   app.id = "app";
-  body.appendChild(app);           // web/shell.html 里 body 只有一个 <div id="app">
+  // web/shell.html 里 body 是「图景 + <div id="app">」：#stage 在 #app 之外，
+  // ui.js 每次 clear(#app) 都清不到它 —— 这正是图景不被重画打断的原因。
+  body.appendChild(stage);
+  body.appendChild(app);
   var doc = {
     body: body,
     documentElement: makeNode("html"),
@@ -213,8 +226,15 @@ function brief(node, limit) {
 var pack = JSON.parse(fs.readFileSync(PACK_FILE, "utf8"));
 var doc = makeDocument();
 var storage = makeStorage();
+// 图景台账由 tests/test_webui.py 从 gongwei/web/art.py 导出（与页面上 #art 块同一份
+// JSON），没给就留空 —— ui.js 必须能空着手跑，所以这也算一条隐性检查。
+var art = null;
+if (process.env.GONGWEI_ART_FILE) {
+  art = JSON.parse(fs.readFileSync(process.env.GONGWEI_ART_FILE, "utf8"));
+}
 var win = {
   __GONGWEI_PACK__: pack,
+  __GONGWEI_ART__: art,
   localStorage: storage,
   sessionStorage: storage,
   addEventListener: noop,
@@ -282,12 +302,54 @@ if (booted) {
     need(t.indexOf(String(pack.prologue).slice(0, 10)) >= 0, "标题屏上找不到序章引文");
   });
 
+  // 图景槽是一层画在 #app 外面的景：ui.js 每次重画都会 clear(#app)，景要是放进去
+  // 就会被连根拔掉，所以这条检查同时钉住「它在 body 之下」这件事。
+  check("图景槽在标题屏上是默认景，且落在 #app 外面", function () {
+    var stage = byId("stage");
+    need(stage, "页面上没有 #stage：web/shell.html 的图景槽没接上");
+    need(stage.parent === doc.body, "#stage 被放进了 #app 里，每次重画都会被清掉");
+    need(String(stage.getAttribute("data-tone")).length > 0, "#stage 没有 data-tone");
+    need(String(stage.getAttribute("data-light")).length > 0, "#stage 没有 data-light");
+    need(stage.getAttribute("data-act") === "0",
+      "标题屏该是第 0 幕，实得「" + stage.getAttribute("data-act") + "」");
+    if (art) {
+      need(stage.getAttribute("data-tone") === art.default_tone,
+        "标题屏色调是「" + stage.getAttribute("data-tone") + "」，台账里默认是「" + art.default_tone + "」");
+      need(stage.getAttribute("data-light") === art.default_light,
+        "标题屏明暗是「" + stage.getAttribute("data-light") + "」，台账里默认是「" + art.default_light + "」");
+    }
+  });
+
   check("点「新案」进第一幕", function () {
     clickButton("新案");
     need(byId("reading-body"), "开局后没有 #reading-body（阅读区没渲染）");
     var body = String(START_SCENE.body).slice(0, 12);
     need(paneText("reading-body").indexOf(body) >= 0,
       "卷宗里没有开场正文；应有「" + body + "」，实得「" + brief(byId("reading-body")) + "」");
+  });
+
+  check("进场报幕：幕次、幕名、地点色调都跟着走", function () {
+    var stage = byId("stage");
+    need(stage, "进游戏后 #stage 不见了");
+    need(stage.getAttribute("data-act") === "1",
+      "已经进了第一幕，图景还写着第 " + stage.getAttribute("data-act") + " 幕");
+    var card = byId("stage-card");
+    need(card && (" " + card.className + " ").indexOf(" on ") >= 0, "换幕没有报幕卡片");
+    var title = String(pack.act_titles["1"]);
+    need(textOf(card).indexOf(title) >= 0,
+      "报幕卡片上没有第一幕的幕名「" + title + "」：" + brief(card));
+    var place = String(START_SCENE.place);
+    if (art) {
+      // 地点必须在台账里登记过：漏一个就会静默退回默认景，画面对不上文字
+      need(art.place_tone[place],
+        "起点地点「" + place + "」不在图景台账里（gongwei/web/art.py 的 PLACE_TONES）");
+      need(stage.getAttribute("data-tone") === art.place_tone[place],
+        "在「" + place + "」，色调却是「" + stage.getAttribute("data-tone") + "」");
+      var lights = Object.keys(art.time_light).map(function (k) { return art.time_light[k]; });
+      lights.push(art.default_light);
+      need(lights.indexOf(stage.getAttribute("data-light")) >= 0,
+        "明暗「" + stage.getAttribute("data-light") + "」不在台账里");
+    }
   });
 
   check("选项区列出可选动作", function () {
@@ -451,6 +513,84 @@ if (booted) {
     need(input.value === "", "Escape 没清掉命令行");
   });
 
+  check("「案外」页：幕册 / 结局册 / 行囊 / 音画设定", function () {
+    var tabs = buttons(app(), "案外");
+    need(tabs.length === 1, "找不到「案外」页签（找到 " + tabs.length + " 个）");
+    tabs[0].click();
+    var text = appText();
+    ["幕册", "结局册", "行囊", "音画设定"].forEach(function (word) {
+      need(text.indexOf(word) >= 0, "「案外」页里没有「" + word + "」这一节");
+    });
+    need(text.indexOf("未至") >= 0, "还没到过的幕没有标「未至」");
+    // 收集册只记「到过哪儿」：没到过的幕，连幕名都不许先漏出来
+    var raw = storage.getItem("gongwei_marks");
+    need(raw, "「案外」没把进度写进本机（gongwei_marks）：" + String(raw));
+    var marks = JSON.parse(raw);
+    need(marks.acts && marks.acts.length >= 1, "marks.acts 里没有已至的幕：" + raw);
+    Object.keys(pack.act_titles).forEach(function (key) {
+      var title = String(pack.act_titles[key]);
+      if (title.length < 3 || marks.acts.indexOf(Number(key)) >= 0) { return; }
+      need(text.indexOf(title) < 0,
+        "第 " + key + " 幕还没到过，「案外」却把幕名「" + title + "」写出来了");
+    });
+    buttons(app(), "卷宗")[0].click();          // 收尾：别把页签状态漏给后面的检查
+  });
+
+  check("音画设定：点一下当场生效，也写进本机", function () {
+    buttons(app(), "案外")[0].click();
+    var rows = query(app(), ".setting-row");
+    need(rows.length === 4, "音画设定该是四行，实得 " + rows.length + " 行");
+    need(brief(rows[0]).indexOf("动效") >= 0, "第一行不是「动效」：" + brief(rows[0]));
+    var off = buttons(rows[0], "关");
+    need(off.length === 1, "「动效」行里找不到唯一的「关」按钮（找到 " + off.length + " 个）");
+    off[0].click();
+    var saved = JSON.parse(storage.getItem("gongwei_settings") || "null");
+    need(saved && saved.motion === "off",
+      "点了「关」之后本机设定是 " + String(storage.getItem("gongwei_settings")));
+    need(doc.body.getAttribute("data-motion") === "off",
+      "body 上的 data-motion 还是「" + doc.body.getAttribute("data-motion") + "」，动效没当场关掉");
+    var back = buttons(query(app(), ".setting-row")[0], "开");
+    need(back.length === 1, "「动效」行里找不到唯一的「开」按钮（找到 " + back.length + " 个）");
+    back[0].click();
+    need(JSON.parse(storage.getItem("gongwei_settings")).motion === "on", "动效开不回来了");
+    buttons(app(), "卷宗")[0].click();
+  });
+
+  check("顶栏分主次：四项读数带 meta-extra，窄屏交给 CSS 收", function () {
+    // 收不收是 CSS 的事（@media max-width:899px），这里只管两件事：
+    // 该收的那四项真的带了记号，该留的「幕 / 时辰 / 所在」没被一起收走。
+    var extra = query(app(), ".meta-extra");
+    var words = ["回合", "评分", "行囊", "线索"];
+    need(extra.length === words.length,
+      "顶栏该有 " + words.length + " 项读数带 meta-extra，实得 " + extra.length + " 项");
+    var text = extra.map(function (node) { return textOf(node); }).join(" ");
+    words.forEach(function (word) {
+      need(text.indexOf(word) >= 0, "带 meta-extra 的读数里少了「" + word + "」：" + text);
+    });
+    var head = appText();
+    ["幕 ", "时辰 ", "所在 "].forEach(function (word) {
+      need(head.indexOf(word) >= 0, "顶栏把「" + word.trim() + "」也收起来了：" + brief(app()));
+    });
+  });
+
+  check("浮层的出口：顶上「收起」当场合上，body 上记着有没有遮罩", function () {
+    cmd("帮助");
+    var overlay = byId("overlay");
+    need(overlay, "敲「帮助」后没有开帮助浮层");
+    need(doc.body.getAttribute("data-overlay") === "1",
+      "开着浮层时 body 上没有 data-overlay=1（实为「" +
+      doc.body.getAttribute("data-overlay") + "」）");
+    var top = query(overlay, ".sheet-top");
+    need(top.length === 1, "浮层顶上没有那条常驻出口（找到 " + top.length + " 条）");
+    need(textOf(top[0]).indexOf("Esc 可合上") >= 0, "顶上那条不是按键提示：" + brief(top[0]));
+    var shut = buttons(top[0], "收起");
+    need(shut.length === 1, "顶上找不到唯一的「收起」按钮（找到 " + shut.length + " 个）");
+    shut[0].click();
+    need(!byId("overlay"), "点了「收起」浮层还在");
+    need(doc.body.getAttribute("data-overlay") !== "1",
+      "合上浮层之后 body 上还留着 data-overlay=1");
+  });
+
   if (SEED_SAVE) {
     check("读回一份结案存档", function () {
       var data = JSON.parse(fs.readFileSync(SEED_SAVE, "utf8"));
@@ -467,6 +607,63 @@ if (booted) {
       var body = String(pack.scenes[eid].body).slice(0, 12);
       need(appText().indexOf(body) >= 0,
         "结局屏上没有结局正文「" + body + "」；实得「" + brief(app()) + "」");
+    });
+
+    // 全篇真正带人名的话只有 07-DL-TWO 里的三行供词（郑守拙 / 柳青 / 贺小五），
+    // 同一份档案里还躺着两行「……：」的旁白——名牌与旁白必须分得开。
+    check("说话人名牌：名字真在人物表里才点金", function () {
+      var data = JSON.parse(fs.readFileSync(SEED_SAVE, "utf8"));
+      data.state.dossiers["07-DL-TWO"] = [true, false];
+      storage.setItem("gongwei_save", JSON.stringify(data));
+      cmd("读档");
+      var overlay = byId("overlay");
+      need(overlay, "敲「读档」后没有开存读面板");
+      var back = buttons(overlay, "读本机存档");
+      need(back.length === 1, "存读面板里找不到唯一的「读本机存档」按钮");
+      back[0].click();
+      cmd("07-DL-TWO");
+      var pane = byId("reading-body");
+      need(pane, "阅档后阅读区不见了");
+      var names = query(pane, ".said-name").map(function (n) { return textOf(n); });
+      need(names.length === 3, "07-DL-TWO 里该有三行名牌，实得 " + names.length + " 个：" + names.join(" / "));
+      ["郑守拙：", "柳青：", "贺小五："].forEach(function (who) {
+        need(names.indexOf(who) >= 0, "名牌里少了「" + who + "」，实得 " + names.join(" / "));
+      });
+      var text = paneText("reading-body");
+      need(text.indexOf("三句放在一起：") >= 0 && text.indexOf("只有一种可能：") >= 0,
+        "旁白里的冒号被当成名牌、正文也被拆坏了：" + brief(pane));
+      need(text.indexOf("郑守拙：蒋九整夜都在值房抄账，咱家没见他出去。") >= 0,
+        "套上名牌之后那一行改动了：" + brief(pane));
+    });
+
+    // 档案正文里有以 // 开头的旁注行（01-FY-XFE 的尸格里两处）：整行降一档、
+    // 只把开头的 // 点金——但 pane 文本必须与从前逐字相同（终端版也是原样印的）。
+    check("档案里的 // 旁注行：淡墨点金，字一个不改", function () {
+      var data = JSON.parse(fs.readFileSync(SEED_SAVE, "utf8"));
+      data.state.dossiers["01-FY-XFE"] = [true, false];
+      storage.setItem("gongwei_save", JSON.stringify(data));
+      cmd("读档");
+      var overlay = byId("overlay");
+      need(overlay, "敲「读档」后没有开存读面板");
+      var back = buttons(overlay, "读本机存档");
+      need(back.length === 1, "存读面板里找不到唯一的「读本机存档」按钮");
+      back[0].click();
+      cmd("01-FY-XFE");
+      var pane = byId("reading-body");
+      need(pane, "阅档后阅读区不见了");
+      var notes = query(pane, ".note-line");
+      need(notes.length === 2 || notes.length === 3,
+        "01-FY-XFE 的尸格里该有两三行旁注，实得 " + notes.length + " 行：" + brief(pane, 200));
+      var text = paneText("reading-body");
+      need(text.indexOf("//另有一事记在尸格末尾") >= 0,
+        "第一处旁注的字被改动了：" + brief(pane, 300));
+      need(text.indexOf("//份档号：01-FY-XFE-2、01-FY-WDH") >= 0,
+        "档号那行旁注的字被改动了：" + brief(pane, 300));
+      query(pane, ".note-mark").forEach(function (mark) {
+        need(textOf(mark) === "//", "旁注行的 // 被换成了「" + textOf(mark) + "」");
+      });
+      need(text.indexOf("苏氏，年二十有七，六妃之一，居凤仪殿。") >= 0,
+        "旁注样式把正文也一起吞了：" + brief(pane, 300));
     });
   }
 }

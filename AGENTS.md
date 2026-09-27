@@ -19,6 +19,11 @@
 7. **档号一经发布就不要改**：`links=` / `requires=` / 正文里的交叉引用都按字符串写死。
    要加内容就加**新**档号。
 8. `reference-gongwei-mizong.chatglm.html` 是只读参考原型，不要改、不要当数据源。
+9. **图景是名字，不是图片**。表现层只许加「名字」：地点→色调、时辰→明暗、标签→字形住在
+   `gongwei/web/art.py`（一张台账），画法住在 `web/src/static.css`（CSS 渐变与形状）。
+   两条红线：**不许出现图片、字体或任何外链**（这一卷必须能离线双击打开），
+   **不许给 `Content` / `GameState` 加字段**——`tools/audit_web.py` 要逐字比对两端的
+   存档与选项表，多一个字段就红。新地点 / 新标签有没有漏登记，`tests/test_art.py` 会说话。
 
 ## 2. 目录地图（该改哪里）
 
@@ -26,23 +31,27 @@
 | --- | --- | --- |
 | `gongwei/data/story.py` | ~2800 | 场景、选项、话题、结局规则、人物表、幕案映射 |
 | `gongwei/data/dossiers.py` | ~2100 | 91 份档案的正文、幕标题 `ACT_TITLES`、勘验总录 |
-| `gongwei/game/models.py` | 236 | 数据模型（字段不够用时才动） |
-| `gongwei/game/engine.py` | 783 | 规则引擎：选项门禁、效果、阅档、结局判定、存档 |
-| `gongwei/game/conditions.py` | 396 | 条件小语言（`clue:` / `flag:` / `trust:` …）+ AST |
+| `gongwei/game/models.py` | 237 | 数据模型（字段不够用时才动） |
+| `gongwei/game/engine.py` | 812 | 规则引擎：选项门禁、效果、阅档、结局判定、存档 |
+| `gongwei/game/conditions.py` | 391 | 条件小语言（`clue:` / `flag:` / `trust:` …）+ AST |
 | `gongwei/game/command.py` | 578 | 指令解析（档号、档目、检索、记事、存读档），两端同一套语义 |
-| `gongwei/tui/terminal.py` | 850 | 零依赖终端层：CJK 双宽、禁则、ANSI、键盘、行编辑 |
-| `gongwei/tui/app.py` | 1054 | 界面：分栏、阅读区、命令行、浮层、提示语 |
-| `gongwei/web/pack.py` | 155 | 剧本 → 内容包（条件编译成 AST） |
+| `gongwei/tui/terminal.py` | 877 | 零依赖终端层：CJK 双宽、禁则、ANSI（含 `NO_COLOR`）、键盘、行编辑 |
+| `gongwei/tui/app.py` | 1227 | 界面：分栏、阅读区、命令行、浮层、提示语、说话人名牌与结局印章 |
+| `gongwei/web/pack.py` | 154 | 剧本 → 内容包（条件编译成 AST） |
+| `gongwei/web/art.py` | 177 | 图景台账：地点→色调、时辰→明暗、标签→字形（纯名字，没有图片） |
 | `gongwei/autoplay.py` | 425 | 脚本化通关原语 + `ENDING_ROUTES`（tools/ 与 tests/ 共用） |
-| `web/src/game.js` | 786 | JS 侧引擎（必须与 `engine.py` 行为一致） |
-| `web/src/ui.js` | 996 | 网页界面（分页、命令行、存读档、导出导入） |
-| `web/src/style.css` | 458 | 网页版**断点都在这儿**（窄屏分页、宽屏三栏、480px）——`ui.js` 里没有宽度判断 |
+| `web/src/game.js` | 818 | JS 侧引擎（必须与 `engine.py` 行为一致） |
+| `web/src/ui.js` | 1424 | 网页界面（分页、命令行、存读档、导出导入、图景与案外页） |
+| `web/src/style.css` | 699 | 网页版**断点都在这儿**（窄屏分页、宽屏三栏、480px）+ 设计令牌——`ui.js` 里没有宽度判断；排版合约由 `tests/test_web_tokens.py` 盯着 |
+| `web/src/static.css` | 302 | 图景的画法：宫墙/药柜/书架/藻井全是 CSS 渐变与形状（零图片、零外链） |
 | `web/src/driver.js` | 128 | node 下走路线，供 `audit_web.py` 调 |
 | `tools/audit_*.py` | — | 四道体检闸门（§4） |
-| `tests/` | — | 251 项；`tests/webui_harness.js` 在 node 里用最小 DOM 真跑 `web/src/ui.js` 与 `game.js` 的判决节拍；`BreadcrumbFlagTest` / `TrustCeilingTest` 盯着「只设不读的 flag」与角色的深谈阈值；`ActTitleTest` 盯着幕名表与实际用到的幕号互相覆盖；`DeadEndAuditTest` 盯着第 5 节那三档软卡判定；`tests/helpers.py` 只是转手 `autoplay` 的路线，**不要另抄一份** |
+| `docs/prototype-v1.1-review.md` | 235 | 第三方 v1.1 插画版原型的拆解：偷了什么做法、明确不学什么、落在哪个文件 |
+| `tests/` | — | 293 项；`tests/webui_harness.js` 在 node 里用最小 DOM 真跑 `web/src/ui.js` 与 `game.js` 的判决节拍；`BreadcrumbFlagTest` / `TrustCeilingTest` 盯着「只设不读的 flag」与角色的深谈阈值；`ActTitleTest` 盯着幕名表与实际用到的幕号互相覆盖；`DeadEndAuditTest` 盯着第 5 节那三档软卡判定；`tests/helpers.py` 只是转手 `autoplay` 的路线，**不要另抄一份**；`tests/test_art.py` 盯着图景台账与真剧本、`static.css`、网页产物三方对账 |
 
 判断要点：**玩家的体验问题 → `story.py` / `dossiers.py`；行为不对 → `engine.py` + `web/src/game.js`
-两边一起改；显示不对 → `tui/app.py` / `web/src/ui.js`（网页版的断点在 `web/src/style.css`）。**
+两边一起改；显示不对 → `tui/app.py` / `web/src/ui.js`（网页版的断点在 `web/src/style.css`）；
+背景图景 → `gongwei/web/art.py`（名字）+ `web/src/static.css`（画法）。**
 
 ## 3. 内容约定（写剧本照这个写）
 
@@ -92,8 +101,9 @@
 **人物（`CHARACTERS`）**
 
 - `Character(id, 名字, 身份, 起始信任, 简介, confide_at, case=(…))`：`confide_at` 是
-  「信任够了就能深谈」那道线（第 6 个位置参数，没有关键字名）。**面板上那个
-  「已可深谈」标记还没做**，这个字段目前只是一条登记。
+  「信任够了就能深谈」那道线（第 6 个位置参数，没有关键字名）。终端版在人情栏那一行
+  行尾点一个金 `●`（`gongwei/tui/app.py` 的 `CONFIDE_MARK`），`confide_at == 999` 永不亮；
+  网页版没有人物面板，暂时不显示这个标记。
 - `confide_at` 要么写 `999`（永不深谈），要么必须落在「起始信任 < `confide_at` ≤ 信任上限」
   之间（上限 = 起始值 + 全部正增量）。写在够不到的地方等于没写——`TrustCeilingTest` 会红。
 
@@ -114,7 +124,7 @@
 
 ```powershell
 python tools/build_web.py --check        # 产物等于当前剧本打的包
-python -m unittest discover -s tests -t .  # 251 项（含下面几道闸）
+python -m unittest discover -s tests -t .  # 293 项（含下面几道闸）
 python tools/audit_gates.py              # 线索/物证登记一致性、门禁引用是否有据
 python tools/audit_web.py                # 跨端差分：27 条路线逐字比对存档与选项表
 python tools/audit_story.py 30000        # 可达性：枚举状态图 + 20 条结局路线（参数是预算步数）
@@ -128,7 +138,7 @@ python tools/audit_logic.py              # 逻辑体检：后门/剧透面/刷�
 
 预期输出（当前基线）：
 
-- `Ran 251 tests … OK`
+- `Ran 293 tests … OK`
 - `审计通过：门禁全部可达，引用全部有据。`
 - `✓ 两端逐步一致：存档与选项表逐字相同，连报错都一致`
 - `场景 64/64`、`档案 91/91`、`线索/物证 103/103（核心 65/65）`、`话题 44/44`、`结局 20/20`、
@@ -181,5 +191,7 @@ python tools/audit_logic.py              # 逻辑体检：后门/剧透面/刷�
 - [ ] 新加的场景/档案/线索/话题/结局都出现在 `audit_story.py` 的 `N/N` 里。
 - [ ] 新加的门禁都写了 `locked_hint`（玩家要知道缺什么）。
 - [ ] 改动涉及界面 → 终端与网页两端都手工看过一眼（窄屏也要看）。
+- [ ] 新增地点 / 时辰 / 标签 → 名字先登进 `gongwei/web/art.py`，画法补进 `web/src/static.css`
+      （`tests/test_art.py` 会拿真剧本查有没有漏登记的）。
 - [ ] 老存档读得回来（`GameState.from_save` 对缺字段要容错，别让版本升级废档）。
 - [ ] `README.md` 的数字、结局表、目录结构与实际一致。

@@ -57,7 +57,7 @@
     setTimeout(function () {
       ui.toasts.shift();
       renderToasts();
-    }, 2400);
+    }, 4000);
   }
 
   function nowStamp() {
@@ -85,6 +85,7 @@
       window.localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
       return true;
     } catch (e) {
+      storageOk = false;   // 案外页会据此说一句：本机存不下
       toast("存档写不进去：" + e.message, "error");
       return false;
     }
@@ -316,6 +317,7 @@
     ui.read = "log";
     ui.dossier = "";
     toastUpd(upd);
+    cueFor(upd);
     var opts = game.options();
     ui.cursor = Math.min(ui.cursor, Math.max(0, opts.length - 1));
     render();
@@ -343,6 +345,9 @@
 
   function render() {
     document.body.setAttribute("data-tab", ui.tab);
+    // 图景与案外都长在 #app 之外：下面这记 clear() 清不到它们，所以先报状态、再重画
+    if (ui.screen !== "title") { noteProgress(); }
+    applyStage();
     clear(root);
     if (ui.screen === "title") { renderTitle(); }
     else { renderGame(); }
@@ -403,13 +408,16 @@
     // 时别让人以为还在第一幕），否则印当前进度。不能直接看 st.open_dossier ——
     // 那是引擎替存档记着的「上次读到哪儿」，读完退回卷宗、或读一份旧存档之后
     // 它仍然指着旧档，顶栏就会印错幕（案① 已结案、人站在第六幕，却写着第一幕）。
+    // 前三项是「此刻在哪儿、什么时候」，窄屏留着；后四项是读数，窄屏交给 CSS 收起。
     var headAct = game.headAct(ui.read === "dossier" ? ui.dossier : "");
-    [["幕", game.actTitleOf(headAct)],
-     ["时辰", st.time], ["所在", st.place], ["回合", String(st.turn)],
-     ["评分", String(st.score)], ["行囊", String(st.items_owned.length)],
-     ["线索", st.clues.length + "/" + Object.keys(PACK.items).filter(function (k) { return PACK.items[k].core; }).length]
+    [["幕", game.actTitleOf(headAct), ""],
+     ["时辰", st.time, ""], ["所在", st.place, ""],
+     ["回合", String(st.turn), "meta-extra"],
+     ["评分", String(st.score), "meta-extra"],
+     ["行囊", String(st.items_owned.length), "meta-extra"],
+     ["线索", st.clues.length + "/" + Object.keys(PACK.items).filter(function (k) { return PACK.items[k].core; }).length, "meta-extra"]
     ].forEach(function (pair) {
-      var span = el("span");
+      var span = el("span", pair[2]);
       span.appendChild(document.createTextNode(pair[0] + " "));
       span.appendChild(el("b", null, esc(pair[1])));
       meta.appendChild(span);
@@ -423,7 +431,7 @@
     top.appendChild(meta);
 
     var tabs = el("div", "tabs");
-    [["log", "卷宗"], ["index", "档目"], ["notes", "记事"], ["search", "检索"]].forEach(function (pair) {
+    [["log", "卷宗"], ["index", "档目"], ["notes", "记事"], ["search", "检索"], ["collection", "案外"]].forEach(function (pair) {
       var b = el("button", "tab" + (ui.tab === pair[0] ? " on" : ""), pair[1]);
       b.addEventListener("click", function () {
         ui.tab = pair[0];
@@ -440,6 +448,7 @@
     var left = el("div", "col-left");
     var right = el("div", "col-right");
 
+    if (st.ending) { left.appendChild(endingSeal(st.ending)); }
     left.appendChild(renderReading());
     if (!game.state.ending) { left.appendChild(renderOptions()); }
     left.appendChild(renderCommand());
@@ -448,6 +457,7 @@
     right.appendChild(renderIndex());
     right.appendChild(renderNotes());
     right.appendChild(renderSearchHits());
+    right.appendChild(renderCollection());
     right.appendChild(renderButtons());
     main.appendChild(left);
     main.appendChild(right);
@@ -512,7 +522,8 @@
     if (meta) { card.appendChild(el("div", "doc-meta", meta)); }
     var body = el("pre");
     // 与终端版同一套排版：把卡片宽度折成「列数」，中文按两格算
-    body.textContent = game.dossierView(did, dossierColumns()).slice(2).join("\n");
+    // 逐行走名牌：档案里的「供词」才是全篇真正带人名的话（见 07-DL-TWO）
+    saidLinesInto(body, game.dossierView(did, dossierColumns()).slice(2).join("\n"));
     card.appendChild(body);
     var links = (d.links || []).filter(function (x) { return PACK.dossiers[x]; });
     if (links.length) {
@@ -545,7 +556,7 @@
         var scene = PACK.scenes[game.state.scene];
         if (scene) { box.appendChild(el("span", "scene-title", scene.title + " · " + scene.place)); }
       }
-      box.appendChild(el("p", null, text));
+      box.appendChild(saidParagraph(text));
       wrap.appendChild(box);
     });
     return wrap;
@@ -635,7 +646,8 @@
   }
 
   function renderCommand() {
-    var panel = el("div", "panel page page-log");
+    // 吸底那一条要挂在**面板**上：面板自己有 overflow:hidden，挂在内层就不吸了
+    var panel = el("div", "panel page page-log command-bar");
     var body = el("div", "panel-body command");
     body.appendChild(el("span", "prompt", "›"));
     var input = el("input");
@@ -746,7 +758,8 @@
   }
 
   function renderButtons() {
-    var panel = el("div", "panel page page-index page-notes page-search");
+    // page-log 也挂上：手机上翻到「卷宗」那一页时，存档 / 帮助也得够得着
+    var panel = el("div", "panel page page-log page-index page-notes page-search page-collection");
     var body = el("div", "panel-body");
     var row = el("div", "tabs");
     [["存档", doSave], ["读档/搬档", function () { ui.overlay = { kind: "save" }; renderOverlay(); }],
@@ -785,7 +798,12 @@
   function renderOverlay() {
     var old = document.getElementById("overlay");
     if (old) { old.remove(); }
-    if (!ui.overlay) { return; }
+    if (!ui.overlay) {
+      // 关掉浮层时松开底下的页面滚动（假 DOM 没有 removeAttribute，只能写空值）
+      document.body.setAttribute("data-overlay", "");
+      return;
+    }
+    document.body.setAttribute("data-overlay", "1");
     var wrap = el("div", "overlay");
     wrap.id = "overlay";
     var sheet = el("div", "sheet");
@@ -799,6 +817,18 @@
       row.appendChild(b);
       return row;
     }
+
+    // 顶上常驻一行出口：帮助那张表很长，在手机上要滚到底才够得着「合上」
+    // （按钮文案与底下那个「合上」不重名，免得按文案找按钮的脚本两头都命中）
+    function sheetTop() {
+      var bar = el("div", "sheet-top");
+      bar.appendChild(el("span", null, "Esc 可合上"));
+      var close = el("button", "btn small bare", "收起");
+      close.addEventListener("click", function () { ui.overlay = null; renderOverlay(); });
+      bar.appendChild(close);
+      return bar;
+    }
+    sheet.appendChild(sheetTop());
 
     if (kind === "help") {
       sheet.appendChild(el("h3", null, "怎么玩"));
@@ -947,6 +977,9 @@
     if (!box) {
       box = el("div", "toasts");
       box.id = "toasts";
+      // 提示条是唯一的异步反馈：让读屏软件也念一遍（旧版只在屏幕上闪 4 秒）
+      box.setAttribute("role", "status");
+      box.setAttribute("aria-live", "polite");
       document.body.appendChild(box);
     }
     clear(box);
@@ -995,6 +1028,397 @@
     }
   });
 
-  // 起手：先看标题屏
+  // ------------------------------------------------------------------
+  // 图景
+  //
+  // #stage / #stage-card 是 shell.html 里 #app 的同级节点，这里只改它们身上的
+  // data-* 属性。render() 每次 clear(root) 只清 #app，所以图景不会跟着一次次
+  // 重画从头动起，阅读区的卷动位置也碰不到。
+  //
+  // 台账（色调 / 明暗 / 字形）由 gongwei/web/art.py 生成，一路带进 #art 块；
+  // 读不到就退到 default_*，图景只是不换，游戏照玩。
+  // ------------------------------------------------------------------
+
+  var ART = window.__GONGWEI_ART__ || {};
+  var SET_KEY = "gongwei_settings";
+  var MARKS_KEY = "gongwei_marks";
+
+  var PACE_MS = { quick: 1200, normal: 2200, slow: 3600 };
+  var settings = { motion: "on", pace: "normal", sfx: "on", volume: 60 };
+  var marks = { acts: [], endings: [] };
+  var storageOk = true;
+
+  var stage = document.getElementById("stage");
+  var stageCard = document.getElementById("stage-card");
+  // act 从 null 起手：标题屏要的就是第 0 幕，若与初值相同就一个属性都不写，
+  // 页面就变成「属性全靠 shell.html 里那三个默认值」——两边一旦不同步没人看得出来。
+  var shown = { tone: "", light: "", act: null, scene: "" };
+  var cardTimer = null;
+
+  function readStore(key) {
+    try {
+      var raw = window.localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+
+  function writeStore(key, value) {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch (e) {
+      storageOk = false;
+      return false;
+    }
+  }
+
+  function loadSettings() {
+    var saved = readStore(SET_KEY) || {};
+    if (saved.motion === "on" || saved.motion === "off") { settings.motion = saved.motion; }
+    if (PACE_MS[saved.pace]) { settings.pace = saved.pace; }
+    if (saved.sfx === "on" || saved.sfx === "off") { settings.sfx = saved.sfx; }
+    var vol = Number(saved.volume);
+    if (isFinite(vol) && vol >= 0 && vol <= 100) { settings.volume = Math.round(vol); }
+    document.body.setAttribute("data-motion", settings.motion);
+  }
+
+  function saveSettings() {
+    if (!writeStore(SET_KEY, settings)) {
+      toast("设定存不进本机：这一屏改了，下一屏会忘。", "error");
+    }
+    document.body.setAttribute("data-motion", settings.motion);
+  }
+
+  function loadMarks() {
+    var saved = readStore(MARKS_KEY) || {};
+    marks.acts = Array.isArray(saved.acts) ? saved.acts : [];
+    marks.endings = Array.isArray(saved.endings) ? saved.endings : [];
+  }
+
+  // 案外只记「到过哪儿」，不记剧情：没到过的幕与结局一律只说「未至 / 未解」，
+  // 不然收集册会先把后面的幕名和结局名漏给玩家。
+  function noteProgress() {
+    var st = game.state, changed = false;
+    if (st.chapter && marks.acts.indexOf(st.chapter) < 0) { marks.acts.push(st.chapter); changed = true; }
+    if (st.ending && marks.endings.indexOf(st.ending) < 0) { marks.endings.push(st.ending); changed = true; }
+    if (changed) { writeStore(MARKS_KEY, marks); }
+  }
+
+  function isVerdictScene(id) { return (PACK.verdict_scenes || []).indexOf(id) >= 0; }
+
+  // 引擎只认「现在这一支结局」（game.endingInfo），案外册要把 20 支全列出来，
+  // 所以这里自己按 id 在 PACK.endings 里找一遍。
+  function endingById(eid) {
+    var list = PACK.endings || [];
+    for (var i = 0; i < list.length; i += 1) {
+      if (list[i].id === eid) { return list[i]; }
+    }
+    return null;
+  }
+
+  // 台账里那份 tones 就用在这么一道闸上：万一配色表被手改过、或只带来半份台账，
+  // 宁可退回默认景，也不要让 #stage 顶着一个 CSS 根本画不出来的色调（那一屏会是白的）。
+  function knownTone(tone) {
+    var list = ART.tones || [];
+    if (!list.length) { return tone || "hall"; }
+    return list.indexOf(tone) >= 0 ? tone : (ART.default_tone || "hall");
+  }
+
+  // 色调优先级：结案 > 判决屏 > 当场有对谈的人 > 所在地。台账里没有的地点退到 default。
+  function toneOf(scene, st) {
+    var byPlace = ART.place_tone || {};
+    var tone;
+    if (st.ending || (scene && scene.kind === "ending")) { tone = ART.tone_ending || "ending"; }
+    else if (isVerdictScene(st.scene)) { tone = ART.tone_verdict || "verdict"; }
+    else if (scene && (scene.interlocutor || scene.hall)) { tone = ART.tone_encounter || "interrogation"; }
+    else { tone = byPlace[scene ? scene.place : ""] || ART.default_tone || "hall"; }
+    return knownTone(tone);
+  }
+
+  function lightOf(scene, st) {
+    var byTime = ART.time_light || {};
+    return byTime[st.time] || byTime[scene ? scene.time : ""] || ART.default_light || "day";
+  }
+
+  function paintStage(tone, light, act) {
+    if (!stage) { return; }
+    if (tone !== shown.tone) { stage.setAttribute("data-tone", tone); shown.tone = tone; }
+    if (light !== shown.light) { stage.setAttribute("data-light", light); shown.light = light; }
+    if (act !== shown.act) { stage.setAttribute("data-act", String(act)); shown.act = act; }
+  }
+
+  function showCard(title, sub) {
+    if (!stageCard || !title) { return; }
+    clear(stageCard);
+    stageCard.appendChild(el("b", null, title));
+    if (sub) { stageCard.appendChild(el("span", null, sub)); }
+    stageCard.className = "stage-card on";
+    if (cardTimer) { clearTimeout(cardTimer); }
+    cardTimer = setTimeout(function () {
+      cardTimer = null;
+      if (stageCard) { stageCard.className = "stage-card"; }
+    }, PACE_MS[settings.pace] || PACE_MS.normal);
+  }
+
+  // 每次重画都报一次：换幕说一句，换场换色调与明暗。标题屏一律报 hall/day。
+  function applyStage() {
+    if (ui.screen === "title") {
+      paintStage(knownTone(ART.default_tone), ART.default_light || "day", 0);
+      shown.scene = "";
+      return;
+    }
+    var st = game.state;
+    var scene = PACK.scenes[st.scene] || {};
+    var act = st.chapter || 0;
+    var actChanged = act !== shown.act;
+    var sceneChanged = st.scene !== shown.scene;
+    paintStage(toneOf(scene, st), lightOf(scene, st), act);
+    shown.scene = st.scene;
+    if (actChanged && act) {
+      showCard(game.actTitleOf(act), (scene.place || "") + (st.time ? " · " + st.time : ""));
+    } else if (sceneChanged && isVerdictScene(st.scene)) {
+      showCard("判决 · " + (scene.title || ""), scene.place || "");
+    } else if (sceneChanged && st.ending) {
+      showCard("结案 · " + (scene.title || ""), scene.place || "");
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // 音效：现吹，不放音频文件
+  //
+  // 一簇正弦/三角波，几十毫秒起音、一两秒衰减干净。浏览器不许没交互就出声，
+  // 所以第一声一定落在点按之后；没有 WebAudio 的环境（老浏览器、测试沙箱）
+  // 一律静默跳过，不报错。
+  // ------------------------------------------------------------------
+
+  var CUES = {
+    scene: [[392, 0, 0.9, 0.10, "sine"], [523.25, 0.08, 1.1, 0.07, "sine"]],
+    clue: [[659.25, 0, 0.35, 0.10, "triangle"], [987.77, 0.09, 0.5, 0.07, "triangle"]],
+    dossier: [[220, 0, 0.5, 0.10, "sine"], [329.63, 0.06, 0.6, 0.07, "sine"]],
+    verdict: [[146.83, 0, 1.6, 0.16, "sine"], [110, 0.06, 1.8, 0.12, "sine"]],
+    ending: [[261.63, 0, 1.0, 0.10, "sine"], [329.63, 0.18, 1.1, 0.09, "sine"],
+             [392, 0.36, 1.5, 0.08, "sine"]]
+  };
+
+  var audioCtx = null;
+
+  function audioCue(name) {
+    var notes = CUES[name];
+    if (!notes || settings.sfx !== "on" || settings.volume <= 0) { return; }
+    var Ctor = window.AudioContext || window.webkitAudioContext;
+    if (!Ctor) { return; }
+    if (!audioCtx) {
+      try { audioCtx = new Ctor(); } catch (e) { audioCtx = null; return; }
+    }
+    var now = audioCtx.currentTime;
+    notes.forEach(function (note) {
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = note[4] || "sine";
+      osc.frequency.value = note[0];
+      var peak = (settings.volume / 100) * note[3];
+      gain.gain.setValueAtTime(0.0001, now + note[1]);
+      gain.gain.exponentialRampToValueAtTime(peak, now + note[1] + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + note[1] + note[2]);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now + note[1]);
+      osc.stop(now + note[1] + note[2] + 0.05);
+    });
+  }
+
+  function cueFor(upd) {
+    if (!upd) { return; }
+    if (upd.ended) { audioCue("ending"); return; }
+    if (upd.scene_changed) { audioCue("scene"); return; }
+    if ((upd.new_dossiers || []).length) { audioCue("dossier"); return; }
+    if ((upd.new_clues || []).length || (upd.new_items || []).length) { audioCue("clue"); }
+  }
+
+  // ------------------------------------------------------------------
+  // 说话人名牌
+  //
+  // 卷宗里的正文是逐字跟着存档走的，所以只在「名字：」那一段外面套一个 span，
+  // 其余一字不动：换行照旧补回去，textContent 与以前完全一样。
+  // ------------------------------------------------------------------
+
+  // 名字必须真的在人物表里。旁白里「结案文书上写的是：……」这类句子的第一处
+  // 冒号也落在十二字内，只按冒号切会把它染成名牌——全篇有二十三处。
+  var SPEAKERS = (function () {
+    var map = {};
+    var chars = PACK.characters || {};
+    Object.keys(chars).forEach(function (cid) {
+      var name = chars[cid] && chars[cid].name;
+      if (name) { map[name] = cid; }
+    });
+    return map;
+  })();
+
+  function saidLine(line) {
+    // 供词是缩进排的：07-DL-TWO 只有第一行顶格，后两行各带六个空格。
+    var lead = /^\s*/.exec(line)[0];
+    var rest = line.slice(lead.length);
+    // 旁注行（正文以 // 开头，如「//份档号：…」「//另有一事记在尸格末尾」）：
+    // 整行降一档，只把开头的 // 点金——正文一字不动，pane 文本仍然逐字相同
+    if (rest.slice(0, 2) === "//") {
+      var note = el("span", "note-line");
+      if (lead) { note.appendChild(document.createTextNode(lead)); }
+      note.appendChild(el("span", "note-mark", "//"));
+      note.appendChild(document.createTextNode(rest.slice(2)));
+      return note;
+    }
+    var cut = rest.indexOf("：");
+    if (cut <= 0 || !SPEAKERS[rest.slice(0, cut)]) { return el("span", null, line); }
+    var span = el("span", "said-line");
+    if (lead) { span.appendChild(document.createTextNode(lead)); }
+    span.appendChild(el("span", "said-name", rest.slice(0, cut + 1)));
+    span.appendChild(document.createTextNode(rest.slice(cut + 1)));
+    return span;
+  }
+
+  /** 逐行套名牌，并把换行原样补回去：整段文字与从前一字不差。 */
+  function saidLinesInto(node, text) {
+    String(text).split("\n").forEach(function (line, i) {
+      if (i) { node.appendChild(document.createTextNode("\n")); }
+      node.appendChild(saidLine(line));
+    });
+    return node;
+  }
+
+  function saidParagraph(text) {
+    return saidLinesInto(el("p"), text);
+  }
+
+  // 结局印：rank 早就跟着内容包一路带到网页端了（gongwei/web/pack.py），
+  // 只是从前没人用它。印的是「评等 + 结局名」，与顶栏那个「已结案」小印分开。
+  function endingSeal(eid) {
+    var e = endingById(eid);
+    var box = el("div", "ending-seal");
+    box.appendChild(el("div", "seal-stamp", e && e.rank ? e.rank : "卷终"));
+    if (e) {
+      box.appendChild(el("div", "seal-title", e.title));
+      if (e.subtitle) { box.appendChild(el("div", "seal-sub", e.subtitle)); }
+    }
+    return box;
+  }
+
+  // ------------------------------------------------------------------
+  // 案外：行囊 / 幕册 / 结局册 / 音画设定
+  // ------------------------------------------------------------------
+
+  function glyphSpan(tag) {
+    var known = ART.glyphs || [];
+    var span = el("span", "glyph");
+    span.setAttribute("data-glyph", known.indexOf(tag) >= 0 ? tag : (ART.glyph_fallback || "mark"));
+    return span;
+  }
+
+  function bagRows() {
+    var st = game.state;
+    var owned = [];
+    (st.clues || []).forEach(function (id) { owned.push(id); });
+    (st.items_owned || []).forEach(function (id) { if (owned.indexOf(id) < 0) { owned.push(id); } });
+    owned.sort(function (a, b) {
+      var ia = PACK.items[a] || {}, ib = PACK.items[b] || {};
+      return (ib.core ? 1 : 0) - (ia.core ? 1 : 0);
+    });
+    var list = el("div", "bag");
+    if (!owned.length) {
+      list.appendChild(el("div", "empty", "行囊还空着。"));
+      return list;
+    }
+    owned.forEach(function (id) {
+      var item = PACK.items[id] || {};
+      var row = el("div", "bag-row" + (item.core ? " core" : ""));
+      row.appendChild(glyphSpan(item.tag || ""));
+      row.appendChild(el("span", "bag-name", item.name || id));
+      list.appendChild(row);
+    });
+    return list;
+  }
+
+  function settingsRow(label, choices, current, apply) {
+    var row = el("div", "setting-row");
+    row.appendChild(el("span", "setting-label", label));
+    var group = el("span", "setting-choices");
+    choices.forEach(function (pair) {
+      var b = el("button", "btn small" + (pair[1] === current() ? " on" : ""), pair[0]);
+      b.addEventListener("click", function () { apply(pair[1]); render(); });
+      group.appendChild(b);
+    });
+    row.appendChild(group);
+    return row;
+  }
+
+  function renderSettings() {
+    var box = el("div", "settings");
+    box.appendChild(settingsRow("动效", [["开", "on"], ["关", "off"]],
+      function () { return settings.motion; },
+      function (v) { settings.motion = v; saveSettings(); }));
+    box.appendChild(settingsRow("过场停留", [["快", "quick"], ["中", "normal"], ["慢", "slow"]],
+      function () { return settings.pace; },
+      function (v) { settings.pace = v; saveSettings(); }));
+    box.appendChild(settingsRow("音效", [["开", "on"], ["关", "off"]],
+      function () { return settings.sfx; },
+      function (v) { settings.sfx = v; saveSettings(); if (v === "on") { audioCue("dossier"); } }));
+    box.appendChild(settingsRow("音量", [["静音", 0], ["25%", 25], ["50%", 50], ["75%", 75], ["100%", 100]],
+      function () { return settings.volume; },
+      function (v) { settings.volume = v; saveSettings(); audioCue("clue"); }));
+    if (!storageOk) {
+      box.appendChild(el("div", "empty",
+        "本机存不下（隐私模式，或站点数据满了）：进度与设定都只留在这一屏。"));
+    }
+    return box;
+  }
+
+  function renderCollection() {
+    var panel = el("div", "panel page page-collection");
+    var acts = PACK.act_numbers || [];
+    var endings = PACK.endings || [];
+
+    var head = el("div", "panel-head");
+    head.appendChild(el("span", null, "案外"));
+    head.appendChild(el("span", "count", "幕 " + marks.acts.length + "/" + acts.length +
+      " · 结局 " + marks.endings.length + "/" + endings.length));
+    panel.appendChild(head);
+
+    var body = el("div", "panel-body");
+
+    body.appendChild(el("h4", null, "幕册"));
+    var actList = el("div", "marks");
+    acts.forEach(function (n) {
+      var done = marks.acts.indexOf(n) >= 0;
+      var row = el("div", "mark-row" + (done ? " on" : ""));
+      row.appendChild(el("span", "mark-num", "第 " + n + " 幕"));
+      row.appendChild(el("span", "mark-name", done ? game.actTitleOf(n) : "未至"));
+      actList.appendChild(row);
+    });
+    body.appendChild(actList);
+
+    body.appendChild(el("h4", null, "结局册"));
+    var endList = el("div", "marks");
+    endings.forEach(function (e) {
+      var done = marks.endings.indexOf(e.id) >= 0;
+      var row = el("div", "mark-row" + (done ? " on" : ""));
+      row.appendChild(el("span", "mark-rank", done && e.rank ? e.rank : "·"));
+      row.appendChild(el("span", "mark-name", done ? e.title : "未解"));
+      if (done && e.subtitle) { row.appendChild(el("span", "mark-sub", e.subtitle)); }
+      endList.appendChild(row);
+    });
+    body.appendChild(endList);
+
+    body.appendChild(el("h4", null, "行囊"));
+    body.appendChild(bagRows());
+
+    body.appendChild(el("h4", null, "音画设定"));
+    body.appendChild(renderSettings());
+
+    panel.appendChild(body);
+    return panel;
+  }
+
+  // 起手：先读设定与案外进度，再看标题屏
+  loadSettings();
+  loadMarks();
   render();
 })();

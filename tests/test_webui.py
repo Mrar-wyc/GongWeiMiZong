@@ -45,10 +45,17 @@ def ending_save() -> dict:
 class WebUiSmokeTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        from gongwei.web.art import art_tables
+
         cls.tmp = tempfile.mkdtemp(prefix="gongwei-webui-")
         cls.seed_path = os.path.join(cls.tmp, "seed.json")
         with open(cls.seed_path, "w", encoding="utf-8") as fh:
             json.dump(ending_save(), fh, ensure_ascii=False)
+        # 页面上那块图景台账与这里导出的是同一份 JSON（都由 gongwei/web/art.py 生成），
+        # 不给的话 ui.js 走的是「空台账」退化路——两条路都得能跑，但检查要覆盖真台账。
+        cls.art_path = os.path.join(cls.tmp, "art.json")
+        with open(cls.art_path, "w", encoding="utf-8") as fh:
+            json.dump(art_tables(), fh, ensure_ascii=False)
 
     @classmethod
     def tearDownClass(cls):
@@ -59,6 +66,7 @@ class WebUiSmokeTest(unittest.TestCase):
         env["PYTHONIOENCODING"] = "utf-8"
         env["PYTHONUTF8"] = "1"
         env["GONGWEI_SEED_SAVE"] = self.seed_path
+        env["GONGWEI_ART_FILE"] = self.art_path
         if ui_src:
             env["GONGWEI_UI_SRC"] = ui_src
         return subprocess.run(
@@ -85,10 +93,18 @@ class WebUiSmokeTest(unittest.TestCase):
             proc.returncode, 0,
             "网页版界面冒烟测试没通过：\n" + "\n".join(failed) + "\n" + proc.stdout + proc.stderr,
         )
-        self.assertGreaterEqual(total, 12, f"只跑了 {total} 项检查，覆盖面缩水了")
+        self.assertGreaterEqual(total, 23, f"只跑了 {total} 项检查，覆盖面缩水了")
         self.assertEqual(failed, [])
         for name in ("开屏是标题屏", "点「新案」进第一幕", "敲档号能阅档",
-                     "「读档」开存读面板，点「读本机存档」不出错", "读回一份结案存档"):
+                     "「读档」开存读面板，点「读本机存档」不出错", "读回一份结案存档",
+                     "图景槽在标题屏上是默认景，且落在 #app 外面",
+                     "进场报幕：幕次、幕名、地点色调都跟着走",
+                     "「案外」页：幕册 / 结局册 / 行囊 / 音画设定",
+                     "音画设定：点一下当场生效，也写进本机",
+                     "说话人名牌：名字真在人物表里才点金",
+                     "顶栏分主次：四项读数带 meta-extra，窄屏交给 CSS 收",
+                     "浮层的出口：顶上「收起」当场合上，body 上记着有没有遮罩",
+                     "档案里的 // 旁注行：淡墨点金，字一个不改"):
             self.assertIn(name, passed, f"没跑到「{name}」这一项")
 
     def test_a_broken_ui_is_actually_caught(self):

@@ -13,6 +13,8 @@
   web/gongwei-pack.json     同一份内容包，供 web/src/driver.js 与门禁使用
 
 内容包只由 `gongwei/web/pack.py` 生成 —— 网页端不许有第二份剧本。
+图景（色调 / 时辰明暗 / 字形词表）只由 `gongwei/web/art.py` 生成，画法在
+web/src/static.css，这里只把台账内联成 `#art` 块 —— 页面照旧不引图片、字体与链接。
 """
 
 from __future__ import annotations
@@ -33,6 +35,7 @@ from gongwei.console import use_utf8  # noqa: E402
 use_utf8()
 
 from gongwei.data.story import TOPIC_GATES, build_content  # noqa: E402
+from gongwei.web.art import art_slot, art_tables  # noqa: E402
 from gongwei.web.pack import content_pack, pack_json  # noqa: E402
 
 SHELL = ROOT / "web" / "shell.html"
@@ -44,6 +47,11 @@ PACK_PLACEHOLDER = "__PACK__"
 STYLE_PLACEHOLDER = "__STYLE__"
 GAME_PLACEHOLDER = "__GAME_JS__"
 UI_PLACEHOLDER = "__UI_JS__"
+ART_SLOT_PLACEHOLDER = "__ART_SLOT__"
+ART_TABLES_PLACEHOLDER = "__ART_TABLES__"
+
+PLACEHOLDERS = (PACK_PLACEHOLDER, STYLE_PLACEHOLDER, GAME_PLACEHOLDER,
+                UI_PLACEHOLDER, ART_SLOT_PLACEHOLDER, ART_TABLES_PLACEHOLDER)
 
 EXT_PATTERNS = ("http://", "https://", "//cdn.", "src=\"/", "href=\"/")
 
@@ -70,11 +78,13 @@ def build() -> Dict[Path, str]:
     content = build_content()
     pack = pack_json(content, TOPIC_GATES)
     style = _read(SRC_DIR / "style.css")
+    art_css = _read(SRC_DIR / "static.css")
     game_js = _read(SRC_DIR / "game.js")
     ui_js = _read(SRC_DIR / "ui.js")
     shell = _read(SHELL)
 
     _guard("style.css", style)
+    _guard("static.css", art_css)
     _guard("game.js", game_js)
     _guard("ui.js", ui_js)
     # 内容包是 JSON，只挡掉会截断 <script> 的序列
@@ -82,16 +92,29 @@ def build() -> Dict[Path, str]:
         raise SystemExit("内容包里有 </script：内联时会截断页面")
     pack = pack.replace("<\\/", "</")  # 允许 JSON 里写 <\/ 的转义形态
 
+    # 图景台账（色调 / 明暗 / 字形词表）：同样是 JSON，同样不许带外部引用
+    art_json = json.dumps(art_tables(), ensure_ascii=False, sort_keys=True,
+                          separators=(",", ":"))
+    for token in EXT_PATTERNS:
+        if token in art_json.lower():
+            raise SystemExit(f"图景台账里有外部引用 {token!r}：这一卷必须能离线打开")
+    if "<script" in art_json.lower() or "</script" in art_json.lower():
+        raise SystemExit("图景台账里有 <script：内联时会截断页面")
+
     html = shell
-    for placeholder, text in ((STYLE_PLACEHOLDER, style),
+    # 图景样式排在 style.css 后面：它要压在基础样式之上（纸更透一点，图景才看得见）
+    for placeholder, text in ((STYLE_PLACEHOLDER, style + "\n" + art_css),
+                              (ART_SLOT_PLACEHOLDER, art_slot()),
+                              (ART_TABLES_PLACEHOLDER, art_json),
                               (PACK_PLACEHOLDER, pack),
                               (GAME_PLACEHOLDER, game_js),
                               (UI_PLACEHOLDER, ui_js)):
         if placeholder not in html:
             raise SystemExit(f"web/shell.html 里缺少占位符 {placeholder}")
         html = html.replace(placeholder, text)
-    if PACK_PLACEHOLDER in html or STYLE_PLACEHOLDER in html:
-        raise SystemExit("生成结果里还残留占位符")
+    for placeholder in PLACEHOLDERS:
+        if placeholder in html:
+            raise SystemExit(f"生成结果里还残留占位符 {placeholder}")
 
     pretty = json.dumps(content_pack(content, TOPIC_GATES), ensure_ascii=False,
                         sort_keys=True, indent=1)

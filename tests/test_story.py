@@ -409,10 +409,10 @@ class SaveResumeFidelityTest(unittest.TestCase):
 
 
 class EveryEndingReachableTest(unittest.TestCase):
-    """三案十九个结局**全部**要能从真实操作走出来。
+    """三案二十个结局**全部**要能从真实操作走出来。
 
     单独看每个结局的规则很容易以为都没问题；真正会漏的是「某条路被中间
-    的门禁悄悄堵死」。这里把每条路都走一遍，并且要求十九个结局一个不落。
+    的门禁悄悄堵死」。这里把每条路都走一遍，并且要求二十个结局一个不落。
 
     案① 的八条都在第一案里收场；案② 的五条要先借案① 的门槛进尚药局——
     所以它们的前缀取自 ``CASE2_SHORT_HEAD``（案① 查到手 + 进案② 的最小走法）；
@@ -437,7 +437,7 @@ class EveryEndingReachableTest(unittest.TestCase):
                          f"这条路线没问出来的话题：{set(CONTENT.topics) - asked}")
 
     def test_every_ending_is_reachable_by_real_play(self):
-        """十九条真实操作路线 → 十九个结局，一一对应。
+        """二十条真实操作路线 → 二十个结局，一一对应。
 
         路线表本身在 ``gongwei/autoplay.py`` 的 ``ENDING_ROUTES`` 里
         （终端快照与可达性体检取的是同一份），这里只负责「走一遍、对一遍」。

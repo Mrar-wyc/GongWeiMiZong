@@ -48,6 +48,9 @@ FG = {
     "white": 37,
     "default": 39,
 }
+
+#: ``--no-color`` 置位；``NO_COLOR`` 环境变量另外在 color_enabled() 里看。
+_COLOR_OFF = False
 FG_BRIGHT = {
     "black": 90,
     "red": 91,
@@ -60,8 +63,26 @@ FG_BRIGHT = {
 }
 
 
+def color_enabled() -> bool:
+    """彩色现在是否开着。
+
+    两条关掉的路子，都按 no-color.org 的约定：环境变量 ``NO_COLOR`` 只要非空
+    就关（不论值是多少，包括 ``0``），命令行 ``--no-color`` 走 :func:`set_color`。
+    """
+    return not _COLOR_OFF and not os.environ.get("NO_COLOR")
+
+
+def set_color(enabled: bool) -> None:
+    """全局开关彩色（``main.py --no-color`` 用）。关掉后 :func:`fg` 返回空串，
+    :func:`paint` 原样返回文本，屏幕上不会留下任何颜色码。"""
+    global _COLOR_OFF
+    _COLOR_OFF = not enabled
+
+
 def fg(color: str, bright: bool = False) -> str:
-    """返回设置前景色的转义序列。"""
+    """返回设置前景色的转义序列；彩色关掉时返回空串。"""
+    if not color_enabled():
+        return ""
     table = FG_BRIGHT if bright else FG
     code = table.get(color, FG["default"])
     return f"{ESC}[{code}m"
@@ -69,7 +90,13 @@ def fg(color: str, bright: bool = False) -> str:
 
 def paint(text: str, color: Optional[str] = None, bright: bool = False,
           bold: bool = False, dim: bool = False) -> str:
-    """给文本套上样式；``text`` 里如果已有样式也不会被破坏（结束时统一 RESET）。"""
+    """给文本套上样式；``text`` 里如果已有样式也不会被破坏（结束时统一 RESET）。
+
+    彩色关掉（``NO_COLOR`` / ``--no-color``）时连粗体、暗色一起省掉：无色出口
+    的意思是「一个转义序列都不发」，而不是「只留下 BOLD/DIM」。
+    """
+    if not color_enabled():
+        return text
     prefix = ""
     if color:
         prefix += fg(color, bright)

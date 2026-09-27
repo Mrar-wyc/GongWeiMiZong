@@ -17,9 +17,14 @@ from gongwei.autoplay import ENDING_ROUTES, play
 from gongwei.data import CONTENT, TOPIC_GATES
 from gongwei.game import GameEngine
 from gongwei.game.save import SaveStore
-from gongwei.tui.app import GameApp
-from gongwei.tui.terminal import strip_ansi, visible_width
+from gongwei.tui.app import CONFIDE_MARK, C_GOLD, C_SCENE, GameApp, _cn_number, _log_entry
+from gongwei.tui.terminal import fg, paint, strip_ansi, visible_width
 from tests import helpers
+
+#: 本屏断言有 84 处逐字比屏、还有几处直接比 ANSI（结局印章、名牌、知己符），
+#: 所以先把「无色出口」的外部开关摘掉：NO_COLOR 是给玩家用的，CI 或某些终端
+#: 工具默认设了它（值为 1），留着会让这些断言依据跑测试的机器不同而红。
+os.environ.pop("NO_COLOR", None)
 
 
 #: 真结局路线。与 tools/walk.py 的 TRUE_ENDING、tests/test_story.py 的同名常量
@@ -485,7 +490,7 @@ class ScreenInventorySnapshotTest(AppTestCase):
 
     def _endings(self):
         # 路线表取自 ``gongwei.autoplay.ENDING_ROUTES``：与 ``test_story`` 的
-        # 「十三条路线 → 十三个结局」用的是同一份，不在这里另抄一遍。
+        # 「二十条路线 → 二十个结局」用的是同一份，不在这里另抄一遍。
         declared = {e.id for e in CONTENT.endings}
         assert set(ENDING_ROUTES) == declared, (set(ENDING_ROUTES) ^ declared)
         out = []
@@ -713,6 +718,345 @@ class ReadingPaneTest(AppTestCase):
         engine = GameEngine(CONTENT, gates=TOPIC_GATES)
         engine.new_game()
         return GameApp(CONTENT, engine, store=self.store)
+
+
+class DisplayedDataTest(AppTestCase):
+    """三件「数据早就有了、界面从没画过」的东西。
+
+    说话人名牌、结案评语印章、可深谈标记都只读数据：名字、评语、案号、门槛
+    全部取自 ``CONTENT``，写死一个都会让这些断言失去意义。
+    """
+
+    SIZES = ((120, 34), (96, 30), (80, 24), (62, 18))
+
+    # -- 取屏幕 ---------------------------------------------------------
+    def raw(self, width: int = 120, height: int = 34) -> str:
+        """连 ANSI 一起取屏幕——名牌与标记的颜色只有原始行里才有。"""
+        return "\n".join(self.app.render(width, height).lines)
+
+    def plain(self, width: int = 120, height: int = 34) -> str:
+        return strip_ansi(self.raw(width, height))
+
+    def say(self, name: str, words: str, bracketed: bool = True) -> None:
+        head = f"「{name}」：" if bracketed else f"{name}："
+        self.engine.state.log.append(_log_entry("scene", head + words))
+
+    def _npc(self):
+        """一个会说话的配角（信任 > 0，不是玩家本人）。"""
+        return next(c for c in CONTENT.characters.values() if c.trust > 0)
+
+    def _ranked_ending(self):
+        return next(e for e in CONTENT.endings if e.rank)
+
+    def _play_ending(self, rule) -> None:
+        self.start()
+        play(self.engine, ENDING_ROUTES[rule.id])
+        self.app._apply_update(None)
+        self.assertEqual(rule.id, self.engine.state.ending)
+
+    # -- 1. 说话人名牌 ---------------------------------------------------
+    def test_a_dialogue_line_gets_a_nameplate(self):
+        ch = self._npc()
+        self.start()
+        self.say(ch.name, "他说的话。")
+
+        raw = self.raw()
+        self.assertIn(paint(f"{ch.name}：", C_GOLD, bold=True), raw)   # 名字上金
+        self.assertIn(paint("他说的话。", C_SCENE), raw)               # 台词转正白
+        self.assertIn(f"{ch.name}：他说的话。", self.plain())
+
+    def test_the_bracketless_name_form_is_a_speaker_too(self):
+        ch = self._npc()
+        self.start()
+        self.say(ch.name, "不带括号也认。", bracketed=False)
+        self.assertIn(paint(f"{ch.name}：", C_GOLD, bold=True), self.raw())
+
+    def test_a_bracket_that_is_not_a_character_stays_narration(self):
+        self.start()
+        self.engine.state.log.append(_log_entry("scene", "「要静心抄经」：这不是谁在说话。"))
+
+        self.assertNotIn(paint("要静心抄经：", C_GOLD, bold=True), self.raw())
+        self.assertIn("「要静心抄经」：这不是谁在说话。", self.plain())
+
+    # -- 2. 结案评语印章 -------------------------------------------------
+    def test_the_ending_screen_shows_the_rank_seal(self):
+        rule = self._ranked_ending()
+        self._play_ending(rule)
+        label = f"【{rule.rank}】案{_cn_number(rule.case)}"
+
+        lines = [strip_ansi(line) for line in self.app.render(120, 34).lines]
+        self.assertTrue(any(label in line for line in lines), f"结案屏上没有评语印章：{label}")
+        seal_row = next(i for i, line in enumerate(lines) if label in line)
+        self.assertLessEqual(seal_row, 5, "印章该贴在卷宗上沿、正文之前")
+        raw = "\n".join(self.app.render(120, 34).lines)
+        self.assertIn(fg(C_GOLD) + "\x1b[1m" + f"【{rule.rank}】", raw, "印章该是金色加粗的")
+
+    def test_the_seal_rank_and_case_come_from_the_data(self):
+        seen = set()
+        for rule in CONTENT.endings:
+            if not rule.rank or rule.case in seen:
+                continue
+            seen.add(rule.case)
+            with self.subTest(ending=rule.id):
+                engine = GameEngine(CONTENT, gates=TOPIC_GATES)
+                engine.new_game()
+                play(engine, ENDING_ROUTES[rule.id])
+                app = GameApp(CONTENT, engine, store=self.store)
+                app.show_title = False
+                text = strip_ansi("\n".join(app.render(120, 34).lines))
+                self.assertIn(f"【{rule.rank}】案{_cn_number(rule.case)}", text)
+
+    def test_no_ending_and_no_rule_means_no_seal(self):
+        self.start()
+        self.assertIsNone(self.app._rank_seal())             # 还没结案
+        rule = self._ranked_ending()
+        self.engine.state.ending = "no-such-ending"          # 查不到的结局号
+        self.assertIsNone(self.app._rank_seal())
+        self.assertNotIn(f"【{rule.rank}】案{_cn_number(rule.case)}", self.plain())
+
+    # -- 3. 可深谈标记 ---------------------------------------------------
+    def _mark_ansi(self) -> str:
+        """金色加粗的那颗点。
+
+        Canvas 落字时会省掉紧跟换色之后的 RESET，所以这里只比对前缀——
+        它同样能证明这颗点不是普通正文，而是上了色、加粗的标记。
+        """
+        return fg(C_GOLD) + "\x1b[1m" + CONFIDE_MARK
+
+    def _marked_rows(self) -> list:
+        return [strip_ansi(line) for line in self.app.render(120, 34).lines
+                if CONFIDE_MARK in strip_ansi(line)]
+
+    def test_the_confide_mark_lights_up_exactly_at_the_threshold(self):
+        cast = [c for c in CONTENT.characters.values()
+                if self.engine.state.case in getattr(c, "case", (1,))]
+        ready = next(c for c in cast if c.confide_at != 999)
+        mark = self._mark_ansi()
+
+        self.start()
+        self.assertEqual(0, self.raw().count(mark), "开局谁也不该是可深谈")
+        self.engine.state.trust[ready.id] = ready.confide_at - 1
+        self.assertEqual(0, self.raw().count(mark), "差一分就不该亮")
+        self.engine.state.trust[ready.id] = ready.confide_at
+
+        self.assertEqual(1, self.raw().count(mark), "到线必须亮，而且只亮这一颗")
+        marked = self._marked_rows()
+        self.assertEqual(1, len(marked), "只该有一个人是可深谈")
+        self.assertIn(ready.name, marked[0], "亮起来的该是他自己那一行")
+        self.assertIn(CONFIDE_MARK, marked[0])
+
+    def test_a_never_confide_character_never_lights_up(self):
+        never = next(c for c in CONTENT.characters.values() if c.confide_at == 999)
+        self.start()
+        self.engine.state.trust[never.id] = 100
+
+        self.assertFalse(self.app._confide_ready(never, 100), "999 是「永不可深谈」")
+        rows = [strip_ansi(line) for line in self.app.render(120, 34).lines]
+        self.assertTrue([r for r in rows if never.name in r and "█" in r],
+                        f"{never.name} 信任满了也该照常列在人情栏里")
+        self.assertEqual(0, self.raw().count(self._mark_ansi()))
+        self.assertEqual([], self._marked_rows())
+
+    # -- 4. 四个尺寸的宽度不变量 -----------------------------------------
+    def test_dialogue_lines_keep_every_line_exactly_terminal_width(self):
+        ch = self._npc()
+        engine = GameEngine(CONTENT, gates=TOPIC_GATES)
+        engine.new_game()
+        engine.state.log.append(_log_entry("scene", f"「{ch.name}」：四个尺寸都要看得见。"))
+        app = GameApp(CONTENT, engine, store=self.store)
+        app.show_title = False
+
+        self._assert_widths(app, "对话", expects=(paint(f"{ch.name}：", C_GOLD, bold=True),))
+
+    def test_the_ending_screen_keeps_every_line_exactly_terminal_width(self):
+        rule = self._ranked_ending()
+        ch = self._npc()
+        engine = GameEngine(CONTENT, gates=TOPIC_GATES)
+        engine.new_game()
+        play(engine, ENDING_ROUTES[rule.id])
+        # 结案之后卷宗里再落一句对话：一个屏幕上同时有印章和名牌的极端情况
+        engine.state.log.append(_log_entry("scene", f"「{ch.name}」：结案之后还得说一句。"))
+        app = GameApp(CONTENT, engine, store=self.store)
+        app.show_title = False
+
+        self._assert_widths(app, "结案",
+                            expects=(f"【{rule.rank}】", paint(f"{ch.name}：", C_GOLD, bold=True)))
+
+    def _assert_widths(self, app, tag: str, expects=()) -> None:
+        for width, height in self.SIZES:
+            lines = app.render(width, height).lines
+            self.assertEqual(height, len(lines), f"{tag} @ {width}x{height} 行数不对")
+            for line in lines:
+                self.assertEqual(width, visible_width(line),
+                                 f"{tag} @ {width}x{height} 越界：{strip_ansi(line)!r}")
+            text = "\n".join(lines)
+            for want in expects:
+                self.assertIn(want, text, f"{tag} @ {width}x{height} 缺内容")
+        if hasattr(app, "shutdown"):
+            app.shutdown()
+
+
+class DossierSpeakerPlateTest(AppTestCase):
+    """档案正文里的说话人名牌（``_reading_rows`` 的 dossier 分支）。
+
+    ``DisplayedDataTest`` 那一组钉的是**卷宗日志**那条路（``_log_lines``）。档案
+    正文走的是另一条分支，必须单独钉：哪天有人把它改回「整段一个颜色」，日志里的
+    名牌照样全绿，档案里却不再有人名 —— 那正是「引擎全对、屏幕全错」的老坑。
+    """
+
+    #: 与 DisplayedDataTest 共用同一组尺寸，免得两份清单各自漂移。
+    SIZES = DisplayedDataTest.SIZES
+
+    #: Canvas 落字时会省掉紧跟换色之后的 RESET，所以只比对转义前缀。
+    PLATE = fg(C_GOLD) + "\x1b[1m"
+
+    # -- 取样：档号与名字一个都不写死，全从剧本里现找 ---------------------
+    def _names(self) -> list:
+        """人物表里的名字（长的排前面，和界面那套一致，免得短名抢长名的开头）。"""
+        return sorted({ch.name for ch in CONTENT.characters.values()}, key=len, reverse=True)
+
+    def _speaker_lines(self) -> list:
+        """剧本里以「真名：」开头的正文行（含缩进写的那种）—— 名牌该亮的就是这些。"""
+        names = self._names()
+        return [(did, line)
+                for did, dossier in CONTENT.dossiers.items()
+                for line in (dossier.body or "").split("\n")
+                if any(line.strip().startswith(f"{name}：") for name in names)]
+
+    def _early_colon_narration(self, did: str) -> list:
+        """这份档案里「冒号落在前 12 字内、前缀却不是人名」的旁白（反面样本）。"""
+        names = self._names()
+        found = []
+        for line in (CONTENT.dossiers[did].body or "").split("\n"):
+            text = line.strip()
+            at = text.find("：")
+            if not text or at < 0 or at > 12:
+                continue
+            if not any(text.startswith(f"{name}：") for name in names):
+                found.append(text)
+        return found
+
+    def _plates(self, raw: str) -> list:
+        """原始文本里所有「金色加粗」的片段（截到 RESET 或行尾为止）。"""
+        found, at = [], raw.find(self.PLATE)
+        while at >= 0:
+            found.append(raw[at + len(self.PLATE):].split("\x1b", 1)[0])
+            at = raw.find(self.PLATE, at + 1)
+        return found
+
+    # -- 小工具 ----------------------------------------------------------
+    def _read(self, did: str) -> list:
+        """敲档号读一份档案（先让引擎认识它），返回阅读区的原始行。"""
+        self.engine.collect_dossier(did)
+        # 前面挂个「阅」字：命令行空着时「1-9」是选项快捷键（``_handle_game`` 里那一支），
+        # 直接敲 10-DL-SMB 会把首位的 1 吃掉、只剩 0-DL-SMB。「阅 <档号>」是玩家真会用的路。
+        for ch in f"阅{did}":
+            self.app.handle(ch)
+        self.app.handle("ENTER")
+        self.assertEqual("dossier", self.app.read_mode, f"{did} 没读开")
+        self.assertEqual(did, self.engine.state.open_dossier)
+        return self.app._reading_rows(76)
+
+    def _assert_plates_are_names(self, rows: list, tag: str) -> list:
+        """阅读区里每一处金色加粗，都必须正好是「人物表里的真名 + 全角冒号」。"""
+        plates = self._plates("\n".join(rows))
+        for plate in plates:
+            self.assertTrue(plate.endswith("："),
+                            f"{tag}：金色加粗的不是「名字：」：{plate!r}")
+            # 缩进写的供词，名牌里带着段首空白——名字要 strip 之后才对得上人物表。
+            self.assertIn(plate[:-1].strip(), self._names(),
+                          f"{tag}：名牌上的「{plate[:-1]}」不在人物表里")
+        return plates
+
+    # -- 1. 正面：行首人名上金加粗，其余照旧 -----------------------------
+    def test_a_dossier_body_speaker_line_gets_a_gold_nameplate(self):
+        samples = self._speaker_lines()
+        self.assertTrue(samples, "剧本里一份带说话人的档案都没有，这条用例就白写了")
+        self.start()
+        for did, line in samples:
+            with self.subTest(dossier=did, line=line):
+                text = line.strip()
+                lead = line[: len(line) - len(text)]
+                name = text.split("：", 1)[0]
+                rest = text[len(name) + 1:]
+                rows = self._read(did)
+                row = next(r for r in rows if strip_ansi(r).endswith(line))
+                # 段落记号（▤ / 两格缩进）原样留着，名牌那一截上金加粗，其余照旧；
+                # 源数据自带的段首空白也算名牌的一部分，屏幕上还是那些空格。
+                mark = "▤ " if strip_ansi(row).startswith("▤ ") else "  "
+                self.assertEqual(paint(mark, C_GOLD)
+                                 + paint(lead + f"{name}：", C_GOLD, bold=True)
+                                 + paint(rest, C_GOLD),
+                                 row, "「金名加粗 + 其余照旧」没做全")
+                self._assert_plates_are_names(rows, did)
+
+    def test_the_nameplate_actually_reaches_the_screen(self):
+        did, line = self._speaker_lines()[0]
+        plate = line[: line.index("：") + 1]     # 名牌 = 这一行「名字：」那一截（含缩进）
+        self.start()
+        self._read(did)
+
+        raw = "\n".join(self.app.render(120, 34).lines)
+        self.assertIn(self.PLATE + plate, raw, "屏幕上没有金色加粗的名牌")
+        self.assertIn(line, strip_ansi(raw), "正文一个字都不该被改动")
+
+    # -- 2. 反面：全篇旁白，一处都不许沾金 -------------------------------
+    def test_no_narration_in_the_whole_corpus_gets_a_nameplate(self):
+        """名牌只认人物表里的名字，不认「第一个冒号」。
+
+        反面样本是「结案文书上写的是：……」那一类旁白：冒号落得很早，前缀却不是
+        人名。这里把 91 份档案全读一遍，逐份比对「亮起来的金名」与「剧本里写着
+        的说话人行（缩进的也算）」是否**完全相同** —— 多了是误伤，少了是漏画。
+        """
+        want = {}
+        for did, line in self._speaker_lines():
+            want.setdefault(did, []).append(line.strip().split("：", 1)[0])
+
+        self.start()
+        checked = 0
+        for did in CONTENT.dossiers:
+            negatives = self._early_colon_narration(did)
+            checked += len(negatives)
+            rows = self._read(did)
+            plain = strip_ansi("\n".join(rows))
+            plates = self._assert_plates_are_names(rows, did)
+            with self.subTest(dossier=did):
+                self.assertEqual(sorted(want.get(did, [])),
+                                 sorted(p[:-1].strip() for p in plates),
+                                 "金名的处数与剧本里的说话人行对不上")
+                for text in negatives:
+                    head = text[: text.find("：") + 1]
+                    self.assertNotIn(self.PLATE + head, "\n".join(rows),
+                                     f"旁白「{head}」被当成了说话人")
+                    self.assertIn("".join(text.split()), "".join(plain.split()),
+                                  "旁白要一字不少地照旧显示")
+        self.assertGreater(checked, 0, "全篇一个反面样本都没有，这条用例失去了靶子")
+
+    # -- 3. 四个尺寸：宽度不变量 + 金名该在的地方还在 --------------------
+    def test_the_dossier_pane_keeps_every_line_exactly_terminal_width(self):
+        """档案正文这条路扫四个尺寸：一格不越界，金名该露面时真露面。
+
+        62x18 上正文行进不了屏（选项区把阅读区挤到只剩档头与元信息两行），所以这
+        里按「屏幕上真出现金名」计数、要求至少露面一次，宽度不变量则四个尺寸一个
+        不落 —— 那才是 ``ReadingPaneTest`` 钉住的对齐契约。
+        """
+        did, line = self._speaker_lines()[0]
+        plate = line[: line.index("：") + 1]
+        self.start()
+        self._read(did)
+
+        seen = 0
+        for width, height in self.SIZES:
+            lines = self.app.render(width, height).lines
+            self.assertEqual(height, len(lines), f"档案 @ {width}x{height} 行数不对")
+            for one in lines:
+                self.assertEqual(width, visible_width(one),
+                                 f"档案 @ {width}x{height} 越界：{strip_ansi(one)!r}")
+            raw = "\n".join(lines)
+            if self.PLATE + plate in raw:
+                seen += 1
+                self.assertIn(line, strip_ansi(raw), f"金名那行的正文被改动了 @ {width}x{height}")
+        self.assertGreater(seen, 0, "四个尺寸都没把金名摆上屏幕，这个扫描等于没扫")
 
 
 if __name__ == "__main__":

@@ -5,12 +5,18 @@
 
 from __future__ import annotations
 
+import os
 import sys
 import unittest
 
 sys.path.insert(0, ".")
 
 from gongwei.tui import terminal as T
+
+#: 这一层要逐字比 ANSI（见 AnsiTest），所以把「无色出口」的外部开关先摘掉：
+#: NO_COLOR 是给玩家用的，CI 或某些终端工具默认设了它（值为 1），留着会让
+#: 比色的断言依据跑测试的机器不同而红。想验无色行为请显式调 T.set_color(False)。
+os.environ.pop("NO_COLOR", None)
 
 
 class CharWidthTest(unittest.TestCase):

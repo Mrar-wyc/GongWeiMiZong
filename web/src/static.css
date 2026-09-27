@@ -1,0 +1,302 @@
+/* 宫闱迷踪 · 图景层
+ *
+ * 这一层只画「此刻人在什么地方」——不引任何图片、字体与链接，全靠渐变与形状。
+ * 色调名字来自 gongwei/web/art.py（`TONE_*`），打包时内联成 `#art` 表；
+ * 改色调请改那张表，别在这里加地点判断。
+ *
+ * 两个属性由 web/src/ui.js 按当前场景写在 #stage 上：
+ *   data-tone  hall / pharmacy / archive / office / interrogation / verdict / ending
+ *   data-light night / dawn / day
+ * 四层各画各的：
+ *   .stage-wash     底色与墙面（地方味）
+ *   .stage-lattice  窗格 / 药柜格 / 书格 / 屏风（地方的骨）
+ *   .stage-glow     天光、灯与暗角（时辰）
+ *   .stage-mote     浮尘与斜光里的粒子（会慢慢飘）
+ *
+ * 纪律：#stage 垫在 #app 底下，只做气氛，不碰可读性——文字永远在纸上，
+ * 图景只在纸的四周与纸背后透出来一点点。开关见 body[data-motion]。
+ */
+
+#stage {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--paper);
+  --w1: rgba(139, 44, 44, .10);
+  --w2: rgba(201, 169, 97, .08);
+  --lat: rgba(107, 31, 31, .10);
+  --lat-w: 64px;
+  --lat-h: 34px;
+}
+
+#app { position: relative; z-index: 1; }
+
+.stage-layer { position: absolute; inset: 0; }
+
+/* ---------- 地方味：一层墙面底色 + 一层顶光 ---------- */
+
+.stage-wash {
+  background:
+    linear-gradient(180deg, var(--w1) 0%, var(--w2) 32%, rgba(245, 230, 211, 0) 68%),
+    radial-gradient(130% 78% at 50% -18%, var(--w2), rgba(245, 230, 211, 0) 62%);
+}
+
+/* ---------- 地方的骨：窗格、药柜、书格、屏风 ---------- */
+
+.stage-lattice { opacity: .9; }
+
+/* 凤仪殿：间柱与窗棂 */
+#stage[data-tone="hall"] {
+  --w1: rgba(107, 31, 31, .16);
+  --w2: rgba(139, 44, 44, .09);
+  --lat: rgba(107, 31, 31, .13);
+  --lat-w: 96px;
+  --lat-h: 40px;
+}
+#stage[data-tone="hall"] .stage-lattice {
+  background-image:
+    repeating-linear-gradient(90deg, var(--lat) 0 1px, rgba(0, 0, 0, 0) 1px var(--lat-w)),
+    repeating-linear-gradient(0deg, rgba(107, 31, 31, .06) 0 1px, rgba(0, 0, 0, 0) 1px var(--lat-h));
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, .25) 58%, rgba(0, 0, 0, 0) 84%);
+  mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, .25) 58%, rgba(0, 0, 0, 0) 84%);
+}
+
+/* 尚药局：一墙小抽屉（横三竖八的格） */
+#stage[data-tone="pharmacy"] {
+  --w1: rgba(63, 90, 80, .15);
+  --w2: rgba(91, 122, 111, .09);
+  --lat: rgba(63, 90, 80, .14);
+  --lat-w: 58px;
+  --lat-h: 30px;
+}
+#stage[data-tone="pharmacy"] .stage-lattice {
+  background-image:
+    repeating-linear-gradient(90deg, var(--lat) 0 1px, rgba(0, 0, 0, 0) 1px var(--lat-w)),
+    repeating-linear-gradient(0deg, var(--lat) 0 1px, rgba(0, 0, 0, 0) 1px var(--lat-h)),
+    radial-gradient(circle at 50% 50%, rgba(63, 90, 80, .10) 0 2px, rgba(0, 0, 0, 0) 3px);
+  background-size: auto, auto, var(--lat-w) var(--lat-h);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, .3) 52%, rgba(0, 0, 0, 0) 80%);
+  mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, .3) 52%, rgba(0, 0, 0, 0) 80%);
+}
+
+/* 经卷阁与旧档库：一排排书格，格子里是深浅不一的卷帙 */
+#stage[data-tone="archive"] {
+  --w1: rgba(166, 138, 61, .16);
+  --w2: rgba(201, 169, 97, .10);
+  --lat: rgba(166, 138, 61, .16);
+  --lat-w: 46px;
+  --lat-h: 44px;
+}
+#stage[data-tone="archive"] .stage-lattice {
+  background-image:
+    repeating-linear-gradient(90deg, var(--lat) 0 1px, rgba(0, 0, 0, 0) 1px var(--lat-w)),
+    repeating-linear-gradient(0deg, var(--lat) 0 6px, rgba(0, 0, 0, 0) 6px var(--lat-h)),
+    repeating-linear-gradient(90deg,
+      rgba(107, 31, 31, .10) 0 4px, rgba(0, 0, 0, 0) 4px 11px,
+      rgba(63, 90, 80, .10) 11px 14px, rgba(0, 0, 0, 0) 14px 23px,
+      rgba(166, 138, 61, .12) 23px 26px, rgba(0, 0, 0, 0) 26px 46px);
+  background-position: 0 0, 0 0, 0 8px;
+  background-size: auto, auto, auto;
+  background-repeat: repeat, repeat, repeat;
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, .28) 50%, rgba(0, 0, 0, 0) 78%);
+  mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, .28) 50%, rgba(0, 0, 0, 0) 78%);
+}
+
+/* 内官监值房：冷灰的板壁 */
+#stage[data-tone="office"] {
+  --w1: rgba(92, 64, 51, .13);
+  --w2: rgba(92, 64, 51, .06);
+  --lat: rgba(92, 64, 51, .11);
+  --lat-w: 72px;
+  --lat-h: 52px;
+}
+#stage[data-tone="office"] .stage-lattice {
+  background-image:
+    repeating-linear-gradient(90deg, var(--lat) 0 1px, rgba(0, 0, 0, 0) 1px var(--lat-w)),
+    repeating-linear-gradient(0deg, rgba(92, 64, 51, .05) 0 1px, rgba(0, 0, 0, 0) 1px var(--lat-h));
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, .25) 55%, rgba(0, 0, 0, 0) 82%);
+  mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, .25) 55%, rgba(0, 0, 0, 0) 82%);
+}
+
+/* 问询：对面立着一扇屏风（竖条子密、颜色沉） */
+#stage[data-tone="interrogation"] {
+  --w1: rgba(44, 24, 16, .18);
+  --w2: rgba(107, 31, 31, .10);
+  --lat: rgba(44, 24, 16, .14);
+  --lat-w: 22px;
+  --lat-h: 26px;
+}
+#stage[data-tone="interrogation"] .stage-lattice {
+  background-image:
+    repeating-linear-gradient(90deg, var(--lat) 0 2px, rgba(0, 0, 0, 0) 2px var(--lat-w)),
+    repeating-linear-gradient(0deg, rgba(44, 24, 16, .05) 0 1px, rgba(0, 0, 0, 0) 1px var(--lat-h)),
+    linear-gradient(90deg, rgba(44, 24, 16, .10), rgba(0, 0, 0, 0) 26%);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, .35) 46%, rgba(0, 0, 0, 0) 76%);
+  mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, .35) 46%, rgba(0, 0, 0, 0) 76%);
+}
+
+/* 结案陈词：堂上，只留一圈藻井与头顶的阴影 */
+#stage[data-tone="verdict"] {
+  --w1: rgba(139, 44, 44, .20);
+  --w2: rgba(201, 169, 97, .12);
+  --lat: rgba(107, 31, 31, .12);
+  --lat-w: 120px;
+  --lat-h: 120px;
+}
+#stage[data-tone="verdict"] .stage-lattice {
+  background-image:
+    repeating-conic-gradient(from 0deg at 50% -10%,
+      rgba(107, 31, 31, .10) 0deg 3deg, rgba(0, 0, 0, 0) 3deg 9deg),
+    linear-gradient(180deg, rgba(44, 24, 16, .16), rgba(0, 0, 0, 0) 46%);
+}
+
+/* 结局：天光收下来，只剩一点金 */
+#stage[data-tone="ending"] {
+  --w1: rgba(44, 24, 16, .26);
+  --w2: rgba(166, 138, 61, .14);
+  --lat: rgba(166, 138, 61, .10);
+  --lat-w: 80px;
+  --lat-h: 80px;
+}
+#stage[data-tone="ending"] .stage-lattice {
+  background-image:
+    radial-gradient(120% 80% at 50% 118%, rgba(201, 169, 97, .22), rgba(0, 0, 0, 0) 60%),
+    linear-gradient(180deg, rgba(44, 24, 16, .18), rgba(0, 0, 0, 0) 52%);
+}
+
+/* ---------- 光：夜里点灯、寅时天将亮、白日天光 ---------- */
+
+.stage-glow { /* 只用半透明的光与影叠加，不去改底下的颜色 */ }
+
+#stage[data-light="night"] .stage-glow {
+  background:
+    radial-gradient(42% 30% at 22% 74%, rgba(201, 169, 97, .34), rgba(201, 169, 97, 0) 70%),
+    radial-gradient(150% 100% at 50% 50%, rgba(0, 0, 0, 0) 42%, rgba(44, 24, 16, .20) 100%);
+}
+#stage[data-light="dawn"] .stage-glow {
+  background:
+    linear-gradient(0deg, rgba(201, 169, 97, .26) 0%, rgba(201, 169, 97, 0) 34%),
+    linear-gradient(180deg, rgba(63, 90, 80, .16) 0%, rgba(0, 0, 0, 0) 40%),
+    radial-gradient(150% 100% at 50% 50%, rgba(0, 0, 0, 0) 50%, rgba(44, 24, 16, .14) 100%);
+}
+#stage[data-light="day"] .stage-glow {
+  background:
+    radial-gradient(70% 50% at 76% 6%, rgba(251, 243, 228, .80), rgba(251, 243, 228, 0) 70%),
+    radial-gradient(160% 110% at 50% 50%, rgba(0, 0, 0, 0) 56%, rgba(44, 24, 16, .10) 100%);
+}
+
+/* ---------- 浮尘 / 雪：会慢慢飘，但不会闪 ---------- */
+
+#stage[data-light="night"] .stage-mote {
+  background-image:
+    radial-gradient(circle at 30% 40%, rgba(251, 243, 228, .55) 0 1px, rgba(0, 0, 0, 0) 2px),
+    radial-gradient(circle at 70% 72%, rgba(201, 169, 97, .45) 0 1px, rgba(0, 0, 0, 0) 2px);
+  background-size: 190px 170px, 260px 230px;
+  animation: gw-mote 54s linear infinite;
+}
+#stage[data-light="dawn"] .stage-mote,
+#stage[data-light="day"] .stage-mote {
+  background-image:
+    radial-gradient(circle at 26% 34%, rgba(92, 64, 51, .30) 0 1px, rgba(0, 0, 0, 0) 3px),
+    radial-gradient(circle at 68% 66%, rgba(92, 64, 51, .22) 0 1px, rgba(0, 0, 0, 0) 3px);
+  background-size: 210px 180px, 300px 260px;
+  animation: gw-mote 72s linear infinite;
+}
+
+@keyframes gw-mote {
+  from { background-position: 0 0, 0 0; }
+  to { background-position: 190px -340px, -260px -460px; }
+}
+
+/* ---------- 过场卡：进幕、判决、结局时说一句 ---------- */
+
+.stage-card {
+  position: absolute;
+  left: 50%;
+  top: 16%;
+  transform: translate(-50%, 6px);
+  max-width: min(84vw, 34em);
+  padding: 14px 30px;
+  border: 1px solid var(--gold-dark);
+  box-shadow: var(--shadow);
+  background: linear-gradient(180deg, rgba(251, 243, 228, .96), rgba(245, 230, 211, .92));
+  color: var(--crimson-dark);
+  font-family: var(--serif);
+  font-size: 1.06rem;
+  letter-spacing: .18em;
+  text-align: center;
+  opacity: 0;
+  transition: opacity .42s ease, transform .42s ease;
+}
+.stage-card.on { opacity: 1; transform: translate(-50%, 0); }
+.stage-card b { display: block; font-size: 1.24rem; color: var(--crimson); letter-spacing: .22em; }
+.stage-card span { display: block; margin-top: 6px; font-size: .84rem; letter-spacing: .12em; color: var(--ink-light); }
+
+/* ---------- 让纸透一点：图景只在纸的四周与纸背后露出来 ---------- */
+
+.topbar { background: linear-gradient(180deg, rgba(245, 230, 211, .92) 62%, rgba(245, 230, 211, .74)); }
+.panel { background: rgba(251, 243, 228, .88); }
+.dossier-card, .sheet { background: rgba(251, 243, 228, .96); }
+.footer { background: rgba(245, 230, 211, .74); }
+
+/* ---------- 字形：线索 / 口供 / 文书 / 物证 ---------- */
+
+.glyph {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 6px;
+  vertical-align: -1px;
+  background: var(--gold-dark);
+}
+.glyph[data-glyph="clue"] {
+  background: linear-gradient(135deg, var(--crimson), var(--gold));
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+.glyph[data-glyph="testimony"] {
+  background: var(--jade);
+  border-radius: 3px 3px 3px 0;
+}
+.glyph[data-glyph="doc"] {
+  background: none;
+  border: 1px solid var(--gold-dark);
+  border-radius: 1px;
+  background-image: repeating-linear-gradient(0deg, var(--gold-dark) 0 1px, rgba(0, 0, 0, 0) 1px 4px);
+  background-size: 60% 100%;
+  background-position: 2px 0;
+  background-repeat: no-repeat;
+}
+.glyph[data-glyph="item"] {
+  background: var(--crimson);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+}
+.glyph[data-glyph="mark"] {
+  background: none;
+  border: 1px solid var(--ink-light);
+  border-radius: 50%;
+}
+
+/* ---------- 窄屏：图景退一步，不抢纸的位置 ---------- */
+
+@media (max-width: 899px) {
+  .stage-card { top: 9%; padding: 10px 18px; font-size: .96rem; }
+  #stage .stage-lattice { opacity: .7; }
+}
+
+@media (max-width: 480px) {
+  #stage .stage-mote { display: none; }
+}
+
+/* ---------- 关掉动效：只关图景自己的，不动界面其他地方 ---------- */
+
+body[data-motion="off"] .stage-card { transition: none; }
+body[data-motion="off"] #stage .stage-mote { display: none; }
+body[data-motion="off"] #stage .stage-layer { animation: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .stage-card { transition: none; }
+  #stage .stage-mote { display: none; }
+  #stage .stage-layer { animation: none; }
+}

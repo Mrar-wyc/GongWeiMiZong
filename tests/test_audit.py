@@ -66,7 +66,7 @@ class StoryAuditTest(unittest.TestCase):
 
         案② 加进来之后预算被摊薄，撒网一度把 ``ending_pressured`` /
         ``ending2_pressed`` 这两条**证据薄**的结局漏报成死结局；路线这一遍
-        正是为此存在的。所以这里盯两件事：十三条路线一条都不能断，
+        正是为此存在的。所以这里盯两件事：二十条路线一条都不能断，
         而且它们要真的走出一批东西来。
         """
         from gongwei.autoplay import ENDING_ROUTES

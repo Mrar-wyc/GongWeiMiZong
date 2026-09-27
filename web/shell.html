@@ -16,10 +16,15 @@ __STYLE__
   <p style="padding:24px;font-family:serif">这一卷要开着 JavaScript 才能翻。请在浏览器设置里允许脚本后重开此页。</p>
 </noscript>
 
+<!-- 图景：垫在 #app 前面的同级节点（ui.js 每次重画只清 #app，所以它不会被重置） -->
+__ART_SLOT__
+
 <div id="app"></div>
 
 <!-- 剧本数据：与终端版由 tools/audit_web.py 逐步比对，保证同一套判定 -->
 <script id="pack" type="application/json">__PACK__</script>
+<!-- 图景台账：色调 / 时辰明暗 / 字形词表，由 gongwei/web/art.py 生成 -->
+<script id="art" type="application/json">__ART_TABLES__</script>
 <script>
 (function () {
   var node = document.getElementById("pack");
@@ -27,6 +32,14 @@ __STYLE__
     window.__GONGWEI_PACK__ = JSON.parse(node.textContent);
   } catch (err) {
     document.body.innerHTML = "<p style='padding:20px'>剧本数据读不出来：" + err.message + "</p>";
+    return;
+  }
+  // 图景台账缺了不致命：ui.js 会退到默认色调，游戏照玩
+  var art = document.getElementById("art");
+  try {
+    window.__GONGWEI_ART__ = art ? JSON.parse(art.textContent) : null;
+  } catch (err2) {
+    window.__GONGWEI_ART__ = null;
   }
 })();
 </script>
