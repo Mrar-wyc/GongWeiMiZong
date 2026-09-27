@@ -282,7 +282,7 @@ tools/
 ## 开发
 
 ```powershell
-# 全部测试（235 项，跨端与结构那几道闸也在里面）
+# 全部测试（239 项，跨端与结构那几道闸也在里面）
 python -m unittest discover -s tests -t .
 
 # —— 六道门禁，改完剧本按顺序跑 ——
@@ -302,7 +302,7 @@ python tools/walk.py
 python tools/probe_story.py
 ```
 
-这六道门禁 + 235 项测试每次 push / PR 都会在 GitHub Actions 上自动跑一遍
+这六道门禁 + 239 项测试每次 push / PR 都会在 GitHub Actions 上自动跑一遍
 （`.github/workflows/gates.yml`，两条腿：Windows + Python 3.13、Linux + Python 3.9），
 标题下面那枚「门禁」徽章就是它的结果。
 
@@ -374,8 +374,12 @@ python tools/probe_story.py
 - **`ACT_TITLES[4]`「第四幕 · 采薇（旧案）」是孤儿**：第四幕只有可敲的档案，没有场景。
 - **`audit_logic.py` 第 5 节的软卡出口偏松**：只要场上还有档可翻就报「软卡」，
   而开局就有 27 份档可读，所以这一节基本恒有一行输出，看的时候别当成故障。
-- **仓库里没有浏览器自动化测试**。跨端一致性靠 `audit_web.py` 在 node 层面逐步比对，
-  真实浏览器是发布前手工用 puppeteer 跑一遍（两种视口 + 存档读回），脚本不进仓库。
+- **真实浏览器仍靠手工**。`web/src/ui.js` 现在会被 `tests/test_webui.py` 拖着
+  `tests/webui_harness.js` 在 node 里跑一遍——手写的最小 DOM（没有 jsdom，也不许引），
+  走的是真动作：开屏、开新案、敲档号阅档、档目、检索、记事、帮助浮层、存档、
+  读档面板、读回一份结案存档（那份存档由 Python 引擎走真结局写出来，顺带验了
+  存档跨端读得回来）；把 ui.js 弄坏或把「读档」指令摘掉，它都会红。但**布局、滚动、
+  移动端视口**这些只有真浏览器说了算，仍是发布前手工过一遍，脚本不进仓库。
 - **存档各一个槽**：终端在 `%USERPROFILE%\.gongwei\save.json`，网页在 localStorage
   的 `gongwei_save`；网页版可以导出/导入 JSON 当作多槽用。
 
