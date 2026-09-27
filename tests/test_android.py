@@ -514,6 +514,11 @@ class WorkflowTest(unittest.TestCase):
         self.assertIn("startsWith(github.ref, 'refs/tags/v')", self.code)
         self.assertIn("secrets.GITHUB_TOKEN", self.code)
         self.assertIn("gh release", self.code)
+        # 资产名要像游戏名，不能是 app-debug.apk：`gh` 的 `file#label` 只改显示标签，
+        # 所以必须先复制成想要的文件名再传（第一次发 Release 就下载成了 app-debug.apk）。
+        self.assertIn('ASSET=gongwei-mizong-debug.apk', self.code)
+        self.assertIn('cp "$APK" "$ASSET"', self.code)
+        self.assertNotIn("#gongwei-mizong-debug.apk", self.code)
         self.assertNotIn("gradle wrapper", self.text.lower())
         self.assertNotIn("gradlew", self.text)
 
