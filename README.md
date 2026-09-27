@@ -282,7 +282,7 @@ tools/
 ## 开发
 
 ```powershell
-# 全部测试（244 项，跨端与结构那几道闸也在里面）
+# 全部测试（246 项，跨端与结构那几道闸也在里面）
 python -m unittest discover -s tests -t .
 
 # —— 六道门禁，改完剧本按顺序跑 ——
@@ -302,7 +302,7 @@ python tools/walk.py
 python tools/probe_story.py
 ```
 
-这六道门禁 + 244 项测试每次 push / PR 都会在 GitHub Actions 上自动跑一遍
+这六道门禁 + 246 项测试每次 push / PR 都会在 GitHub Actions 上自动跑一遍
 （`.github/workflows/gates.yml`，两条腿：Windows + Python 3.13、Linux + Python 3.9），
 标题下面那枚「门禁」徽章就是它的结果。
 
@@ -375,7 +375,10 @@ python tools/probe_story.py
   网页顶栏按非 0 显示——但剧本里 0 处产出，终端也没有那一格。
   14 个 flag（`case2_entered`、`zzz_confessed` 之类）只设不读，留着当路标；
   它们登记在 `tests/test_story.py` 的 `BREADCRUMB_FLAGS` 白名单里，新加一个没人读的会红。
-- **`ACT_TITLES[4]`「第四幕 · 采薇（旧案）」是孤儿**：第四幕只有可敲的档案，没有场景。
+- **第四幕是唯一没有场景的一幕**。「第四幕 · 采薇（旧案）」全靠敲档号读出来（两份档：
+  `04-DL-SMB`、`04-YC-CW`），档目按幕分组时用的正是这条幕名——所以它不算孤儿，
+  只是玩家永远走不进「第四幕」。`tests/test_story.py` 的 `ActTitleTest` 盯着两件事：
+  幕名表里不许有谁都不用的幕，实际用到的幕号也必须有幕名（且从 1 起连续不跳号）。
 - **`audit_logic.py` 第 5 节的软卡出口偏松**：只要场上还有档可翻就报「软卡」，
   而开局就有 27 份档可读，所以这一节基本恒有一行输出，看的时候别当成故障。
 - **真实浏览器仍靠手工**。`web/src/ui.js` 现在会被 `tests/test_webui.py` 拖着

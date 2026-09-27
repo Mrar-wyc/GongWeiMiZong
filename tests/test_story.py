@@ -631,5 +631,38 @@ class TrustCeilingTest(unittest.TestCase):
             )
 
 
+class ActTitleTest(unittest.TestCase):
+    """幕名表与实际用到的幕号必须互相覆盖，而且不许跳号。
+
+    第四幕是特例：它一份场景都没有（采薇案全靠敲档号读出来），但有两份档案，
+    档目里按幕分组就靠这条幕名——所以「没有场景」不等于「没用」。
+    """
+
+    @staticmethod
+    def _acts_in_use() -> set:
+        acts = {scene.act for scene in CONTENT.scenes.values() if scene.act}
+        acts |= {dos.act for dos in CONTENT.dossiers.values() if dos.act}
+        return acts
+
+    def test_every_act_title_is_used_by_a_scene_or_a_dossier(self):
+        orphan = sorted(set(CONTENT.act_titles) - self._acts_in_use())
+        self.assertEqual(
+            orphan, [],
+            "幕名表里有谁都不用的幕：一个场景一份档都没有，就该删掉这条幕名；"
+            "只是「没有场景、只有档案」的话，它仍然用在档目分组里，不算孤儿",
+        )
+
+    def test_every_act_in_use_has_a_title_and_the_numbers_are_contiguous(self):
+        titled = set(CONTENT.act_titles)
+        self.assertEqual(
+            sorted(self._acts_in_use() - titled), [],
+            "这些幕号没有幕名——顶栏与档目会显示出空的第 N 幕",
+        )
+        self.assertEqual(
+            sorted(titled), list(range(1, len(titled) + 1)),
+            "幕号必须从 1 开始、连续、不跳号（`CASE_ACTS` 与档号前缀都按它推）",
+        )
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
