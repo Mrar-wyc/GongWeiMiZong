@@ -3,6 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-blue.svg)
 ![零第三方依赖](https://img.shields.io/badge/dependencies-0-brightgreen.svg)
+[![门禁](https://github.com/Mrar-wyc/GongWeiMiZong/actions/workflows/gates.yml/badge.svg)](https://github.com/Mrar-wyc/GongWeiMiZong/actions/workflows/gates.yml)
 
 一个古风宫廷推理游戏。你是大理寺仵作**沈墨白**，贤妃死在凤仪殿，
 皇帝只给你三个时辰和一句话：
@@ -300,6 +301,14 @@ python tools/walk.py
 # 场景图勘探（看某一段的场景/话题/出口）
 python tools/probe_story.py
 ```
+
+这六道门禁 + 235 项测试每次 push / PR 都会在 GitHub Actions 上自动跑一遍
+（`.github/workflows/gates.yml`，两条腿：Windows + Python 3.13、Linux + Python 3.9），
+标题下面那枚「门禁」徽章就是它的结果。
+
+> 产物是**按字节**比的（`build_web.py --check` 认死 371465 / 360514），
+> 所以 `.gitattributes` 把全仓锁成了 LF——换行符被 git 转过一次，门禁就会在
+> 别的平台上误报，看着像剧本坏了，其实只是 git 动了手脚。
 
 怎么读这些门禁的输出：`audit_story.py` 会打印 `场景 64/64`、`档案 91/91`、
 `线索/物证 103/103（核心 65/65）`、`话题 44/44`、`结局 20/20`，并且**有缺口就退出码 1**

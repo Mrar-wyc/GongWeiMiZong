@@ -1,0 +1,73 @@
+name: 门禁
+
+# 六道门禁 + 235 项单元测试，每次 push / PR 自动跑一遍。
+# 命令与 AGENTS.md §4 逐条对应；本地怎么跑、怎么读输出，见 README 的「开发」一节。
+#
+# 两条腿：Windows + 当前 Python（开发环境本尊）、Linux + 较老的 Python
+# （确认没有「只在 Windows 上成立」的假设，顺便贴近 README 承诺的版本下限）。
+# 产物是按字节比对的，所以 `.gitattributes` 把全仓锁成了 LF。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Windows 中文控制台不设这两个会乱码（AGENTS.md §6）
+  PYTHONIOENCODING: utf-8
+  PYTHONUTF8: "1"
+
+jobs:
+  gates:
+    name: ${{ matrix.os }} · Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            python: "3.13"
+          - os: ubuntu-latest
+            python: "3.9"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: 环境自查
+        shell: bash
+        run: |
+          python --version
+          node --version
+          git --version
+          echo "--- 换行符分布（应全是 lf；出现 crlf 说明 .gitattributes 没生效）---"
+          git ls-files --eol | awk '{print $1}' | sort | uniq -c
+
+      - name: 门禁 1/6 · 网页产物等于当前剧本打的包
+        run: python tools/build_web.py --check
+
+      - name: 门禁 2/6 · 单元测试（235 项）
+        run: python -m unittest discover -s tests -t .
+
+      - name: 门禁 3/6 · 线索/物证登记与门禁引用
+        run: python tools/audit_gates.py
+
+      - name: 门禁 4/6 · 跨端差分（27 条路线逐字比对）
+        run: python tools/audit_web.py
+
+      - name: 门禁 5/6 · 可达性撒网
+        run: python tools/audit_story.py 30000
+
+      - name: 门禁 6/6 · 逻辑体检
+        run: python tools/audit_logic.py
