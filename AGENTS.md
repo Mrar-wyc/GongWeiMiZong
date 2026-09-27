@@ -39,7 +39,7 @@
 | `web/src/style.css` | 458 | 网页版**断点都在这儿**（窄屏分页、宽屏三栏、480px）——`ui.js` 里没有宽度判断 |
 | `web/src/driver.js` | 128 | node 下走路线，供 `audit_web.py` 调 |
 | `tools/audit_*.py` | — | 四道体检闸门（§4） |
-| `tests/` | — | 246 项；`tests/webui_harness.js` 在 node 里用最小 DOM 真跑 `web/src/ui.js` 与 `game.js` 的判决节拍；`BreadcrumbFlagTest` / `TrustCeilingTest` 盯着「只设不读的 flag」与角色的深谈阈值；`ActTitleTest` 盯着幕名表与实际用到的幕号互相覆盖；`tests/helpers.py` 只是转手 `autoplay` 的路线，**不要另抄一份** |
+| `tests/` | — | 249 项；`tests/webui_harness.js` 在 node 里用最小 DOM 真跑 `web/src/ui.js` 与 `game.js` 的判决节拍；`BreadcrumbFlagTest` / `TrustCeilingTest` 盯着「只设不读的 flag」与角色的深谈阈值；`ActTitleTest` 盯着幕名表与实际用到的幕号互相覆盖；`DeadEndAuditTest` 盯着第 5 节那三档软卡判定；`tests/helpers.py` 只是转手 `autoplay` 的路线，**不要另抄一份** |
 
 判断要点：**玩家的体验问题 → `story.py` / `dossiers.py`；行为不对 → `engine.py` + `web/src/game.js`
 两边一起改；显示不对 → `tui/app.py` / `web/src/ui.js`（网页版的断点在 `web/src/style.css`）。**
@@ -114,11 +114,11 @@
 
 ```powershell
 python tools/build_web.py --check        # 产物等于当前剧本打的包
-python -m unittest discover -s tests -t .  # 246 项（含下面几道闸）
+python -m unittest discover -s tests -t .  # 249 项（含下面几道闸）
 python tools/audit_gates.py              # 线索/物证登记一致性、门禁引用是否有据
 python tools/audit_web.py                # 跨端差分：27 条路线逐字比对存档与选项表
 python tools/audit_story.py 30000        # 可达性：枚举状态图 + 20 条结局路线（参数是预算步数）
-python tools/audit_logic.py              # 逻辑体检：后门/剧透面/刷分/死胡同/结局判定
+python tools/audit_logic.py              # 逻辑体检：后门/剧透面/刷分/死胡同/结局判定（-v 列软卡明细）
 ```
 
 > **这六条本地不必默认全跑。** `audit_story.py` 是唯一吃内存的一条——它要在内存里
@@ -128,13 +128,14 @@ python tools/audit_logic.py              # 逻辑体检：后门/剧透面/刷�
 
 预期输出（当前基线）：
 
-- `Ran 246 tests … OK`
+- `Ran 249 tests … OK`
 - `审计通过：门禁全部可达，引用全部有据。`
 - `✓ 两端逐步一致：存档与选项表逐字相同，连报错都一致`
 - `场景 64/64`、`档案 91/91`、`线索/物证 103/103（核心 65/65）`、`话题 44/44`、`结局 20/20`、
   `[从未解开过的门禁] 无`
-- `audit_logic.py`：**九节全绿**（第 8 节的刷分口子已收；第 5 节会打印一处「还有档可翻」的软卡，
-  那是案① 的节奏，不算死胡同）。
+- `audit_logic.py`：**九节全绿**（第 8 节的刷分口子已收；第 5 节会打印一行
+  「另有 1 处软卡」，那是案① 开局的正常节奏、加 `-v` 看明细；
+  「翻不动的软卡」是 0 处——那一档才算问题）。
 
 **两端的报错必须逐字一致**：Python 侧在 `gongwei/autoplay.py`，JS 侧在 `web/src/driver.js`，
 `audit_web.py` 会把两侧的报错句子直接对比——改一边忘一边，门禁立刻红。
@@ -169,6 +170,10 @@ python tools/audit_logic.py              # 逻辑体检：后门/剧透面/刷�
   状态永远停在第一案，报出「场景 61/63、档案 87/91」这种假缺口——**门禁红了先怀疑尺子**。
 - **写死的规模数字有测试盯着**：界面文案里的案数与幕数由 `tests/test_presentation.py`
   与实际剧本比对（网页版的「关于」曾把总幕数写少过，这条教训自己也被它抓过一次）。
+- **闸门只分两档，就会恒亮一行、然后没人看**：`audit_logic.py` 第 5 节原先只问
+  「选项全灰时还有没有档可翻」——开局就有 27 份档可读，于是那行字永远在，
+  真正卡住的局面反而混在里面。现在按「翻档到底改不改变什么」分三档，
+  只有**翻不动**的那档才计入问题（`DeadEndAuditTest` 盯着三档判定）。
 
 ## 7. 交付前自检（DoD）
 

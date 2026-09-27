@@ -14,7 +14,7 @@ import unittest
 
 from gongwei.data.story import TOPIC_GATES
 from gongwei.game.conditions import has_clue, trust_at_least
-from gongwei.game.models import Choice, Content, Effect, Scene
+from gongwei.game.models import Choice, Content, Dossier, Effect, Scene
 
 from .helpers import load_tool
 
@@ -141,6 +141,56 @@ class LogicAuditTest(unittest.TestCase):
         """回程不算后门：侧屋那一幕的幕号更大，可它本来就是玩家来的路。"""
         self.mod.CONTENT = self._content(hub_act=3, side_act=2)
         self.assertEqual(self.mod.unlocked_progression(), [])
+
+
+class DeadEndAuditTest(unittest.TestCase):
+    """`tools/audit_logic.py` 第 5 节：软卡出口的三档判定。
+
+    这一节原先只分「有没有档可读」两档，于是开局那份 27 份档一摆，
+    「软卡」这行字就恒存在、也就没人看。现在多分一档：**翻开任何一份档
+    都不改变任何东西**的软卡才是问题（玩家被钉在原地翻页）。
+    """
+
+    def setUp(self) -> None:
+        self.mod = load_tool("audit_logic")
+        self.real = self.mod.CONTENT
+        self.addCleanup(lambda: setattr(self.mod, "CONTENT", self.real))
+
+    def _trap(self, effect: Effect) -> object:
+        """一条死巷：没有选项，手上只有一份档可翻。"""
+        scenes = {
+            "trap": Scene(id="trap", title="死巷", place="", time="", body="",
+                          act=1, case=1, choices=[]),
+        }
+        dossiers = {
+            "01-DL-XXX": Dossier(id="01-DL-XXX", title="探针档", act=1,
+                                 body="", effect=effect),
+        }
+        return Content(items={}, characters={}, scenes=scenes, topics={},
+                       endings=[], start_scene="trap", verdict_scene="trap",
+                       title="探针", subtitle="", prologue="", version="探针",
+                       dossiers=dossiers)
+
+    def test_a_flip_that_changes_nothing_is_a_problem(self):
+        self.mod.CONTENT = self._trap(Effect())
+        _hard, soft, stalled, _states = self.mod.dead_ends(200)
+        self.assertEqual(soft, [])
+        self.assertEqual(len(stalled), 1)
+        self.assertIn("trap", stalled[0])
+        self.assertIn("翻", stalled[0])
+
+    def test_a_flip_that_opens_something_is_just_pacing(self):
+        self.mod.CONTENT = self._trap(Effect(add_clues=("probe_clue",)))
+        _hard, soft, stalled, _states = self.mod.dead_ends(200)
+        self.assertEqual(stalled, [])
+        self.assertEqual(len(soft), 1)
+        self.assertIn("trap", soft[0])
+
+    def test_the_real_story_has_no_flip_inert_dead_end(self):
+        """真剧本里每一处「选项全灰」都靠翻档解得开。"""
+        _hard, _soft, stalled, states = self.mod.dead_ends(30000)
+        self.assertGreater(states, 100)
+        self.assertEqual(stalled, [])
 
 
 if __name__ == "__main__":
