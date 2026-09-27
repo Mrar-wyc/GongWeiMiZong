@@ -250,6 +250,11 @@ function esc() {
   doc.dispatch("keydown", { key: "Escape", target: doc.body, preventDefault: noop });
 }
 
+// 给某个节点派发一次按键（如命令行里的 ↑ ↓）。
+function keyOn(node, key) {
+  node.dispatch("keydown", { key: key, preventDefault: noop, target: node });
+}
+
 function buttons(scope, word) {
   var host = scope || app();
   var all = query(host, "button");      // 选项是 .opt、浮层里是 .btn，都按标签找
@@ -362,6 +367,55 @@ if (booted) {
     need(byId("cmd"), "折腾一圈之后回不到游戏屏（没有 #cmd）");
   });
 
+  check("帮助里列的那些敲法，网页自己真的都认", function () {
+    // 表在 ui.js 里是硬编码的，所以直接读源码把行首那几格刮出来；
+    // 表改了而这里没跟上，下面的两条断言就会红。
+    var src = fs.readFileSync(UI_FILE, "utf8");
+    var head = src.indexOf('if (kind === "help")');
+    need(head >= 0, "ui.js 里找不到帮助浮层的分支");
+    var tail = src.indexOf('} else if (kind === "about")', head);
+    need(tail > head, "帮助浮层与「关于」之间那段代码不见了");
+    var block = src.slice(head, tail);
+    var rows = [];
+    var re = /\["((?:[^"\\]|\\.)*)",\s*"/g;
+    var m;
+    while ((m = re.exec(block)) !== null) { rows.push(m[1]); }
+    need(rows.length >= 8, "帮助表只刮出 " + rows.length + " 行，正则或表结构变了");
+
+    // 每一行都要有交代：要么给出「照它敲什么」的样例，要么登记成非指令的说明行。
+    var SAMPLES = {
+      "01-FY-XFE": "01-FY-XFE",
+      "档目": "档目",
+      "搜 银针": "搜 银针",
+      "记 皇后在说谎": "记 皇后在说谎",
+      "删 2": "删 2",
+      "存档 / 读档": "存档",
+      "重来 / 离开": "重来",
+      "直接敲选项上的字": "",
+      "数字 1-9": "",
+      "↑ ↓（行里有字时）": ""
+    };
+    rows.forEach(function (key) {
+      need(Object.prototype.hasOwnProperty.call(SAMPLES, key),
+        "帮助表里多了一行「" + key + "」，测试没跟上：给它一个能敲的样例，或登记成非指令行");
+    });
+    Object.keys(SAMPLES).forEach(function (key) {
+      need(rows.indexOf(key) >= 0, "帮助表里少了「" + key + "」这一行");
+    });
+
+    var bad = [];
+    Object.keys(SAMPLES).forEach(function (key) {
+      var sample = SAMPLES[key];
+      if (!sample) { return; }
+      cmd(sample);
+      var screen = appText() + " " + paneText("toasts");
+      if (screen.indexOf("看不明白：「" + sample + "」") >= 0) { bad.push(sample); }
+      esc();                              // 关掉可能开着的浮层（读档 / 重来）
+    });
+    need(bad.length === 0, "帮助里写了、网页却敲不通：" + bad.join(" / "));
+    need(byId("cmd"), "走完这一圈回不到游戏屏（没有 #cmd）");
+  });
+
   check("判决屏节拍与跨案指认（JS 侧与 Python 一致）", function () {
     var GAME = win.GongweiGame;
     var third = new GAME.Game(pack);
@@ -382,6 +436,19 @@ if (booted) {
     first.state.case = 1;
     need(first.verdictTarget("HD") === "verdict_HD",
       "案① 里指认陛下被送到「" + first.verdictTarget("HD") + "」");
+  });
+
+  check("网页的命令行也认 ↑ ↓ 翻指令历史（与终端一致）", function () {
+    cmd("档目");                       // 先提交一条真指令进历史
+    var input = byId("cmd");
+    need(input, "敲完「档目」后命令行不见了");
+    input.value = "银";
+    keyOn(input, "ArrowUp");           // 行里有字 → 翻历史，不是挪光标
+    need(input.value === "档目", "↑ 之后行里变成了「" + input.value + "」");
+    keyOn(input, "ArrowDown");         // 再按回来 = 回到还没提交的草稿
+    need(input.value === "银", "↓ 之后行里变成了「" + input.value + "」");
+    keyOn(input, "Escape");            // 收尾：清空草稿，别把状态漏给后面的检查
+    need(input.value === "", "Escape 没清掉命令行");
   });
 
   if (SEED_SAVE) {

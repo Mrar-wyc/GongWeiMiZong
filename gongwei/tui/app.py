@@ -233,6 +233,12 @@ class GameApp:
         if len(key) == 1 and key >= " " and self.editor.buffer:
             self.editor.handle(key)
             return
+        # 行里已经有字时，↑↓ 归编辑器翻指令历史（帮助面板里就是这么写的）；
+        # 行是空的才回落成「选择动作」。少了这一支，历史列表有人在写、
+        # 却没有任何按键读得到——帮助里的那行字就成了空头支票。
+        if key in ("UP", "DOWN") and self.editor.buffer:
+            self.editor.handle(key)
+            return
         if key == "ESC":
             if self.editor.buffer:
                 self.editor.clear()

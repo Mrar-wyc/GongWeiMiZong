@@ -820,7 +820,8 @@
        ["存档 / 读档", "存到本机 / 读回本机（也可搬档）"],
        ["重来 / 离开", "重开一卷 / 回到标题"],
        ["直接敲选项上的字", "与点它一样；敲「移步」就能迈步"],
-       ["数字 1-9", "选第 N 项动作"]].forEach(function (pair) {
+       ["数字 1-9", "选第 N 项动作"],
+       ["↑ ↓（行里有字时）", "翻敲过的指令"]].forEach(function (pair) {
         var tr = el("tr");
         tr.appendChild(el("td", "k", pair[0]));
         tr.appendChild(el("td", null, pair[1]));
@@ -829,6 +830,9 @@
       sheet.appendChild(table);
       sheet.appendChild(el("div", "rule"));
       sheet.appendChild(el("h4", null, "终端版还多这些敲法"));
+      sheet.appendChild(el("p", "empty", "下面这张表是终端版认的写法。" +
+        "网页版没有「问 / 出示 / 前往 / 查证 / 复核 / 指认 / 目 / 幕」这些动词，" +
+        "只认上面那张表，外加「把选项上的字敲出来」这一条。"));
       (PACK.help_sections || []).forEach(function (sec) {
         sheet.appendChild(el("h4", null, "【" + sec.title + "】"));
         var t = el("table");

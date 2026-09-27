@@ -144,6 +144,29 @@ class GameScreenTest(AppTestCase):
         self.app.handle("UP")            # 回环到最后一个
         self.assertEqual(self.app.cursor, total - 1)
 
+    def test_arrow_keys_walk_the_command_history_when_the_line_has_text(self):
+        self.start()
+        for ch in "档目":                 # 先敲一条真指令并提交
+            self.app.handle(ch)
+        self.app.handle("ENTER")
+        self.assertIn("档目", self.app.editor.history)
+        self.app.handle("银")             # 行里已经有字了
+        self.assertEqual(self.app.editor.buffer, "银")
+        self.app.handle("UP")             # 这一下该翻历史，不是挪光标
+        self.assertEqual(self.app.editor.buffer, "档目")
+        self.assertEqual(self.app.cursor, 0, "翻历史不该顺手挪动选项光标")
+        self.app.handle("DOWN")           # 再按回来 = 回到还没提交的草稿
+        self.assertEqual(self.app.editor.buffer, "银")
+
+    def test_arrow_keys_still_move_the_cursor_on_an_empty_line(self):
+        self.start()
+        self.app.editor.clear()
+        total = len(self.app.options())
+        self.app.handle("UP")
+        self.assertEqual(self.app.cursor, total - 1, "空行时 ↑ 仍然是选动作")
+        self.app.handle("DOWN")
+        self.assertEqual(self.app.cursor, 0)
+
     def test_number_key_picks_a_choice(self):
         self.start()
         self.app.handle("2")             # 空行按数字 = 直接选中第 2 项（询问王德海）
